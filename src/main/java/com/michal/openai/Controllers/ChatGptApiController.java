@@ -28,5 +28,5 @@ public class ChatGptApiController {
 	{
 		return gptService.getAnswerToSingleQuery(query, gptFunction);
 	}
-
+ 
 }
