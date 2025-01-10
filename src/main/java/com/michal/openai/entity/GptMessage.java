@@ -24,7 +24,6 @@ public class GptMessage {
 		this.name = name;
 	}
 
-
 	public FunctionCall getFunctionCall() {
 		return functionCall;
 	}

@@ -17,7 +17,7 @@ public class ChatGptApiController {
 	
 	@Autowired
 	@Qualifier("gptWeatherFunction")
-	GptFunction gptFunction;
+	GptFunction gptWeatherFunction;
 	
 	@GetMapping("/v1/ask-gpt")
 	public String askGpt(@RequestParam String query)
@@ -28,7 +28,7 @@ public class ChatGptApiController {
 	@GetMapping("/v1/function")
 	public String callFunction(@RequestParam String query)
 	{
-		return gptService.getAnswerToSingleQuery(query, gptFunction);
+		return gptService.getAnswerToSingleQuery(query, gptWeatherFunction);
 	}
  
 }

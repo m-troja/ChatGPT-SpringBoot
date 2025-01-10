@@ -10,6 +10,16 @@ public class GptFunction {
 		
 		private String type;
 		private ParameterProperties properties;
+		
+		String[] required;
+		
+		
+		public String[] getRequired() {
+			return required;
+		}
+		public void setRequired(String[] required) {
+			this.required = required;
+		}
 		public String getType() {
 			return type;
 		}

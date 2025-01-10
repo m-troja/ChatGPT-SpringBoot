@@ -1,6 +1,6 @@
 package com.michal.openai.entity;
 
-public class WeatherParameterProperties {
+public class WeatherParameterProperties implements ParameterProperties {
 	
 	private Location location;
 	private MeasurementUnit measurementUnit;
@@ -47,6 +47,38 @@ public class WeatherParameterProperties {
 			this.type = type;
 			this.description = description;
 			this.enumValues = enumValues;
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public void setType(String type) {
+			this.type = type;
+		}
+
+		public String getDescription() {
+			return description;
+		}
+
+		public void setDescription(String description) {
+			this.description = description;
+		}
+
+		public String[] getEnumValues() {
+			return enumValues;
+		}
+
+		public void setEnumValues(String[] enumValues) {
+			this.enumValues = enumValues;
+		}
+
+		public static String getCelsius() {
+			return CELSIUS;
+		}
+
+		public static String getFahrenheit() {
+			return FAHRENHEIT;
 		}
 	}
 

@@ -1,6 +1,10 @@
 package com.michal.openai.gpt.impl;
 
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
-import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -22,6 +25,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.michal.openai.entity.GptFunction;
 import com.michal.openai.entity.GptMessage;
 import com.michal.openai.entity.GptMessage.FunctionCall;
@@ -30,10 +36,11 @@ import com.michal.openai.functions.FunctionFacory;
 import com.michal.openai.entity.GptRequest;
 import com.michal.openai.entity.GptResponse;
 import com.michal.openai.gpt.GptService;
+import com.michal.openai.log.JsonSaver;
 
 @Service
 public class DefaultGptService implements GptService{
-
+	
 	@Value("${gpt.chat.model}")
 	private String model;
 
@@ -66,7 +73,7 @@ public class DefaultGptService implements GptService{
 
 	@Autowired
 	FunctionFacory functionFactory;
-	
+		
 	private int i;
 	
 	@Override
@@ -86,6 +93,7 @@ public class DefaultGptService implements GptService{
 			List<GptFunction> functions = Arrays.asList(gptFunctions);
 			gptRequest.setFunctions(functions);
 		}
+		
 		return getResponseFromGpt(gptRequest);
 	}
 	
@@ -95,11 +103,18 @@ public class DefaultGptService implements GptService{
 		
 		String response = "";
 		
+		// Save request to JSON
+		JsonSaver jsonSaver = new JsonSaver();
+		String requestBody = gson.toJson(gptRequest);
+		jsonSaver.saveGptRequestToJson(requestBody);
+
+
 		for (i = 0; i < retryAttempts ; i++)
 		{
 			try 
 			{
 				response = extractGptResponseContent(postRequest, gptRequest);
+				
 				return response;
 			}
 			catch(IOException | RuntimeException e) 
@@ -135,8 +150,12 @@ public class DefaultGptService implements GptService{
 			
 			GptResponse gptResponse = gson.fromJson(responseBody, GptResponse.class);
 			
-			GptMessage message = gptResponse.getChoices().get(0).getMessage();
+			// Save response to JSON
+			JsonSaver jsonSaver = new JsonSaver();
+			jsonSaver.saveResponseJson(responseBody);
 			
+			GptMessage message = gptResponse.getChoices().get(0).getMessage();
+
 			FunctionCall functionCall = message.getFunctionCall();
 			
 			if (functionCall != null)
@@ -153,13 +172,9 @@ public class DefaultGptService implements GptService{
 			
 				return getResponseFromGpt(gptRequest);
 			}
-			
 			return message.getContent();
-			
 		}
-		
 		return "";
-
 	}
 	
 	public HttpPost prepareHttpPostRequest(GptRequest gptRequest)
