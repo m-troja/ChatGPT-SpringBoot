@@ -5,13 +5,27 @@ public class GptMessage {
 	String name;
 	String role;
 	String content;
+	String userName;
 	FunctionCall functionCall;
 	
 	public GptMessage() {}
 
+	public GptMessage(String role, String content, String userName) {
+		this.role = role;
+		this.content = content;
+		this.userName = userName;
+	}
 	public GptMessage(String role, String content) {
 		this.role = role;
 		this.content = content;
+	}
+	
+	public String getUserName() {
+		return userName;
+	}
+
+	public void setUserName(String userName) {
+		this.userName = userName;
 	}
 
 	public String getName() {

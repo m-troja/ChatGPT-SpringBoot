@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.michal.openai.entity.SlackRequestData;
+import com.michal.openai.gpt.GptService;
 import com.michal.openai.slack.SlackService;
 import com.slack.api.model.User;
 import com.slack.api.methods.MethodsClient;
@@ -35,11 +36,17 @@ public class DefaultSlackService implements SlackService {
 	@Autowired
 	Gson gson;
 	
+	@Autowired
+	private GptService gptService;
+	
 	@Override
 	public void processOnMentionEven(String requestBody) {
 		SlackRequestData slackRequestData = extractSlackRequestData(requestBody);
 		
-		sendMessageToSlack("Elo", slackRequestData.getChannelIdFrom());
+		String gptResponseString = gptService.getAnswerToSingleQuery(slackRequestData.getMessage(), slackRequestData.getMessageAuthorId());
+		
+		System.out.println("sendMessageToSlack: " + gptResponseString+":"+ slackRequestData.getChannelIdFrom());
+		sendMessageToSlack(gptResponseString, slackRequestData.getChannelIdFrom());
 		
 		
 	}
@@ -55,6 +62,10 @@ public class DefaultSlackService implements SlackService {
 		Map<String, String> allUserIdToUserMap = extractUserIdToNameMap();
 		String messageWithNames = substituteUserIdsWithUserNames(message, allUserIdToUserMap);
 		
+		System.out.println("extractSlackRequestData: " + messageAuthorId + ":"+messageWithNames+":"+channelIdFrom);
+		// TODO
+		// extractSlackRequestData: U088ARD1VEG:null:C08887LK9KM
+
 		return new SlackRequestData(messageAuthorId, messageWithNames, channelIdFrom);
 	}
 
@@ -74,9 +85,7 @@ public class DefaultSlackService implements SlackService {
 				stringBuilder.replace(startIndex, endIndex, name);
 			}
 		}
-		
-		
-		return null;
+		return stringBuilder.toString();
 	}
 
 	private String[] extractUserIds(String message) {

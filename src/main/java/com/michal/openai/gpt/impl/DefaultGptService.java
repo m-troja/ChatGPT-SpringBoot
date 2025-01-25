@@ -41,6 +41,8 @@ import com.michal.openai.log.JsonSaver;
 @Service
 public class DefaultGptService implements GptService{
 	
+	private static final String ROLE_USER = "user";
+
 	@Value("${gpt.chat.model}")
 	private String model;
 
@@ -80,8 +82,31 @@ public class DefaultGptService implements GptService{
 	public String getAnswerToSingleQuery(String query, GptFunction... gptFunctions) {
 		GptRequest gptRequest = new GptRequest();
 		List<GptMessage> messages = new ArrayList<>();
-		GptMessage message = new GptMessage("user", query);
+		GptMessage message = new GptMessage(ROLE_USER, query);
 		messages.add(message);
+		gptRequest.setModel(model);
+		gptRequest.setTemperature(temperature);;
+		gptRequest.setPresencePenalty(presencePenalty);
+		gptRequest.setMaxTokens(maxTokens);
+		gptRequest.setMessages(messages);
+		
+		if ( gptFunctions != null && gptFunctions.length > 0)
+		{
+			List<GptFunction> functions = Arrays.asList(gptFunctions);
+			gptRequest.setFunctions(functions);
+		}
+		
+		return getResponseFromGpt(gptRequest);
+	}
+	
+	@Override
+	public String getAnswerToSingleQuery(String query, String userName, GptFunction... gptFunctions) {
+		GptRequest gptRequest = new GptRequest();
+		if (userName != null) {
+			userName = userName.replaceAll("\\s+", "_");
+		}
+		List<GptMessage> messages = new ArrayList<>();
+		messages.add( new GptMessage(ROLE_USER, query, userName) );
 		gptRequest.setModel(model);
 		gptRequest.setTemperature(temperature);;
 		gptRequest.setPresencePenalty(presencePenalty);
@@ -191,6 +216,5 @@ public class DefaultGptService implements GptService{
 		
 		return postRequest;
 	}
-	
 
 }
