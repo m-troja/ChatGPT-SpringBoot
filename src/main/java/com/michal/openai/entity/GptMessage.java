@@ -1,7 +1,5 @@
 package com.michal.openai.entity;
 
-import java.util.List;
-
 public class GptMessage {
 	
 	String name;

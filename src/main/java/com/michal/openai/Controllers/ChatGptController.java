@@ -37,7 +37,7 @@ public class ChatGptController {
 	  public void addCorsMappings(CorsRegistry registry) {
 	        registry.addMapping("/v1/**")
 	                .allowedOrigins("*")  
-	                .allowedMethods("GET")  
+	                .allowedMethods("GET", "POST")  
 	                .allowedHeaders("*")
 	              //  .allowCredentials(true)
 	                ;

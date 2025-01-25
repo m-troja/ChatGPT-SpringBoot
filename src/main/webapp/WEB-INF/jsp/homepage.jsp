@@ -7,11 +7,12 @@
 <html lang="en">
 	<head>
 	   <meta charset="UTF-8">
-	   <title>ChatGPT by upat</title>
+	   <title>ChatGPT by Trojan</title>
 	   <link rel="icon" href="/images/openai-16-16.ico">
 	   
 	</head>
 		  <body>
+		  <h4>ChatGPT by Trojan</h1>
 		  
 			  <div class = "input_form" >
 			  

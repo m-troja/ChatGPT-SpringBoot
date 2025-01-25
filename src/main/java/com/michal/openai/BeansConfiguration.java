@@ -2,6 +2,7 @@ package com.michal.openai;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,10 +14,15 @@ import com.michal.openai.entity.WeatherParameterProperties;
 import com.michal.openai.entity.WeatherParameterProperties.MeasurementUnit;
 import com.michal.openai.functions.Function;
 import com.michal.openai.functions.impl.GetWeatherInfoFunction;
+import com.slack.api.Slack;
+import com.slack.api.methods.MethodsClient;
 
 @Configuration
 public class BeansConfiguration {
 	
+	@Value("${slack.bot.oauth.token}")
+	private String slackSecurityTokenBot ;
+
 	@Bean
 	public Gson gson() {
 		
@@ -51,5 +57,10 @@ public class BeansConfiguration {
 		gptFunctionParameters.setProperties(weatherParameterProperties);
 		gptFunction.setParameters(gptFunctionParameters);
 		return gptFunction;
+	}
+	
+	@Bean("slackBotClient")
+	public MethodsClient slackMethodClientBot() {
+		return Slack.getInstance().methods(slackSecurityTokenBot);
 	}
 }

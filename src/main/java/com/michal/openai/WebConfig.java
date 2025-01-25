@@ -45,22 +45,22 @@ import org.springframework.web.servlet.view.JstlView;
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/css/**", "/fonts/**", "/images/**", "/js/**", "/vendor/**").permitAll()
-            .requestMatchers("/chatgpt", "/", "/WEB-INF/jsp/**").permitAll()
+            .requestMatchers("/chatgpt", "/", "/WEB-INF/jsp/**", "/v1/**").permitAll()
             .anyRequest().authenticated()
         );
 
     return http.build();
 	}    
 	        
-		@Bean
-		public ViewResolver viewResolver() {
-			InternalResourceViewResolver bean = new InternalResourceViewResolver();
-			bean.setViewClass(JstlView.class);
-			bean.setPrefix("/WEB-INF/jsp/");
-			bean.setSuffix(".jsp");
-			
-			return bean;
-		}
+	@Bean
+	public ViewResolver viewResolver() {
+		InternalResourceViewResolver bean = new InternalResourceViewResolver();
+		bean.setViewClass(JstlView.class);
+		bean.setPrefix("/WEB-INF/jsp/");
+		bean.setSuffix(".jsp");
+		
+		return bean;
+	}
 //
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
