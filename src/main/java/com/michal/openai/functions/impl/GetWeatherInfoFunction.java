@@ -10,7 +10,7 @@ import com.google.gson.reflect.TypeToken;
 import com.michal.openai.entity.WeatherInfo;
 import com.michal.openai.functions.Function;
 
-public class GetWeatherInfoFunction implements Function{
+public class GetWeatherInfoFunction implements Function {
 
 	
 	@Autowired

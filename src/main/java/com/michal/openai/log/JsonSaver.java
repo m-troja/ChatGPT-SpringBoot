@@ -18,7 +18,7 @@ public class JsonSaver {
 	String responsePath = Paths.get("C:", "tmp", "JSON", "response",  generateResponseFileName() ).toString();
 	String requestPath = Paths.get("C:", "tmp", "JSON", "request",  generateRequestFileName() ).toString();
 
-	
+
 	private static String generateResponseFileName() {
 		LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
@@ -41,11 +41,6 @@ public class JsonSaver {
         return originalFilename + ".json";
     }
 	
-//	private static String checkFileExisting(String originalFilename, String path) {
-//		Path filePath = Paths.get(path, null)
-//		return null;
-//	}
-
 
 	public void saveResponseJson(String responseBody)
 	{

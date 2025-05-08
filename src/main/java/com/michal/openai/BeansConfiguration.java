@@ -13,6 +13,7 @@ import com.michal.openai.entity.GptFunction;
 import com.michal.openai.entity.WeatherParameterProperties;
 import com.michal.openai.entity.WeatherParameterProperties.MeasurementUnit;
 import com.michal.openai.functions.Function;
+import com.michal.openai.functions.impl.GetAllJiraIssues;
 import com.michal.openai.functions.impl.GetWeatherInfoFunction;
 import com.slack.api.Slack;
 import com.slack.api.methods.MethodsClient;
@@ -39,6 +40,12 @@ public class BeansConfiguration {
 		return new GetWeatherInfoFunction();
 	}
 	
+	@Bean("getAllJiraIssuesFunction")
+	public Function allJiraIssuesFunctionCall() {
+		return new GetAllJiraIssues();
+	}
+	
+	
 	@Bean("gptWeatherFunction")
 	public GptFunction defineGetWeatherFunction() {
 		var gptFunction = new GptFunction();
@@ -56,6 +63,27 @@ public class BeansConfiguration {
 		
 		gptFunctionParameters.setProperties(weatherParameterProperties);
 		gptFunction.setParameters(gptFunctionParameters);
+		return gptFunction;
+	}
+	
+	@Bean("allJiraIssuesFunction")
+	public GptFunction defineGetAllJiraIssuesFunction() {
+		var gptFunction = new GptFunction();
+		gptFunction.setName("getAllJiraIssuesFunction");
+		gptFunction.setDescription("Get basic data about all issues in my Jira: key, assignee, description, summary, due date.");
+		
+//		GptFunction.Parameters gptFunctionParameters = gptFunction.new Parameters();
+//		gptFunctionParameters.setType("object");		
+//		gptFunctionParameters.setRequired(new String[] {"location"});
+//		
+//		WeatherParameterProperties weatherParameterProperties = new WeatherParameterProperties();
+//		weatherParameterProperties.setLocation(weatherParameterProperties.new Location("string", "Warsaw"));
+//		weatherParameterProperties.setMeasurementUnit(weatherParameterProperties.new MeasurementUnit("string", "Celsius or fahrenheit. Temperature measurement unit", 
+//				new String[] {MeasurementUnit.CELSIUS, MeasurementUnit.FAHRENHEIT}));
+//		
+//		gptFunctionParameters.setProperties(weatherParameterProperties);
+//		gptFunction.setParameters(gptFunctionParameters);
+		
 		return gptFunction;
 	}
 	

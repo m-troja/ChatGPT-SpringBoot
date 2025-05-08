@@ -39,7 +39,7 @@ public class SlackApiController {
 	{
 		System.out.println("Slack event received: \n" + requestBody);
 
-		slackService.processOnMentionEven(requestBody);
+		slackService.processOnMentionEvent(requestBody);
 		
 		
 		return "";

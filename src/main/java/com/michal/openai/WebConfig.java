@@ -19,33 +19,15 @@ import org.springframework.web.servlet.view.JstlView;
 @Configuration
 	public class WebConfig implements WebMvcConfigurer  {
 
-
-//	   @Bean
-//	    public UserDetailsService userDetailsService() {
-//	        // Tworzymy użytkowników w pamięci
-//	        InMemoryUserDetailsManager userDetailsService = new InMemoryUserDetailsManager();
-//	        
-//	        userDetailsService.createUser(User.withUsername("user")
-//	                .password("{noop}user")  // {noop} oznacza, że nie używamy żadnej enkrypcji hasła
-//	                .roles("USER")  // Przypisujemy rolę USER
-//	                .build());
-//	        
-//	        userDetailsService.createUser(User.withUsername("admin")
-//	                .password("{noop}admin")  // Używamy proste hasło, bez szyfrowania
-//	                .roles("ADMIN")  // Przypisujemy rolę ADMIN
-//	                .build());
-//	        
-//	        return userDetailsService;
-//	   }
-//	   
-//	
 	@Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/css/**", "/fonts/**", "/images/**", "/js/**", "/vendor/**").permitAll()
-            .requestMatchers("/chatgpt", "/", "/WEB-INF/jsp/**", "/v1/**").permitAll()
+            .requestMatchers("/favicon.ico", "/error").permitAll()  // ✅ Add this
+
+            .requestMatchers("/chatgpt", "/", "/WEB-INF/jsp/**", "/v1/**", "/v1/jira/**", "/v1/jira/issue").permitAll()
             .anyRequest().authenticated()
         );
 
