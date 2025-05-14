@@ -40,6 +40,7 @@ public class GptRequest {
 				name = "request_id", referencedColumnName = "id"),
 		inverseJoinColumns = @JoinColumn(name = "message_id", referencedColumnName = "id"))
 	private List<GptMessage> messages;
+	
 	@Transient
 	private Integer n;
 	@Transient
