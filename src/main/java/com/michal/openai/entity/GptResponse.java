@@ -2,19 +2,48 @@ package com.michal.openai.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Entity
+@Table(name = "gpt_response", schema = "chatgpt-integration") 
 public class GptResponse {
-	private String id;
+	
+	@Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+	@JsonIgnore
+	private Long id;
+	@Transient
 	private String object;
+	@Transient
 	private Long created;
+	@Transient
 	private String model;
+	@Transient
 	private List<Choice> choices;
+	@Transient
 	private Usage usage;
 	
+	@JsonIgnore
+	@Column(name = "content")
+	private String content; // for DB column
 	
-	public String getId() {
+	public Long getId() {
 		return id;
 	}
-	public void setId(String id) {
+	public void setId(Long id) {
 		this.id = id;
 	}
 	public String getObject() {
@@ -48,10 +77,23 @@ public class GptResponse {
 		this.usage = usage;
 	}
 	
-	public class Choice {
+	public String getContent() {
+		return content;
+	}
+	public void setContent(String content) {
+		this.content = content;
+	}
+	
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	public static class Choice {
 		
+		@Transient
 		private Integer index;
+		
+		@Transient
 		private GptMessage message;
+		
+		@Transient
 		private String finishReason;
 		
 		public Integer getIndex() {
@@ -76,12 +118,21 @@ public class GptResponse {
 		public String toString() {
 			return "Choice [index=" + index + ", message=" + message + ", finishReason=" + finishReason + "]";
 		}
+		public Choice() {
+			super();
+		}
 	}
 	
-	public class Usage {
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	public static class Usage {
 		
+		@Transient
 		private Integer promptTokens;
+		
+		@Transient
 		private Integer completionTokens;
+		
+		@Transient
 		private Integer totalTokens;
 		
 		public Integer getPromptTokens() {

@@ -1,10 +1,8 @@
 package com.michal.openai;
 
-import org.springframework.boot.autoconfigure.security.reactive.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.ViewResolver;
@@ -28,6 +26,7 @@ import org.springframework.web.servlet.view.JstlView;
             .requestMatchers("/favicon.ico", "/error").permitAll()  // ✅ Add this
 
             .requestMatchers("/chatgpt", "/", "/WEB-INF/jsp/**", "/v1/**", "/v1/jira/**", "/v1/jira/issue").permitAll()
+            .requestMatchers("/authorize", "/oauth2callback").permitAll()
             .anyRequest().authenticated()
         );
 

@@ -1,13 +1,45 @@
 package com.michal.openai.entity;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Entity
+@Table(name = "gpt_message", schema = "chatgpt-integration")  
 public class GptMessage {
 	
-	String name;
-	String role;
-	String content;
-	String userName;
-	FunctionCall functionCall;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private int id;
 	
+	@Column(name = "content")
+	private String content;
+	@Transient
+	private String userName;
+	@Transient
+	private List<Tool> toolCalls;
+	@Transient
+	private String name;
+	@Transient
+	private String role;
+	
+	public List<Tool> getToolCalls() {
+		return toolCalls;
+	}
+
+	public void setToolCalls(List<Tool> toolCalls) {
+		this.toolCalls = toolCalls;
+	}
+
 	public GptMessage() {}
 
 	public GptMessage(String role, String content, String userName) {
@@ -20,6 +52,7 @@ public class GptMessage {
 		this.content = content;
 	}
 	
+
 	public String getUserName() {
 		return userName;
 	}
@@ -36,13 +69,7 @@ public class GptMessage {
 		this.name = name;
 	}
 
-	public FunctionCall getFunctionCall() {
-		return functionCall;
-	}
-
-	public void setFunctionCall(FunctionCall functionCall) {
-		this.functionCall = functionCall;
-	}
+	
 
 	public String getRole() {
 		return role;
@@ -57,12 +84,53 @@ public class GptMessage {
 		this.content = content;
 	}
 
+	
+	
 	@Override
 	public String toString() {
-		return "GptMessage [name=" + name + ", role=" + role + ", content=" + content + "]";
+		return "GptMessage [name=" + name + ", role=" + role + ", content=" + content + ", userName=" + userName
+				+ ", toolCalls=" + toolCalls + "]";
 	}
+
+
+
+	public static class Tool {
+		String id;
+		String type;
+		@JsonProperty("function")
+		FunctionCall function;
+		public Tool() {
+			super();
+		}
+		public String getId() {
+			return id;
+		}
+		public void setId(String id) {
+			this.id = id;
+		}
+		public String getType() {
+			return type;
+		}
+		public void setType(String type) {
+			this.type = type;
+		}
+		public FunctionCall getFunctionCall() {
+			return function;
+		}
+		public void setFunctionCall(FunctionCall function) {
+			this.function = function;
+		}
+		
+		
 	
-	public class FunctionCall {
+	@Override
+		public String toString() {
+			return "Tool [id=" + id + ", type=" + type + ", function=" + function + "]";
+		}
+
+
+
+	public static class FunctionCall {
 		
 		String name;
 		
@@ -80,6 +148,12 @@ public class GptMessage {
 		public void setArguments(String arguments) {
 			this.arguments = arguments;
 		}
+		@Override
+		public String toString() {
+			return "FunctionCall [name=" + name + ", arguments=" + arguments + "]";
+		}
+		
+	}
 	}
 
 }

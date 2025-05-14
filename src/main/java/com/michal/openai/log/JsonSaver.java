@@ -1,12 +1,15 @@
 package com.michal.openai.log;
 
 import java.io.FileWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.CompletableFuture;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -17,7 +20,8 @@ public class JsonSaver {
 
 	String responsePath = Paths.get("C:", "tmp", "JSON", "response",  generateResponseFileName() ).toString();
 	String requestPath = Paths.get("C:", "tmp", "JSON", "request",  generateRequestFileName() ).toString();
-
+ 
+    private final ObjectMapper objectMapper = new ObjectMapper(); 
 
 	private static String generateResponseFileName() {
 		LocalDateTime now = LocalDateTime.now();
@@ -36,34 +40,31 @@ public class JsonSaver {
         
         String formattedDateTime = now.format(formatter);
         String originalFilename = "request_" + formattedDateTime;
-    //   String checkedFilename = checkFileExisting(originalFilename, path);
         		
         return originalFilename + ".json";
     }
 	
 
-	public void saveResponseJson(String responseBody)
+	public void saveResponseJson(String responseBody) throws JsonProcessingException
 	{
-		Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
-		JsonElement je = JsonParser.parseString(responseBody);
-		String responseJsonString = prettyGson.toJson(je);
+		JsonNode jsonNode = objectMapper.readTree(responseBody);
+		String responseJsonString = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
 		
 		saveFile(responseJsonString, responsePath);
 		
-		System.out.println("Response saved to file: " + responsePath);
-		System.out.println("Debug: " + prettyGson.toJson(je).toString());
+	//	System.out.println("Response saved to file: " + responsePath);
+	//	System.out.println("Debug: " + prettyobjectMapper.writeValueAsString(je).toString());
 	}
 	
-	public void saveGptRequestToJson(String requestBody)
+	public void saveGptRequestToJson(String requestBody) throws JsonProcessingException
 	{
-		Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
-		JsonElement je = JsonParser.parseString(requestBody);
-		String requestJsonString = prettyGson.toJson(je);
+		JsonNode jsonNode = objectMapper.readTree(requestBody);
+		String reqestJsonString = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
+		
+		saveFile(reqestJsonString, requestPath);
 
-		saveFile(requestJsonString, requestPath);
-
-		System.out.println("Request saved to file: " + requestPath);
-		System.out.println("Debug: " + prettyGson.toJson(je).toString());
+	//	System.out.println("Request saved to file: " + requestPath);
+	//	System.out.println("Debug: " + prettyobjectMapper.writeValueAsString(je).toString());
 	}
 	
 	private void saveFile(String jsonString, String path)

@@ -1,5 +1,7 @@
 package com.michal.openai.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class JiraIssue {
 	
 	private String key;
@@ -7,7 +9,10 @@ public class JiraIssue {
 	private String description;
 	private String duedate;
 	private String assignee;
-	
+	@JsonProperty("issuetype")  // force this exact JSON key
+	private String issueType;
+
+
 	public JiraIssue(String key, String summary, String description, String duedate, String assignee) {
 		this.key = key;
 		this.summary = summary;
@@ -15,7 +20,15 @@ public class JiraIssue {
 		this.duedate = duedate;
 		this.assignee = assignee;
 	}
+	
+	public String getIssueType() {
+		return issueType;
+	}
 
+	public void setIssueType(String issueType) {
+		this.issueType = issueType;
+	}
+	
 	public JiraIssue() {
 		
 	}

@@ -1,20 +1,17 @@
 package com.michal.openai.gpt.impl;
 
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.ClientProtocolException;
+import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -22,27 +19,33 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.entity.GptFunction;
 import com.michal.openai.entity.GptMessage;
-import com.michal.openai.entity.GptMessage.FunctionCall;
 import com.michal.openai.functions.Function;
 import com.michal.openai.functions.FunctionFacory;
 import com.michal.openai.entity.GptRequest;
 import com.michal.openai.entity.GptResponse;
+import com.michal.openai.entity.GptTool;
 import com.michal.openai.gpt.GptService;
 import com.michal.openai.log.JsonSaver;
+import com.michal.openai.persistence.JpaGptRequestRepo;
+import com.michal.openai.persistence.JpaGptResponseRepo;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
-public class DefaultGptService implements GptService{
+public class DefaultGptService implements GptService {
 	
 	private static final String ROLE_USER = "user";
-
+	
+	@Autowired
+	JpaGptRequestRepo jpaGptRequestRepo;
+	
 	@Value("${gpt.chat.model}")
 	private String model;
 
@@ -68,7 +71,7 @@ public class DefaultGptService implements GptService{
 	private String chatGptApiKey;
 	
 	@Autowired
-	private Gson gson;
+	private ObjectMapper objectMapper;
 	
 	@Autowired
 	HttpClient httpClient;
@@ -76,35 +79,60 @@ public class DefaultGptService implements GptService{
 	@Autowired
 	FunctionFacory functionFactory;
 		
+	@Autowired
+	JpaGptResponseRepo jpaGptResponseRepo;
+	
+	List<GptTool> tools = new ArrayList<>();
+	
 	private int i;
 	
+	@Async("defaultExecutor")
 	@Override
-	public String getAnswerToSingleQuery(String query, GptFunction... gptFunctions) {
-		GptRequest gptRequest = new GptRequest();
-		List<GptMessage> messages = new ArrayList<>();
-		GptMessage message = new GptMessage(ROLE_USER, query);
-		messages.add(message);
-		gptRequest.setModel(model);
-		gptRequest.setTemperature(temperature);;
-		gptRequest.setPresencePenalty(presencePenalty);
-		gptRequest.setMaxTokens(maxTokens);
-		gptRequest.setMessages(messages);
-		
-		if ( gptFunctions != null && gptFunctions.length > 0)
-		{
-			List<GptFunction> functions = Arrays.asList(gptFunctions);
-			gptRequest.setFunctions(functions);
-		}
-		
-		return getResponseFromGpt(gptRequest);
+	public CompletableFuture<String> getAnswerToSingleQuery(CompletableFuture<String> query, GptFunction... gptFunctions) {
+	    return query.thenCompose(unwrappedQuery -> {
+	    	
+	    	log.debug("getAnswerToSingleQuery : " + query + ", gptFunctions : " + gptFunctions.toString());
+	    	
+	    	GptRequest gptRequest = new GptRequest();
+	        List<GptMessage> messages = new ArrayList<>();
+	        GptMessage message = new GptMessage(ROLE_USER, unwrappedQuery);  // ✅ now a String
+	        messages.add(message);
+
+	        gptRequest.setModel(model);
+	        gptRequest.setTemperature(temperature);
+	        gptRequest.setPresencePenalty(presencePenalty);
+	        gptRequest.setMaxTokens(maxTokens);
+	        gptRequest.setMessages(messages);
+	        gptRequest.setToolChoice("auto");
+	        
+	        log.debug("gptRequest : " + gptRequest.toString() );
+	        
+	        if (gptFunctions != null && gptFunctions.length > 0) {
+	        	
+	        	// New OpenAI API says to wrap function into tool
+	        	for ( GptFunction function : gptFunctions)
+	        	{
+	        		tools.add(new GptTool("function", function));
+	        		log.debug("function : " + function.toString() );
+	        	}
+	        
+	        }
+	        gptRequest.setTools(tools);
+	        
+	        return getResponseFromGpt(gptRequest);  // returns CompletableFuture<String>
+	    });
 	}
 	
 	@Override
-	public String getAnswerToSingleQuery(String query, String userName, GptFunction... gptFunctions) {
+	public CompletableFuture<String> getAnswerToSingleQuery(String query, String userName, GptFunction... gptFunctions) {
 		GptRequest gptRequest = new GptRequest();
+		
+    	log.info("getAnswerToSingleQuery : " + query + ", userName : " + userName + ", gptFunctions : " + gptFunctions.toString());
+		
 		if (userName != null) {
 			userName = userName.replaceAll("\\s+", "_");
 		}
+		
 		List<GptMessage> messages = new ArrayList<>();
 		messages.add( new GptMessage(ROLE_USER, query, userName) );
 		gptRequest.setModel(model);
@@ -113,6 +141,8 @@ public class DefaultGptService implements GptService{
 		gptRequest.setMaxTokens(maxTokens);
 		gptRequest.setMessages(messages);
 		
+        log.debug("gptRequest : " + gptRequest.toString() );
+
 		if ( gptFunctions != null && gptFunctions.length > 0)
 		{
 			List<GptFunction> functions = Arrays.asList(gptFunctions);
@@ -122,24 +152,37 @@ public class DefaultGptService implements GptService{
 		return getResponseFromGpt(gptRequest);
 	}
 	
-	public String getResponseFromGpt(GptRequest gptRequest) 
+	
+	@Async("defaultExecutor")
+	public CompletableFuture<String> getResponseFromGpt(GptRequest gptRequest) 
 	{
+		saveGptRequest(gptRequest);
+		
+        log.debug("saveGptRequest : " + gptRequest.toString() );
+
 		HttpPost postRequest = prepareHttpPostRequest(gptRequest);
 		
-		String response = "";
+		CompletableFuture<String> response = CompletableFuture.completedFuture("");
 		
 		// Save request to JSON
 		JsonSaver jsonSaver = new JsonSaver();
-		String requestBody = gson.toJson(gptRequest);
-		jsonSaver.saveGptRequestToJson(requestBody);
-
-
+		try {
+			String requestBody = objectMapper.writeValueAsString(gptRequest);
+			jsonSaver.saveGptRequestToJson(requestBody);
+		}
+		catch(Exception e)
+		{
+			log.info("Error saving json!");
+			e.printStackTrace();
+		}
+		
 		for (i = 0; i < retryAttempts ; i++)
 		{
 			try 
 			{
 				response = extractGptResponseContent(postRequest, gptRequest);
-				
+		        log.debug("response : " + gptRequest.toString() );
+
 				return response;
 			}
 			catch(IOException | RuntimeException e) 
@@ -158,63 +201,132 @@ public class DefaultGptService implements GptService{
 		return response;
 	}
 	
-	private String extractGptResponseContent(HttpPost postRequest, GptRequest gptRequest) throws ClientProtocolException, IOException 
+	@Async("defaultExecutor")
+	private CompletableFuture<String> extractGptResponseContent(HttpPost postRequest, GptRequest gptRequest) throws ParseException, IOException  
 	{
 		HttpResponse response = httpClient.execute(postRequest);
 		int statusCode = response.getStatusLine().getStatusCode();
 		HttpEntity entity = response.getEntity();
 		
+		
 		if (entity != null)
 		{
-			String responseBody = EntityUtils.toString(entity);
 			
+			String responseBody = EntityUtils.toString(entity);
 			if (statusCode == HttpStatus.SC_BAD_REQUEST)
 			{
-				return responseBody;
+				return CompletableFuture.completedFuture(responseBody);
 			}
-			
-			GptResponse gptResponse = gson.fromJson(responseBody, GptResponse.class);
-			
-			// Save response to JSON
-			JsonSaver jsonSaver = new JsonSaver();
-			jsonSaver.saveResponseJson(responseBody);
-			
-			GptMessage message = gptResponse.getChoices().get(0).getMessage();
 
-			FunctionCall functionCall = message.getFunctionCall();
+			GptResponse gptResponse = objectMapper.readValue(responseBody, GptResponse.class);
 			
-			if (functionCall != null)
-			{
-				Function function = functionFactory.getFunctionByFunctionName(functionCall.getName());
-				String functionResponse = function.execute(functionCall.getArguments());
-				
-				GptMessage gptMessage = new GptMessage();
-				gptMessage.setRole("function");
-				gptMessage.setContent(functionResponse);
-				gptMessage.setName(functionCall.getName());
-				gptRequest.getMessages().add(gptMessage);
-				gptRequest.setFunctions(null);
-			
-				return getResponseFromGpt(gptRequest);
+			if (gptResponse.getChoices() != null && !gptResponse.getChoices().isEmpty()) {
+			    GptMessage message = gptResponse.getChoices().get(0).getMessage();
+			    if (message != null && message.getContent() != null) {
+			        gptResponse.setContent(message.getContent());
+			    } else {
+			        log.info("GPT message or content is null, cannot save response content!");
+			        gptResponse.setContent("Brak treści w odpowiedzi GPT.");
+			    }
+			} else {
+			    log.info("GPT response has no choices!");
+			    gptResponse.setContent("Brak odpowiedzi od GPT.");
 			}
-			return message.getContent();
+			saveResponse(gptResponse);
+
+			// Save response to JSON
+			try {
+				JsonSaver jsonSaver = new JsonSaver();
+				jsonSaver.saveResponseJson(responseBody);
+			}
+			catch(Exception e)
+			{
+				log.info("Error saving json!");
+				e.printStackTrace();
+			}
+			
+			log.debug("extractGptResponseContent responseBody: "  + responseBody);
+
+			GptMessage message = gptResponse.getChoices().get(0).getMessage();
+			List<GptMessage.Tool> toolCalls = message.getToolCalls();
+
+			if (toolCalls != null && toolCalls.size() != 0)
+			{
+				
+				log.info("message = " + message.toString());
+				log.info("toolCalls  " + toolCalls.toString() );
+				
+				for ( GptMessage.Tool tool : toolCalls)
+				{
+					GptMessage.Tool.FunctionCall functionCall = tool.getFunctionCall();
+					
+					Function function = functionFactory.getFunctionByFunctionName(functionCall.getName());
+					
+					log.info("functionCall = " + functionCall.toString());
+					
+					log.info(" =========== functionCall -> "+ functionCall.getName() + " ==========");
+					log.info("extractGptResponseContent, Function call arguments: " + functionCall.getArguments());
+
+					CompletableFuture<String> functionResponse = function.execute(functionCall.getArguments());
+					
+					return functionResponse.thenCompose(funcResp -> {
+					    GptMessage gptMessage = new GptMessage();
+					    gptMessage.setRole("function");
+					    gptMessage.setContent(funcResp); 
+					    gptMessage.setName(functionCall.getName());
+					    tool.setFunctionCall(functionCall);
+					    gptRequest.getMessages().add(gptMessage);
+					    gptRequest.setFunctions(null);
+
+					    log.debug("Function call arguments : " + gptRequest.toString() );
+
+					    return getResponseFromGpt(gptRequest); 
+					});
+				}
+			}
+			
+			 return CompletableFuture.completedFuture(message.getContent());
+
 		}
-		return "";
+		return  CompletableFuture.completedFuture("");
 	}
 	
 	public HttpPost prepareHttpPostRequest(GptRequest gptRequest)
 	{
 		String authenticationHeader = "Bearer " + chatGptApiKey;
 		String contentTypeHeader = "application/json";
-		String requestBody = gson.toJson(gptRequest);
+		String requestBody = "";
+		try {
+			requestBody = objectMapper.writeValueAsString(gptRequest);
+		}
+		catch(Exception e)
+		{
+			log.info("Error in objectMapper.writeValueAsString(gptRequest)!");
+			e.printStackTrace();
+		}
+		
 		StringEntity stringEntity = new StringEntity(requestBody, ContentType.APPLICATION_JSON);
+
+	    log.debug("stringEntity : " + stringEntity.toString() );
 
 		HttpPost postRequest = new HttpPost(chatGptApiUrl);
 		postRequest.setHeader(HttpHeaders.AUTHORIZATION, authenticationHeader);
 		postRequest.setHeader(HttpHeaders.CONTENT_TYPE, contentTypeHeader);
 		postRequest.setEntity(stringEntity);
 		
+	    log.debug("postRequest : " + postRequest.toString() );
+
 		return postRequest;
+	}
+	
+	public void saveGptRequest(GptRequest request) 
+	{
+		jpaGptRequestRepo.save(request);
+	}
+	
+	public void saveResponse(GptResponse gptResponse)
+	{
+		jpaGptResponseRepo.save(gptResponse);
 	}
 
 }

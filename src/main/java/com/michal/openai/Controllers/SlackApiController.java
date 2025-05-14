@@ -1,26 +1,40 @@
 package com.michal.openai.Controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.michal.openai.entity.SlackRequestData;
 import com.michal.openai.slack.SlackService;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RequestMapping(value = "/v1/slack")
 @RestController
 public class SlackApiController {
 	
 	@Autowired
-	Gson gson;
+	ObjectMapper objectMapper;
 	
 	@Autowired
 	SlackService slackService;
+	
+
+	@PostMapping
+	public String doPost(@RequestBody String requestBody) 
+	{
+		log.debug("POST /v1/slack " + requestBody);
+		
+		slackService.processOnMentionEvent(requestBody);
+		
+		log.debug("********** Responded status 200 to Slack **********");
+		return "OK";
+	}
+
 	
 //	Authentication
 //	
@@ -34,20 +48,4 @@ public class SlackApiController {
 //		return challengeValue;
 //	}
 	
-	@PostMapping
-	public String doPost(@RequestBody String requestBody) 
-	{
-		System.out.println("Slack event received: \n" + requestBody);
-
-		slackService.processOnMentionEvent(requestBody);
-		
-		
-		return "";
-	}
-	
-	@GetMapping
-	public String doGet() {
-		return "Hello";
-	}
-
 }

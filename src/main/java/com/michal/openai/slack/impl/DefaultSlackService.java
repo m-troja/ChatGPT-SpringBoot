@@ -5,90 +5,148 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.michal.openai.Controllers.SlackApiController;
 import com.michal.openai.entity.GptFunction;
 import com.michal.openai.entity.SlackRequestData;
+import com.michal.openai.entity.SlackUser;
 import com.michal.openai.gpt.GptService;
+import com.michal.openai.persistence.JpaSlackRepo;
 import com.michal.openai.slack.SlackService;
 import com.slack.api.model.User;
+
+import lombok.extern.slf4j.Slf4j;
+
 import com.slack.api.methods.MethodsClient;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.methods.request.chat.ChatPostMessageRequest;
 import com.slack.api.methods.request.users.UsersListRequest;
 import com.slack.api.methods.response.users.UsersListResponse;
-import com.slack.api.model.block.element.RichTextSectionElement.Text;
 
+@Slf4j
 @Service
 public class DefaultSlackService implements SlackService {
-
+	
 	@Autowired
 	@Qualifier("slackBotClient")
 	private MethodsClient slackBotClient;
-	
+	public static final String SUCCESSFULL_REGISTRATION_MESSAGE = "User is registered!";
+	private static final String REGISTRATION_ERROR_MESSAGE = "Error - user already registered!.";
+
 	@Autowired
 	private List<GptFunction> functions;
 	
 	@Autowired
-	Gson gson;
+	ObjectMapper objectMapper;
 	
 	@Autowired
 	private GptService gptService;
 	
+	@Autowired
+	JpaSlackRepo jpaSlackrepo;
+
+	@Async("defaultExecutor")
 	@Override
 	public void processOnMentionEvent(String requestBody) {
 		SlackRequestData slackRequestData = extractSlackRequestData(requestBody);
-		
-		// String gptResponseString = gptService.getAnswerToSingleQuery(slackRequestData.getMessage(), slackRequestData.getMessageAuthorId());
-		String gptResponseString = gptService.getAnswerToSingleQuery(slackRequestData.getMessage(), functions.toArray(GptFunction[]::new));
+		log.debug("processOnMentionEvent requestBody : " + requestBody);
 
-		System.out.println("sendMessageToSlack: " + gptResponseString+":"+ slackRequestData.getChannelIdFrom());
+		// String gptResponseString = gptService.getAnswerToSingleQuery(slackRequestData.getMessage(), slackRequestData.getMessageAuthorId());
+		CompletableFuture<String> gptResponseString = gptService.getAnswerToSingleQuery(CompletableFuture.completedFuture(slackRequestData.getMessage()), functions.toArray(GptFunction[]::new));
+
+		log.info("call sendMessageToSlack: " + gptResponseString+", channel: " + slackRequestData.getChannelIdFrom());
 		sendMessageToSlack(gptResponseString, slackRequestData.getChannelIdFrom());
-		
-		
 	}
 	
 	private SlackRequestData extractSlackRequestData(String requestBody) {
-		JsonObject jsonObject = gson.fromJson(requestBody, JsonObject.class);
-		JsonObject eventJsonObject = jsonObject.getAsJsonObject("event");
+		log.info("extractSlackRequestData....");
+		JsonNode jsonNode = null;
 		
-		String messageAuthorId = eventJsonObject.get("user").getAsString();
-		String message = eventJsonObject.get("text").getAsString();
-		String channelIdFrom = eventJsonObject.get("channel").getAsString();
+		try {
+			jsonNode = objectMapper.readValue(requestBody, JsonNode.class);
+		}
+		catch(Exception e)
+		{
+			log.info("Error in jsonObject = objectMapper.readValue(requestBody, JsonObject.class)!");
+			e.printStackTrace();
+		}
+
+        // Extract the 'event' object
+        JsonNode eventNode = null;
+		try {
+			eventNode = jsonNode.path("event");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+        
+        // Extract the fields from the 'event' object
+        String messageAuthorId = eventNode.path("user").asText();
+        String message = eventNode.path("text").asText();
+        String channelIdFrom = eventNode.path("channel").asText();
+		SlackUser user = new SlackUser();
+		try
+		{
+			// Use a Map to before sending request to Slack API
+			if ( getSlackUserBySlackId(messageAuthorId) == null)
+			{
+				log.info(" messageAuthorId not found! Extracting users...");
+				extractUsersIntoDatabase();
+				
+				 user = getSlackUserBySlackId(messageAuthorId);
+				
+				log.info("slackuser extracted :  " + user.toString());
+			}
+		}
+		catch( Exception e)
+		{
+			
+		}
+		String messageWithNames = substituteUserIdsWithUserNames(message);
 		
-		Map<String, String> allUserIdToUserMap = extractUserIdToNameMap();
-		String messageWithNames = substituteUserIdsWithUserNames(message, allUserIdToUserMap);
-		
-		System.out.println("extractSlackRequestData: " + messageAuthorId + ":"+messageWithNames+":"+channelIdFrom);
-		// extractSlackRequestData: U088ARD1VEG:null:C08887LK9KM
+		log.info("extractSlackRequestData: " + messageAuthorId + " : "+messageWithNames + " : "+channelIdFrom);
 
 		return new SlackRequestData(messageAuthorId, messageWithNames, channelIdFrom);
 	}
 
-	private String substituteUserIdsWithUserNames(String message, Map<String, String> allUserIdToUserMap) {
-		String[] userIds = extractUserIds(message);
-		StringBuilder stringBuilder = new StringBuilder(message);
+	private String substituteUserIdsWithUserNames(String message) {
 		
+		// Extract all slackIDs in a message to string array
+		String[] userIds = extractUserIds(message);
+		
+		StringBuilder stringBuilder = new StringBuilder(message);
+		log.info("stringBuilder : " + stringBuilder.toString() );
+
+		// For slackID in array of slackIDs, assign realName and switch slackID to realName
 		for(String userId : userIds)
 		{
-			String name = allUserIdToUserMap.get(userId);
+			String name = getSlackUserBySlackId(userId).getRealName();
 			String mention = "<@" + userId + ">";
 			
 			if(name != null)
 			{
 				int startIndex = stringBuilder.indexOf(mention);
 				int endIndex = startIndex + mention.length();
+				log.info("startIndex : " + startIndex, ", endIndex : " + endIndex );
+
 				stringBuilder.replace(startIndex, endIndex, name);
 			}
 		}
+		log.info("stringBuilder : " + stringBuilder.toString() );
+
 		return stringBuilder.toString();
 	}
 
@@ -100,43 +158,93 @@ public class DefaultSlackService implements SlackService {
 		while (matcher.find()) {
 			userIds.add(matcher.group(1));
 		}
+		log.info("extractUserIds : " + userIds.toArray().toString() );
+
 		return userIds.toArray(new String[userIds.size()]);
 	}
 
-	private Map<String, String> extractUserIdToNameMap() {
+	private void extractUsersIntoDatabase() {
 			try 
 			{
+				log.info("extractUsersIntoDatabase()...");
 				UsersListRequest usersListRequest = UsersListRequest.builder().build();
 				UsersListResponse userListResponse = slackBotClient.usersList(usersListRequest);          
-				Map <String, String> resultMap = new HashMap<>();
+
+				// Users returned by Slack should be inserted into database
 				for (User user : userListResponse.getMembers())
 				{
-					System.out.println("extractUserIdToNameMap: " + user.getId() + ":" + user.getRealName() );
-					resultMap.put(user.getId(), user.getRealName());
+					// If user not already registered -> register user
+					if ( getSlackUserBySlackId(user.getId()) == null)
+					{
+						registerUser(new SlackUser( user.getId(),user.getRealName() ));
+						log.info("registerUser : " + user.getId() + " : " + user.getRealName() );
+					}
 				}
-				return resultMap;
 			} 
-			catch (IOException | SlackApiException e) 
+			catch (Exception e) 
 			{
 				e.printStackTrace();
 			}
+	}
+	@Async("defaultExecutor")
+	public void sendMessageToSlack(CompletableFuture<String> message, String channelId) {
 		
-		return null;
-	}
+		message.thenAccept
+		(
+				response -> 
+				{
+					String stringToSend = response != null ? response : "[No response]";
+					ChatPostMessageRequest request = ChatPostMessageRequest.builder()
+	                .channel(channelId)
+	                .text(stringToSend)
+	                .build();
+					log.info("Response = " + response);
+					log.info("stringToSend = " + stringToSend);
 
-	public void sendMessageToSlack(String responseToSlack, String channelId)
-	{
-		ChatPostMessageRequest request = ChatPostMessageRequest.builder().channel(channelId).text(responseToSlack).build();
+			        try 
+			        {
+			        	log.debug("sendMessageToSlack: Channel= " + channelId + ", Message= " + stringToSend);
+			            slackBotClient.chatPostMessage(request);
+			        } 
+			        catch (IOException | SlackApiException e) 
+			        {
+			            e.printStackTrace();
+			        }
+		    }
+		)
+		.exceptionally
+		(ex -> 
+			{
+				log.info("Error in GPT response future: " + ex.getMessage());
+			       ex.printStackTrace();
+			       return null;
+			}
+		);
+	}
 	
-		try 
+	public SlackUser getSlackUserBySlackId(String slackid)
+	{
+		return jpaSlackrepo.findBySlackId(slackid);
+	}
+	
+	public List<SlackUser> getAllSlackUsers()
+	{
+		List<SlackUser> users = jpaSlackrepo.findAllByOrderBySlackId();
+		return users;
+	}
+	
+	@Override
+	public String registerUser(SlackUser user) {
+		if ( jpaSlackrepo.save(user) != null)
 		{
-			System.out.println("try sendMessageToSlack: Team= " + channelId +  ", Message= "+ responseToSlack);
-
-			slackBotClient.chatPostMessage(request);
+			log.info(REGISTRATION_ERROR_MESSAGE);
+			return SUCCESSFULL_REGISTRATION_MESSAGE;
 		}
-		catch (IOException | SlackApiException e)
+		else 
 		{
-			e.printStackTrace();
+			log.info(REGISTRATION_ERROR_MESSAGE);
+			return REGISTRATION_ERROR_MESSAGE;
 		}
 	}
+
 }
