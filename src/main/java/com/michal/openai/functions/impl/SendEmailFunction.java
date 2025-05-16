@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import com.michal.openai.entity.EmailData;
 import com.michal.openai.functions.Function;
 import com.michal.openai.mail.GmailService;

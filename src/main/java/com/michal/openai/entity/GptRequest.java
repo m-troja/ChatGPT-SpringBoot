@@ -4,20 +4,17 @@ import java.util.List;
 
 import java.util.Map;
 
-import jakarta.persistence.FetchType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.OneToMany;
+
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 
@@ -30,15 +27,15 @@ public class GptRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	@JsonIgnore
 	private  Long id;
-
+	
+	@JsonIgnore
+	@Column(name = "content")
+	private String content;
+	
 	@Transient
 	private  String model;
 	
-	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-	@JoinTable(name = "request_message", 
-		joinColumns = @JoinColumn( 
-				name = "request_id", referencedColumnName = "id"),
-		inverseJoinColumns = @JoinColumn(name = "message_id", referencedColumnName = "id"))
+	@Transient
 	private List<GptMessage> messages;
 	
 	@Transient
@@ -59,8 +56,15 @@ public class GptRequest {
 	private String stop;
 	@Transient
 	private Map<String, Integer> logitBias;
-	@Transient
-	private String user;
+	
+	@JsonIgnore
+	@Column(name = "author_slackid")
+	private String author;
+
+	@JsonIgnore
+	@Column(name = "author_realname")
+	private String authorRealname;
+	
 	@Transient
 	@JsonIgnore
 	private List<GptFunction> functions;
@@ -101,6 +105,14 @@ public class GptRequest {
 	
 	public List<GptFunction> getFunctions() {
 		return functions;
+	}
+
+	public String getAuthorRealname() {
+		return authorRealname;
+	}
+
+	public void setAuthorRealname(String authorRealname) {
+		this.authorRealname = authorRealname;
 	}
 
 	public void setFunctions(List<GptFunction> functions) {
@@ -171,19 +183,37 @@ public class GptRequest {
 		this.logitBias = logitBias;
 	}
 	public String getUser() {
-		return user;
+		return author;
 	}
 	public void setUser(String user) {
-		this.user = user;
+		this.author = user;
+	}
+
+	public String getContent() {
+		return content;
+	}
+
+	public void setContent(String content) {
+		this.content = content;
+	}
+	
+	public String getAuthor() {
+		return author;
+	}
+
+	public void setAuthor(String author) {
+		this.author = author;
 	}
 
 	@Override
 	public String toString() {
-		return "GptRequest [model=" + model + ", messages=" + messages + ", n=" + n + ", temperature=" + temperature
-				+ ", maxTokens=" + maxTokens + ", Stream=" + Stream + ", presencyPenalty=" + presencePenalty
-				+ ", frequencyPenalty=" + frequencyPenalty + ", topP=" + topP + ", stop=" + stop + ", logitBias="
-				+ logitBias + ", user=" + user + "]";
+		return "GptRequest [id=" + id + ", content=" + content + ", model=" + model + ", messages=" + messages + ", n="
+				+ n + ", temperature=" + temperature + ", maxTokens=" + maxTokens + ", Stream=" + Stream
+				+ ", presencePenalty=" + presencePenalty + ", frequencyPenalty=" + frequencyPenalty + ", topP=" + topP
+				+ ", stop=" + stop + ", logitBias=" + logitBias + ", author=" + author + ", authorRealname="
+				+ authorRealname + ", functions=" + functions + ", tools=" + tools + ", toolChoice=" + toolChoice + "]";
 	}
+
 	
 	
 

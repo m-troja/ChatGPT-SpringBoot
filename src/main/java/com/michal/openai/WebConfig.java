@@ -26,6 +26,7 @@ import org.springframework.web.servlet.view.JstlView;
             .requestMatchers("/favicon.ico", "/error").permitAll()  // ✅ Add this
 
             .requestMatchers("/chatgpt", "/", "/WEB-INF/jsp/**", "/v1/**", "/v1/jira/**", "/v1/jira/issue").permitAll()
+            .requestMatchers("/admin/**").permitAll()
             .requestMatchers("/authorize", "/oauth2callback").permitAll()
             .anyRequest().authenticated()
         );

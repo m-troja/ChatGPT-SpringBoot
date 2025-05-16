@@ -17,7 +17,7 @@ public class GetWeatherInfoFunction implements Function {
 
     @Override
     public CompletableFuture<String> execute(String arguments) {
-        // Use Jackson's TypeReference instead of Gson's Type
+        // Use Jackson's TypeReference instead of  's Type
         try {
             Map<String, String> argumentsMap = objectMapper.readValue(arguments, new TypeReference<Map<String, String>>() {});
             String location = argumentsMap.get("location");

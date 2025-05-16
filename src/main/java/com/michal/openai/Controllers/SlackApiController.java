@@ -6,14 +6,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import com.michal.openai.slack.SlackService;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RequestMapping(value = "/v1/slack")
+@RequestMapping
 @RestController
 public class SlackApiController {
 	
@@ -24,7 +24,7 @@ public class SlackApiController {
 	SlackService slackService;
 	
 
-	@PostMapping
+	@PostMapping(value = "/v1/slack")
 	public String doPost(@RequestBody String requestBody) 
 	{
 		log.debug("POST /v1/slack " + requestBody);
@@ -38,14 +38,22 @@ public class SlackApiController {
 	
 //	Authentication
 //	
-//	@PostMapping
-//	public String doPost(@RequestBody String requestBody) 
+//	@PostMapping(value = "/v1/slack")
+//	public String returnChallengeValue(@RequestBody String requestBody) 
 //	{
 //		System.out.println(requestBody);
-//		JsonObject jsonObject = gson.fromJson(requestBody, JsonObject.class);
-//		String challengeValue = jsonObject.get("challenge").getAsString();
-//		System.out.println("/v1/slack: challenge = " + challengeValue);
-//		return challengeValue;
+//		try
+//		{
+//			JsonNode mainNode = objectMapper.readTree(requestBody);
+//			JsonNode challengeNode = mainNode.path("challenge");
+//			System.out.println("/v1/slack: challenge = " + challengeNode.asText());
+//			
+//			return challengeNode.asText();
+//		}
+//		catch (Exception e)
+//		{
+//			return "error";
+//		}
 //	}
 	
 }

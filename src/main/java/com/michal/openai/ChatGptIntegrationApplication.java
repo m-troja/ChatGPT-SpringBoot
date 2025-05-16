@@ -25,10 +25,14 @@ import lombok.extern.slf4j.Slf4j;
 		
 public class ChatGptIntegrationApplication {
 
+	
     public static void main(String[] args) {
         String os = System.getProperty("os.name").toLowerCase();
         String logPath = os.contains("windows") ? "C:/tmp/log" : "/var/log";
 
+        // Przekazanie ścieżki do logów jako właściwość systemowa
+        System.setProperty("LOG_PATH", logPath);
+        
         // Tworzenie katalogu jeśli nie istnieje
         File logDir = new File(logPath);
         if (!logDir.exists()) {
@@ -40,8 +44,7 @@ public class ChatGptIntegrationApplication {
         
         log.info("App started!");
 
-        // Przekazanie ścieżki do logów jako właściwość systemowa
-        System.setProperty("LOG_PATH", logPath);
+
         
         SpringApplication.run(ChatGptIntegrationApplication.class, args);
     }

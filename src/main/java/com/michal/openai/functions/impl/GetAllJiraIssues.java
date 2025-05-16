@@ -6,12 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import com.michal.openai.Controllers.SlackApiController;
 import com.michal.openai.functions.Function;
 import com.michal.openai.jira.JiraService;
 
 import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 public class GetAllJiraIssues implements Function {
 
@@ -32,7 +32,6 @@ public class GetAllJiraIssues implements Function {
 								return objectMapper.writeValueAsString(issues);
 							} 
 							catch (JsonProcessingException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 							return null;

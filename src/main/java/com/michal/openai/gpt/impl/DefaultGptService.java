@@ -2,7 +2,6 @@ package com.michal.openai.gpt.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -30,10 +29,15 @@ import com.michal.openai.functions.FunctionFacory;
 import com.michal.openai.entity.GptRequest;
 import com.michal.openai.entity.GptResponse;
 import com.michal.openai.entity.GptTool;
+import com.michal.openai.entity.SlackUser;
 import com.michal.openai.gpt.GptService;
 import com.michal.openai.log.JsonSaver;
+import com.michal.openai.persistence.JpaGptMessageRepo;
 import com.michal.openai.persistence.JpaGptRequestRepo;
 import com.michal.openai.persistence.JpaGptResponseRepo;
+import com.michal.openai.persistence.RequestJdbcTemplateRepo;
+import com.michal.openai.persistence.ResponseJdbcTemplateRepo;
+import com.michal.openai.slack.SlackService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,9 +46,13 @@ import lombok.extern.slf4j.Slf4j;
 public class DefaultGptService implements GptService {
 	
 	private static final String ROLE_USER = "user";
+	private static final String ROLE_SYSTEM = "system";
 	
 	@Autowired
 	JpaGptRequestRepo jpaGptRequestRepo;
+	
+	@Autowired
+	RequestJdbcTemplateRepo requestTemplateRepo;
 	
 	@Value("${gpt.chat.model}")
 	private String model;
@@ -70,6 +78,12 @@ public class DefaultGptService implements GptService {
 	@Value("${gpt.chat.api.key}")
 	private String chatGptApiKey;
 	
+	@Value("${gpt.chat.qty.context.messages}")
+	private int qtyOfContextMessages;
+	
+	@Value("${gpt.chat.system.initial.message}")
+	private String systemInitialMessage;
+	
 	@Autowired
 	private ObjectMapper objectMapper;
 	
@@ -82,10 +96,23 @@ public class DefaultGptService implements GptService {
 	@Autowired
 	JpaGptResponseRepo jpaGptResponseRepo;
 	
+	@Autowired
+	JpaGptMessageRepo meesageRepo;
+	
+	@Autowired
+	ResponseJdbcTemplateRepo responseJdbc;
+	
 	List<GptTool> tools = new ArrayList<>();
 	
 	private int i;
 	
+	private SlackService slackService;
+
+	@Autowired
+	public void setSlackService(SlackService slackService) {
+	    this.slackService = slackService;
+	}
+
 	@Async("defaultExecutor")
 	@Override
 	public CompletableFuture<String> getAnswerToSingleQuery(CompletableFuture<String> query, GptFunction... gptFunctions) {
@@ -96,8 +123,8 @@ public class DefaultGptService implements GptService {
 	    	GptRequest gptRequest = new GptRequest();
 	        List<GptMessage> messages = new ArrayList<>();
 	        GptMessage message = new GptMessage(ROLE_USER, unwrappedQuery);  // ✅ now a String
+			messages.add(getInitialSystemMessage(gptRequest.getAuthorRealname()));
 	        messages.add(message);
-
 	        gptRequest.setModel(model);
 	        gptRequest.setTemperature(temperature);
 	        gptRequest.setPresencePenalty(presencePenalty);
@@ -124,34 +151,70 @@ public class DefaultGptService implements GptService {
 	}
 	
 	@Override
-	public CompletableFuture<String> getAnswerToSingleQuery(String query, String userName, GptFunction... gptFunctions) {
+	public CompletableFuture<String> getAnswerToSingleQuery(CompletableFuture<String> queryFuture, CompletableFuture<String> userNameFuture, GptFunction... gptFunctions) {
 		GptRequest gptRequest = new GptRequest();
-		
-    	log.info("getAnswerToSingleQuery : " + query + ", userName : " + userName + ", gptFunctions : " + gptFunctions.toString());
-		
-		if (userName != null) {
-			userName = userName.replaceAll("\\s+", "_");
-		}
-		
-		List<GptMessage> messages = new ArrayList<>();
-		messages.add( new GptMessage(ROLE_USER, query, userName) );
-		gptRequest.setModel(model);
-		gptRequest.setTemperature(temperature);;
-		gptRequest.setPresencePenalty(presencePenalty);
-		gptRequest.setMaxTokens(maxTokens);
-		gptRequest.setMessages(messages);
-		
-        log.debug("gptRequest : " + gptRequest.toString() );
-
-		if ( gptFunctions != null && gptFunctions.length > 0)
-		{
-			List<GptFunction> functions = Arrays.asList(gptFunctions);
-			gptRequest.setFunctions(functions);
-		}
-		
-		return getResponseFromGpt(gptRequest);
-	}
+    	try {
+    	
+			String userName = userNameFuture.get();
+			String query = queryFuture.get();
+	    	gptRequest.setAuthor(userName);
+	    	gptRequest.setContent(query);
+	    	gptRequest.setAuthorRealname(slackService.getSlackUserBySlackId(userName).getRealName());
+	    
+			log.info("getAnswerToSingleQuery : " + query + ", userName : " + userName + ", gptFunctions : " + gptFunctions.toString());
 	
+			if (userName != null) {
+				userName = userName.replaceAll("\\s+", "_");
+			}
+			
+			List<GptMessage> requests = getLastRequestsOfUser(slackService.getSlackUserBySlackId(userName));
+			List<GptMessage> responses = getLastResponsesToUser(slackService.getSlackUserBySlackId(userName));
+			List<GptMessage> messages = new ArrayList<>();	
+			
+			GptMessage message = new GptMessage(ROLE_USER, query, userName);
+			messages.add(getInitialSystemMessage(gptRequest.getAuthor()));
+			messages.add(message);
+
+			int contextSize = Math.min(requests.size(), responses.size());
+			for (int i = 0; i < contextSize; i++) {
+				messages.add(requests.get(i));
+				messages.add(responses.get(i));
+			}
+			
+			gptRequest.setModel(model);
+			gptRequest.setTemperature(temperature);;
+			gptRequest.setPresencePenalty(presencePenalty);
+			gptRequest.setMaxTokens(maxTokens);
+			gptRequest.setMessages(messages);
+
+	        if (gptFunctions != null && gptFunctions.length > 0) {
+	        	
+	        	// New OpenAI API says to wrap function into tool
+	        	for ( GptFunction function : gptFunctions)
+	        	{
+	        		
+	        		tools.add(new GptTool("function", function));
+	        		log.debug("function : " + function.toString() );
+	        	}
+	        }
+	        
+	        gptRequest.setTools(tools);
+	        
+	        log.debug("gptRequest : " + gptRequest.toString() );
+
+	        return getResponseFromGpt(gptRequest);  
+
+    	}
+    	catch (Exception e)
+    	{
+    		log.error("Error in getAnswerToSingleQuery with userName");
+    		e.printStackTrace();
+    	}
+    	
+		log.info("Returning null from getAnswerToSingleQuery with userName");
+		
+		return null;
+	}	
 	
 	@Async("defaultExecutor")
 	public CompletableFuture<String> getResponseFromGpt(GptRequest gptRequest) 
@@ -215,23 +278,27 @@ public class DefaultGptService implements GptService {
 			String responseBody = EntityUtils.toString(entity);
 			if (statusCode == HttpStatus.SC_BAD_REQUEST)
 			{
+		        log.error("Bad request!");
+
 				return CompletableFuture.completedFuture(responseBody);
 			}
 
 			GptResponse gptResponse = objectMapper.readValue(responseBody, GptResponse.class);
 			
 			if (gptResponse.getChoices() != null && !gptResponse.getChoices().isEmpty()) {
-			    GptMessage message = gptResponse.getChoices().get(0).getMessage();
-			    if (message != null && message.getContent() != null) {
+			    GptMessage message = gptResponse.getChoices().get(0).getMessage();																																																																																																																																																	if (message != null && message.getContent() != null) {
 			        gptResponse.setContent(message.getContent());
 			    } else {
-			        log.info("GPT message or content is null, cannot save response content!");
-			        gptResponse.setContent("Brak treści w odpowiedzi GPT.");
+			        log.info("GPT message content is null, cannot save response content!");
+			        gptResponse.setContent("GPT message content is null.");
 			    }
 			} else {
 			    log.info("GPT response has no choices!");
-			    gptResponse.setContent("Brak odpowiedzi od GPT.");
+			    gptResponse.setContent("No answer from GPT");
 			}
+			
+			gptResponse.setRequestId(getHighestRequestId());
+			gptResponse.setRequestSlackID(getLastAuthorSlackId());
 			saveResponse(gptResponse);
 
 			// Save response to JSON
@@ -262,10 +329,7 @@ public class DefaultGptService implements GptService {
 					
 					Function function = functionFactory.getFunctionByFunctionName(functionCall.getName());
 					
-					log.info("functionCall = " + functionCall.toString());
-					
-					log.info(" =========== functionCall -> "+ functionCall.getName() + " ==========");
-					log.info("extractGptResponseContent, Function call arguments: " + functionCall.getArguments());
+					log.info("Calling function '{}' with arguments: {}", functionCall.getName(), functionCall.getArguments());
 
 					CompletableFuture<String> functionResponse = function.execute(functionCall.getArguments());
 					
@@ -328,5 +392,65 @@ public class DefaultGptService implements GptService {
 	{
 		jpaGptResponseRepo.save(gptResponse);
 	}
+	
+	/* Get last messages of user to build context for GPT */ 
+	
+	public List<GptMessage> getLastRequestsOfUser(SlackUser user)
+	{
+		log.info("Calling getLastMessagesOfUser with params  : " +  user.toString(), " : " + qtyOfContextMessages );
+		
+		List<String> messages = requestTemplateRepo.getLastRequestsBySlackId(user.getSlackId(), qtyOfContextMessages);
+		List<GptMessage> gptMessages = new ArrayList<>();
+		
+		for (String message : messages)
+		{
+			GptMessage gptMessage = new GptMessage( ROLE_USER, message, user.getSlackId()  );
+			log.info("meesage : " + message + ", gptMessage : " + gptMessage.toString() );
+			gptMessages.add(gptMessage);
+		}
+		
+		log.info("gptMessages.toString() " + gptMessages.toString());
+		
+		return gptMessages;
+	}
+	
+	public List<GptMessage> getLastResponsesToUser(SlackUser user)
+	{
+		log.info("Calling getLastResponsesToUser with params  : " +  user.toString(), " : " + qtyOfContextMessages );
+		
+		List<String> messages = responseJdbc.getLastResponsesToUser(user.getSlackId(), qtyOfContextMessages);
+		List<GptMessage> gptMessages = new ArrayList<>();
+		
+		for (String message : messages)
+		{
+			GptMessage gptMessage = new GptMessage( ROLE_USER, message, user.getSlackId()  );
+			log.info("meesage : " + message + ", gptMessage : " + gptMessage.toString() );
+			gptMessages.add(gptMessage);
+		}
+		
+		log.info("gptMessages.toString() " + gptMessages.toString());
+		
+		return gptMessages;
+	}
 
+	public Integer getHighestRequestId()
+	{
+		return requestTemplateRepo.getHighestRequestId();
+	}
+	
+	public String getLastAuthorSlackId()
+	{
+		return requestTemplateRepo.getLastAuthorSlackId();
+	}
+	
+	public GptMessage getInitialSystemMessage(String userSlackId) 
+	{
+		String content = String.format(
+			    "%sYou received message from %s. Type <@%s> to mention them.",
+			    systemInitialMessage,
+			    userSlackId,
+			    userSlackId
+			);
+			return new GptMessage(ROLE_SYSTEM, content);
+	}
 }

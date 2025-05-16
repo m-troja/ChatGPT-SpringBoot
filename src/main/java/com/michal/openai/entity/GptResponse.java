@@ -8,10 +8,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -25,6 +27,19 @@ public class GptResponse {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	@JsonIgnore
 	private Long id;
+	
+	@JsonIgnore
+	@Column(name = "request_id")
+	private Integer requestId; // for DB column
+	
+	@JsonIgnore
+	@Column(name = "request_author_slackid")
+	private String requestSlackID; // for DB column
+	
+	@JsonIgnore
+	@Column(name = "content")
+	private String content; // for DB column
+	
 	@Transient
 	private String object;
 	@Transient
@@ -35,11 +50,7 @@ public class GptResponse {
 	private List<Choice> choices;
 	@Transient
 	private Usage usage;
-	
-	@JsonIgnore
-	@Column(name = "content")
-	private String content; // for DB column
-	
+
 	public Long getId() {
 		return id;
 	}
@@ -90,7 +101,8 @@ public class GptResponse {
 		@Transient
 		private Integer index;
 		
-		@Transient
+		@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+		@JoinColumn(name = "response_id")  // Analogicznie, Hibernate doda response_id
 		private GptMessage message;
 		
 		@Transient
@@ -160,11 +172,25 @@ public class GptResponse {
 		}
 		
 	}
+	public Integer getRequestId() {
+		return requestId;
+	}
+	public void setRequestId(Integer requestId) {
+		this.requestId = requestId;
+	}
+	public String getRequestSlackID() {
+		return requestSlackID;
+	}
+	public void setRequestSlackID(String requestSlackID) {
+		this.requestSlackID = requestSlackID;
+	}
 	@Override
 	public String toString() {
-		return "GptResponse [id=" + id + ", object=" + object + ", created=" + created + ", model=" + model
+		return "GptResponse [id=" + id + ", requestId=" + requestId + ", requestSlackID=" + requestSlackID
+				+ ", content=" + content + ", object=" + object + ", created=" + created + ", model=" + model
 				+ ", choices=" + choices + ", usage=" + usage + "]";
 	}
+
 	
 	
 }

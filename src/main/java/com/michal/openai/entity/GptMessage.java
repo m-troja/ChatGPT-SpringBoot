@@ -2,35 +2,36 @@ package com.michal.openai.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
-@Table(name = "gpt_message", schema = "chatgpt-integration")  
 public class GptMessage {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
-	
-	@Column(name = "content")
-	private String content;
+
 	@Transient
-	private String userName;
+	private String content;
+	
+	@JsonIgnore
+	private String userName; // Just to assign author to message in DB -> for context setting
+	
 	@Transient
 	private List<Tool> toolCalls;
 	@Transient
 	private String name;
 	@Transient
-	private String role;
+	private String role; 
 	
 	public List<Tool> getToolCalls() {
 		return toolCalls;
@@ -47,6 +48,7 @@ public class GptMessage {
 		this.content = content;
 		this.userName = userName;
 	}
+	
 	public GptMessage(String role, String content) {
 		this.role = role;
 		this.content = content;

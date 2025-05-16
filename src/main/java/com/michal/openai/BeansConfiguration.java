@@ -8,9 +8,6 @@ import org.springframework.context.annotation.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.michal.openai.entity.GptFunction;
 import com.michal.openai.entity.JiraCreateIssueParameterProperties;
 import com.michal.openai.entity.WeatherParameterProperties;
@@ -19,10 +16,8 @@ import com.michal.openai.functions.Function;
 import com.michal.openai.functions.impl.CreateIssueFunction;
 import com.michal.openai.functions.impl.GetAllJiraIssues;
 import com.michal.openai.functions.impl.GetWeatherInfoFunction;
-import com.michal.openai.functions.impl.SendEmailFunction;
 import com.slack.api.Slack;
 import com.slack.api.methods.MethodsClient;
-import com.michal.openai.entity.SendEmailParameterProperties;
 
 @Configuration
 public class BeansConfiguration {
@@ -57,12 +52,15 @@ public class BeansConfiguration {
 	public Function createJiraIssueCall() {
 		return new CreateIssueFunction();
 	}
+	 
+	/* Disabled mailing feauture due to security 
 	
 	@Bean("sendEmailFunction")
 	public Function sendEmailCall() {
 		return new SendEmailFunction();
 	}
 	
+
 	@Bean("gptSendEmailFunction")
 	public GptFunction gptSendEmailFunction(@Value("${gpt.function.gmail.send.email.name}") String functionName,
 			@Value("${gpt.function.gmail.send.email.name}") String description, 
@@ -74,7 +72,7 @@ public class BeansConfiguration {
 		function.setName(functionName);
 		function.setDescription(description);
 		GptFunction.Parameters parameters = function.new Parameters();
-		parameters.setType("object");
+		parameters.setType("object");b
 
 		SendEmailParameterProperties properties = new SendEmailParameterProperties();
 		properties.setAddresseeEmail(properties.new AddresseeEmail("string", addresseeEmailAttrDescription));
@@ -87,6 +85,8 @@ public class BeansConfiguration {
 		function.setParameters(parameters);
 		return function;
 	}
+	
+	 */
 	
 	// Define  weather fnc behavior and its parameters
 	@Bean("gptWeatherFunction")

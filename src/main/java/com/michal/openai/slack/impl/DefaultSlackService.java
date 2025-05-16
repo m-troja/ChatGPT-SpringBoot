@@ -2,25 +2,19 @@ package com.michal.openai.slack.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.michal.openai.Controllers.SlackApiController;
 import com.michal.openai.entity.GptFunction;
 import com.michal.openai.entity.SlackRequestData;
 import com.michal.openai.entity.SlackUser;
@@ -40,7 +34,7 @@ import com.slack.api.methods.response.users.UsersListResponse;
 @Slf4j
 @Service
 public class DefaultSlackService implements SlackService {
-	
+
 	@Autowired
 	@Qualifier("slackBotClient")
 	private MethodsClient slackBotClient;
@@ -52,13 +46,17 @@ public class DefaultSlackService implements SlackService {
 	
 	@Autowired
 	ObjectMapper objectMapper;
-	
-	@Autowired
-	private GptService gptService;
-	
+
 	@Autowired
 	JpaSlackRepo jpaSlackrepo;
 
+    private GptService gptService;
+
+    @Autowired
+    public void setGptService(@Lazy GptService gptService) {
+        this.gptService = gptService;
+    }
+	
 	@Async("defaultExecutor")
 	@Override
 	public void processOnMentionEvent(String requestBody) {
@@ -66,10 +64,13 @@ public class DefaultSlackService implements SlackService {
 		log.debug("processOnMentionEvent requestBody : " + requestBody);
 
 		// String gptResponseString = gptService.getAnswerToSingleQuery(slackRequestData.getMessage(), slackRequestData.getMessageAuthorId());
-		CompletableFuture<String> gptResponseString = gptService.getAnswerToSingleQuery(CompletableFuture.completedFuture(slackRequestData.getMessage()), functions.toArray(GptFunction[]::new));
+		CompletableFuture<String> gptResponseString = gptService.getAnswerToSingleQuery(CompletableFuture.completedFuture(slackRequestData.getMessage()), CompletableFuture.completedFuture( slackRequestData.getMessageAuthorId() ) ,functions.toArray(GptFunction[]::new));
 
 		log.info("call sendMessageToSlack: " + gptResponseString+", channel: " + slackRequestData.getChannelIdFrom());
+		
+		System.out.println("processOnMentionEvent channel: " + slackRequestData.getChannelIdFrom());
 		sendMessageToSlack(gptResponseString, slackRequestData.getChannelIdFrom());
+	//	sendMessageToSlack(gptResponseString, "C08RLDBCRB9");
 	}
 	
 	private SlackRequestData extractSlackRequestData(String requestBody) {
@@ -215,7 +216,7 @@ public class DefaultSlackService implements SlackService {
 		.exceptionally
 		(ex -> 
 			{
-				log.info("Error in GPT response future: " + ex.getMessage());
+				log.error("Error in GPT response future: " + ex.getMessage());
 			       ex.printStackTrace();
 			       return null;
 			}
@@ -237,8 +238,8 @@ public class DefaultSlackService implements SlackService {
 	public String registerUser(SlackUser user) {
 		if ( jpaSlackrepo.save(user) != null)
 		{
-			log.info(REGISTRATION_ERROR_MESSAGE);
-			return SUCCESSFULL_REGISTRATION_MESSAGE;
+			log.info(SUCCESSFULL_REGISTRATION_MESSAGE);
+			return SUCCESSFULL_REGISTRATION_MESSAGE  ;
 		}
 		else 
 		{

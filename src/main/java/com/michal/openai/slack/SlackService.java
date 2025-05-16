@@ -7,4 +7,5 @@ public interface SlackService {
 	void processOnMentionEvent(String requestBody);
 
 	String registerUser(SlackUser user);
+	public SlackUser getSlackUserBySlackId(String slackid);
 }
