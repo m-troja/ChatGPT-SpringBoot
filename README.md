@@ -1,5 +1,3 @@
 Web server to use OpenAI API. 
-Added weather function to call by ChatGPT.
-Gui config.
-14.01.2025 Frontend /chatgpt
-25.01.2025 slack api integration - on mention events api
+Can create jira ticket and get details of jira issues.
+Developed as Slack-bot asisstant. Communicates over Rest API via Slack API, Jira API, OpenAI API.
