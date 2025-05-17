@@ -47,6 +47,7 @@ public class DefaultGptService implements GptService {
 	
 	private static final String ROLE_USER = "user";
 	private static final String ROLE_SYSTEM = "system";
+	private static final String ROLE_ASSISTANT = "assistant";
 	
 	@Autowired
 	JpaGptRequestRepo jpaGptRequestRepo;
@@ -172,14 +173,16 @@ public class DefaultGptService implements GptService {
 			List<GptMessage> messages = new ArrayList<>();	
 			
 			GptMessage message = new GptMessage(ROLE_USER, query, userName);
-			messages.add(getInitialSystemMessage(gptRequest.getAuthor()));
-			messages.add(message);
-
+			
 			int contextSize = Math.min(requests.size(), responses.size());
-			for (int i = 0; i < contextSize; i++) {
+			
+			for (int i = contextSize -1 ;  i >= 0; i--) {
 				messages.add(requests.get(i));
 				messages.add(responses.get(i));
 			}
+			
+			messages.add(getInitialSystemMessage(gptRequest.getAuthor()));
+			messages.add(message);
 			
 			gptRequest.setModel(model);
 			gptRequest.setTemperature(temperature);;
@@ -423,7 +426,7 @@ public class DefaultGptService implements GptService {
 		
 		for (String message : messages)
 		{
-			GptMessage gptMessage = new GptMessage( ROLE_USER, message, user.getSlackId()  );
+			GptMessage gptMessage = new GptMessage( ROLE_ASSISTANT, message, user.getSlackId()  );
 			log.info("meesage : " + message + ", gptMessage : " + gptMessage.toString() );
 			gptMessages.add(gptMessage);
 		}
@@ -446,7 +449,7 @@ public class DefaultGptService implements GptService {
 	public GptMessage getInitialSystemMessage(String userSlackId) 
 	{
 		String content = String.format(
-			    "%sYou received message from %s. Type <@%s> to mention them.",
+			    "%sYou received message from %s. Type <@%s> to mention them. Type <!channel> to mention channel",
 			    systemInitialMessage,
 			    userSlackId,
 			    userSlackId
