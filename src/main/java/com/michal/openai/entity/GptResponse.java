@@ -30,7 +30,7 @@ public class GptResponse {
 	
 	@JsonIgnore
 	@Column(name = "request_id")
-	private Integer requestId; // for DB column
+	private Long requestId; // for DB column
 	
 	@JsonIgnore
 	@Column(name = "request_author_slackid")
@@ -172,10 +172,10 @@ public class GptResponse {
 		}
 		
 	}
-	public Integer getRequestId() {
+	public Long getRequestId() {
 		return requestId;
 	}
-	public void setRequestId(Integer requestId) {
+	public void setRequestId(Long requestId) {
 		this.requestId = requestId;
 	}
 	public String getRequestSlackID() {

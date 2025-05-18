@@ -80,6 +80,9 @@ public class DefaultJiraService implements JiraService {
         return null;
     }
 
+    /*
+     * Send request of all issue to Jira API, then return list of issue-objects
+     */
     public CompletableFuture<List<JiraIssue>> getIssues() {
         String urlToGet = url + search + "?jql=project=" + projectName;
         log.info("getIssues() urlToGet: " + urlToGet);
@@ -148,7 +151,11 @@ public class DefaultJiraService implements JiraService {
         return null;
     }
 
+    /*
+     * Parse requestBody of issue-data delivered by GPT, then build and send JSON-issue to Jira API
+     */
     public CompletableFuture<String> createJavaIssue(String requestBody) {
+    	
         String urlToCall = url + "/issue";
         log.info("createJavaIssue() urlToCall: " + urlToCall);
         log.debug("requestBody : " + requestBody);
@@ -219,6 +226,7 @@ public class DefaultJiraService implements JiraService {
             log.debug("requestObject : " + objectMapper.writeValueAsString(requestObject));
 
             return CompletableFuture.completedFuture(objectMapper.writeValueAsString(requestObject));
+            
         } catch (Exception e) {
             e.printStackTrace();
         }

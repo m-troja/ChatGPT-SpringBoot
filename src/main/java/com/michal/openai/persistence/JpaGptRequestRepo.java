@@ -7,8 +7,5 @@ import com.michal.openai.entity.GptRequest;
 
 @Repository
 public interface JpaGptRequestRepo extends CrudRepository<GptRequest, Integer> {
-	
-
-
 
 }

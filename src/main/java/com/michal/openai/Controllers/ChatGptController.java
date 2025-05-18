@@ -28,12 +28,12 @@ public class ChatGptController {
 		return "homepage";
 	}
 	
-	@PostMapping
-	public String doPost(@RequestParam String query, Model model) {
-		
-		CompletableFuture<String> response = gptService.getAnswerToSingleQuery(CompletableFuture.completedFuture(query));
-		model.addAttribute("response", response);
-		log.info("POST /chatgpt\", \"/\" " + query );
-		return "homepage";
-	}
+//	@PostMapping
+//	public String doPost(@RequestParam String query, Model model) {
+//		
+//		CompletableFuture<String> response = gptService.getAnswerToSingleQuery(CompletableFuture.completedFuture(query));
+//		model.addAttribute("response", response);
+//		log.info("POST /chatgpt\", \"/\" " + query );
+//		return "homepage";
+//	}
 }

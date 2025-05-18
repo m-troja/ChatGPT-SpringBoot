@@ -9,6 +9,11 @@ import org.springframework.stereotype.Repository;
 
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * Repository used to  extract content of last request messages by user.
+ * Allows simple use of SQL limit
+ */
+
 @Slf4j
 @Repository
 public class RequestJdbcTemplateRepo {
@@ -16,18 +21,6 @@ public class RequestJdbcTemplateRepo {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public Integer getHighestRequestId() 
-    {
-        String sql = "SELECT id FROM gpt_request ORDER BY id DESC LIMIT 1";
-        return jdbcTemplate.queryForObject(sql, Integer.class);
-    }
-    
-    public String getLastAuthorSlackId() 
-    {
-        String sql = "SELECT author_slackid FROM gpt_request ORDER BY id DESC LIMIT 1";
-        return jdbcTemplate.queryForObject(sql, String.class);
-    }
-    
     public List<String> getLastRequestsBySlackId(String slackId, int limit) 
     {
         String sql = "SELECT content FROM gpt_request WHERE author_slackid = ? ORDER BY id DESC LIMIT ?";
@@ -46,7 +39,7 @@ public class RequestJdbcTemplateRepo {
         log.info("Request messages found: " + messages.size());
        
         for (String msg : messages) {
- //           System.out.println("message " + msg);
+        	log.debug("message " + msg);
         }
 
         return messages;

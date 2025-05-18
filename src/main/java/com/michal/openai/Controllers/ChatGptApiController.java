@@ -18,10 +18,10 @@ public class ChatGptApiController {
 	private GptService gptService;
 	
 	@GetMapping("/v1/ask-gpt")
-	public CompletableFuture<String> askGpt(@RequestParam String query)
+	public CompletableFuture<String> askGpt(@RequestParam String query, @RequestParam String userSlackId)
 	{
 		log.info("GET /v1/ask-gpt" );
-		return gptService.getAnswerToSingleQuery(CompletableFuture.completedFuture(query));
+		return gptService.getAnswerToSingleQuery(CompletableFuture.completedFuture(query), CompletableFuture.completedFuture(userSlackId));
 	}
 	
 

@@ -31,6 +31,14 @@ public class GptRequest {
 	@JsonIgnore
 	@Column(name = "content")
 	private String content;
+
+	@JsonIgnore
+	@Column(name = "author_slackid")
+	private String author;
+
+	@JsonIgnore
+	@Column(name = "author_realname")
+	private String authorRealname;
 	
 	@Transient
 	private  String model;
@@ -56,14 +64,6 @@ public class GptRequest {
 	private String stop;
 	@Transient
 	private Map<String, Integer> logitBias;
-	
-	@JsonIgnore
-	@Column(name = "author_slackid")
-	private String author;
-
-	@JsonIgnore
-	@Column(name = "author_realname")
-	private String authorRealname;
 	
 	@Transient
 	@JsonIgnore
