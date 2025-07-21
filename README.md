@@ -38,7 +38,3 @@
 | **JSON Mapper**  | Jackson ObjectMapper                       |
 | **Native Build** | GraalVM `native-maven-plugin` (experimental profile) |
 
----
-
-## Project Structure
-
