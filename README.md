@@ -1,22 +1,22 @@
-# 💬 ChatGPT Integration Platform
+#  ChatGPT Integration Platform
 
 **ChatGPT Integration Platform** is a Spring Boot-based web application that integrates OpenAI's ChatGPT with **Slack** and **Jira** APIs. Designed as a modular and extensible backend, this application facilitates AI-powered task automation, conversational interfaces, and project management workflows.
 
 ---
 
-## 🚀 Features
+##  Features
 
-### 🤖 ChatGPT Interface
+###  ChatGPT Interface
 - **Web UI Endpoint** (`/chatgpt`) to interact with ChatGPT.
 - Built with asynchronous request handling using `CompletableFuture`.
 - Extensible architecture via the `DefaultGptService`.
 
-### 🧠 Slack Integration
+###  Slack Integration
 - REST API endpoint: `/v1/slack`
 - Listens for Slack mention events and responds automatically using ChatGPT.
 - Parses incoming Slack payloads and triggers processing via `SlackService`.
 
-### 🛠️ Jira Integration
+###  Jira Integration
 - Retrieve a single issue: `GET /v1/jira/issue?id=ISSUE-ID`
 - List project-specific issues: `GET /v1/jira/issues-java`
 - Create new issues programmatically: `POST /v1/jira/create-issue`
@@ -24,7 +24,7 @@
 
 ---
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 | Component        | Details                                    |
 |------------------|--------------------------------------------|
@@ -40,5 +40,5 @@
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
