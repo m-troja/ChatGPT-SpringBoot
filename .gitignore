@@ -15,3 +15,8 @@ src/main/resources/secrets.properties
 .springBeans
 .sts4-cache
 
+# Ignore all .txt, .log, .exe, and .jar files
+*.txt
+*.log
+*.exe
+*.jar
