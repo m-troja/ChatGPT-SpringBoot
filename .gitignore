@@ -20,3 +20,4 @@ src/main/resources/secrets.properties
 *.log
 *.exe
 *.jar
+logs/*
