@@ -197,12 +197,17 @@ public class DefaultGptService implements GptService {
 		return null;
 	}	
 	
-	/*
-	 * Called by SlackAPI controller
-	 */
+	/* When userName is not known */
+	
 	@Async("defaultExecutor")
 	public CompletableFuture<String> getResponseFromGpt(GptRequest gptRequest, SlackUser slackUserRequestAuthor) 
 	{
+		gptRequest.setAuthor(slackUserRequestAuthor.getSlackId());
+		gptRequest.setAuthorRealname(slackUserRequestAuthor.getRealName());
+		saveGptRequest(gptRequest);
+		
+        log.debug("saveGptRequest : " + gptRequest.toString() );
+
 		HttpPost postRequest = prepareHttpPostRequest(gptRequest);
 		
 		CompletableFuture<String> response = CompletableFuture.completedFuture("");
@@ -326,6 +331,9 @@ public class DefaultGptService implements GptService {
 					    gptRequest.getMessages().add(gptMessage);
 					    gptRequest.setFunctions(null);
 
+
+					    log.debug("Function call arguments : " + gptRequest.toString() );
+
 					    return getResponseFromGpt(gptRequest, slackUserRequestAuthor); 
 					});
 				}
@@ -379,7 +387,7 @@ public class DefaultGptService implements GptService {
 	
 	public List<GptMessage> getLastRequestsOfUser(SlackUser user)
 	{
-		log.info("Calling getLastMessagesOfUser with params  : " +  user.toString(), " : " + qtyOfContextMessages );
+		log.info("Calling getLastMessagesOfUser with params  : {} : {}", user.toString(), qtyOfContextMessages);
 		
 		List<String> messages = requestTemplateRepo.getLastRequestsBySlackId(user.getSlackId(), qtyOfContextMessages);
 		List<GptMessage> gptMessages = new ArrayList<>();
