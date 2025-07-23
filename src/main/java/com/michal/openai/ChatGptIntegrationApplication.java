@@ -13,8 +13,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@EntityScan("com.michal.openai.entity") // To scan entities like SlackUser
-@EnableJpaRepositories("com.michal.openai.persistence") // To scan repositories like JpaSlackRepo
+@EntityScan("com.michal.openai.entity") 
+@EnableJpaRepositories("com.michal.openai.persistence") 
 @EnableAsync(proxyTargetClass = true)
 @SpringBootApplication
 @Configuration
@@ -30,7 +30,7 @@ public class ChatGptIntegrationApplication {
         String os = System.getProperty("os.name").toLowerCase();
         String logPath = os.contains("windows") ? "C:/tmp/log" : "/var/log";
 
-        // Przekazanie ścieżki do logów jako właściwość systemowa
+        // set log_path into env variable
         System.setProperty("LOG_PATH", logPath);
         
         // Tworzenie katalogu jeśli nie istnieje
@@ -38,7 +38,7 @@ public class ChatGptIntegrationApplication {
         if (!logDir.exists()) {
             boolean created = logDir.mkdirs();
             if (!created) {
-                System.err.println("❌ Nie udało się utworzyć katalogu logów: " + logPath);
+                System.err.println(" Failed to create log folder: " + logPath);
             }
         }
         
