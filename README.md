@@ -50,18 +50,20 @@
 ## Config
 
 Parameters to put into src/main/resources/secrets.properties:
-gpt.chat.api.key=
-slack.bot.oauth.token=
-jira.key=
-mail.sender.email=
-mail.receiver.test.email=
-mail.sender.email.password=
+
+- gpt.chat.api.key=
+- slack.bot.oauth.token=
+- jira.key=
+- mail.sender.email=
+- mail.receiver.test.email=
+- mail.sender.email.password=
 
 Database and Jira config is stored in application.properties.
 
 ## Logging
 
 App saves incoming and outgoing JSON files.
-Outgoing: C:\tmp\JSON\request
-Incoming: C:\tmp\JSON\response
-Info and debug logfiles: C:\tmp\log
+
+- Outgoing: C:\tmp\JSON\request
+- Incoming: C:\tmp\JSON\response
+- Info and debug logfiles: C:\tmp\log
