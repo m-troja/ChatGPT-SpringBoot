@@ -10,6 +10,7 @@
 - Jira integration: retrieve tickets info, post a new ticket according to user requirements written in Slack channel.
 - Email: send an email to given user using SMTP credentials.
 - Admin-endpoint to clear the database.
+- Requests and answers are being assigned to specific Slack user and stored in the database.
 
 ### Slack Integration
 
