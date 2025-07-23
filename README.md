@@ -6,11 +6,10 @@
 
 ## Features
 
-### ChatGPT Interface
-
-- **Web UI Endpoint** (`/chatgpt`) to interact with ChatGPT.
-- Built with asynchronous request handling using `CompletableFuture`.
-- Extensible architecture via the `DefaultGptService`.
+- Slack: integration with Slack workspace. Chatbot answer questions over OpenAI API or completes task with function calls.
+- Jira integration: retrieve tickets info, post a new ticket according to user requirements written in Slack channel.
+- Email: send an email to given user using SMTP credentials.
+- Admin-endpoint to clear the database.
 
 ### Slack Integration
 
