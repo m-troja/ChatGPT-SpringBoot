@@ -71,7 +71,6 @@ public class GptRequest {
 	@Transient
 	private List<GptTool> tools;
 	
-	@JsonProperty("tool_choice")  // for correct key in JSON file
 	@Transient
 	String toolChoice;
 	

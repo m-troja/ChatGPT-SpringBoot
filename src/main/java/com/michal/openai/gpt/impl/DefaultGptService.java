@@ -1,6 +1,9 @@
 package com.michal.openai.gpt.impl;
 
+import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -17,11 +20,15 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.michal.openai.entity.GithubBranch;
 import com.michal.openai.entity.GptFunction;
 import com.michal.openai.entity.GptMessage;
 import com.michal.openai.functions.Function;
@@ -45,6 +52,20 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class DefaultGptService implements GptService {
 	
+	public DefaultGptService(JpaGptRequestRepo jpaGptRequestRepo, RequestJdbcTemplateRepo requestTemplateRepo,
+			@Qualifier("gptRestClient") RestClient restClient, ObjectMapper objectMapper, HttpClient httpClient, FunctionFacory functionFactory,
+			JpaGptResponseRepo jpaGptResponseRepo, JpaGptMessageRepo meesageRepo,
+			ResponseJdbcTemplateRepo responseJdbc) {
+		this.jpaGptRequestRepo = jpaGptRequestRepo;
+		this.requestTemplateRepo = requestTemplateRepo;
+		this.restClient = restClient;
+		this.httpClient = httpClient;
+		this.functionFactory = functionFactory;
+		this.jpaGptResponseRepo = jpaGptResponseRepo;
+		this.meesageRepo = meesageRepo;
+		this.responseJdbc = responseJdbc;
+	}
+
 	private static final String ROLE_USER = "user";
 	private static final String ROLE_SYSTEM = "system";
 	private static final String ROLE_ASSISTANT = "assistant";
@@ -67,17 +88,11 @@ public class DefaultGptService implements GptService {
 	@Value("${gpt.chat.completion.maxtokens}")
 	private Integer maxTokens;
 	
-	@Value("${gpt.chat.api.url}")
-	private String chatGptApiUrl;
-	
 	@Value("${gpt.chat.sendrequest.retryattempts}")
 	private Integer retryAttempts;
 	
 	@Value("${gpt.chat.sendrequest.waitforretry.seconds}")
 	private Integer waitSeconds;
-	
-	@Value("${gpt.chat.api.key}")
-	private String chatGptApiKey;
 	
 	@Value("${gpt.chat.qty.context.messages}")
 	private int qtyOfContextMessages;
@@ -85,22 +100,17 @@ public class DefaultGptService implements GptService {
 	@Value("${gpt.chat.system.initial.message}")
 	private String systemInitialMessage;
 	
-	@Autowired
-	private ObjectMapper objectMapper;
+	RestClient restClient;
 	
 	@Autowired
 	HttpClient httpClient;
 
-	@Autowired
 	FunctionFacory functionFactory;
 		
-	@Autowired
 	JpaGptResponseRepo jpaGptResponseRepo;
 	
-	@Autowired
 	JpaGptMessageRepo meesageRepo;
 	
-	@Autowired
 	ResponseJdbcTemplateRepo responseJdbc;
 	
 	List<GptTool> tools = new ArrayList<>();
@@ -117,269 +127,195 @@ public class DefaultGptService implements GptService {
 	 * Builds object of GPTRequest and forwards it to send to GPT.
 	 */
 	@Override
-	public CompletableFuture<String> getAnswerToSingleQuery(CompletableFuture<String> queryFuture, CompletableFuture<String> userNameFuture, GptFunction... gptFunctions ) {
-		GptRequest gptRequest = new GptRequest();
-    	try {
-    	
-			String userSlackId = userNameFuture.get();
-			String userRealName = slackService.getSlackUserBySlackId(userSlackId).getRealName();
-			String query = queryFuture.get();
-			
-    		SlackUser slackUserRequestAuthor = new SlackUser(userSlackId, userRealName);
+	public CompletableFuture<String> getAnswerToSingleQuery(
+	        CompletableFuture<String> queryFuture,
+	        CompletableFuture<String> userNameFuture,
+	        GptFunction... gptFunctions) {
 
-	    	gptRequest.setAuthor(userSlackId);
-	    	gptRequest.setContent(query);
-	    	gptRequest.setAuthorRealname(userRealName);
-	    
-			log.info("getAnswerToSingleQuery : " + query + ", userName : " + userSlackId + ", gptFunctions : " + gptFunctions.toString());
-	
-			if (userSlackId != null) {
-				userSlackId = userSlackId.replaceAll("\\s+", "_");
-			}
-			
-			/* Define list of messages to sent to GPT */ 
-			
-			List<GptMessage> requests = getLastRequestsOfUser(slackService.getSlackUserBySlackId(userSlackId));
-			List<GptMessage> responses = getLastResponsesToUser(slackService.getSlackUserBySlackId(userSlackId));
-			List<GptMessage> messages = new ArrayList<>();	
-			
-			GptMessage message = new GptMessage(ROLE_USER, query, userSlackId);
-			
-			int contextSize = Math.min(requests.size(), responses.size());
-			
-			for (int i = contextSize - 1 ;  i >= 0; i--) {
-				messages.add(requests.get(i));
-				messages.add(responses.get(i));
-			}
-			
-			messages.add(getInitialSystemMessage(gptRequest.getAuthor()));
-			messages.add(message);
-			
-			/* Define request parameters */
-			
-			gptRequest.setModel(model);
-			gptRequest.setTemperature(temperature);;
-			gptRequest.setPresencePenalty(presencePenalty);
-			gptRequest.setMaxTokens(maxTokens);
-			gptRequest.setMessages(messages);
-			gptRequest.setAuthor(slackUserRequestAuthor.getSlackId());
-			gptRequest.setAuthorRealname(slackUserRequestAuthor.getRealName());
-			saveGptRequest(gptRequest);
+	    try {
+	        String userSlackId = userNameFuture.get();
+	        String query = queryFuture.get();
 
-	        log.debug("saveGptRequest : " + gptRequest.toString() );
-
-	        if (gptFunctions != null && gptFunctions.length > 0) {
-	        	
-	        	// New OpenAI API says to wrap function into tool
-	        	for ( GptFunction function : gptFunctions)
-	        	{
-	        		
-	        		tools.add(new GptTool("function", function));
-	        		log.debug("function : " + function.toString() );
-	        	}
+	        if (userSlackId == null || query == null) {
+	            log.error("User Slack ID or query is null");
+	            return CompletableFuture.completedFuture(null);
 	        }
-	        
+
+	        SlackUser slackUser = slackService.getSlackUserBySlackId(userSlackId);
+	        if (slackUser == null) {
+	            log.error("SlackUser not found for ID: {}", userSlackId);
+	            return CompletableFuture.completedFuture(null);
+	        }
+
+	        String normalizedSlackId = normalizeSlackId(userSlackId);
+
+	        List<GptMessage> messages = buildContextMessages(slackUser, normalizedSlackId, query);
+
+	        GptRequest gptRequest = buildGptRequest(messages, slackUser);
+
+	        addFunctionsToRequest(gptRequest, gptFunctions);
+
+	        saveGptRequest(gptRequest);
+
+	        return getResponseFromGpt(gptRequest, slackUser);
+
+	    } catch (Exception e) {
+	        log.error("Error in getAnswerToSingleQuery", e);
+	        return CompletableFuture.completedFuture(null);
+	    }
+	}
+
+	private String normalizeSlackId(String slackId) {
+	    return slackId.replaceAll("\\s+", "_");
+	}
+
+	private List<GptMessage> buildContextMessages(SlackUser slackUser, String normalizedSlackId, String query) {
+	    List<GptMessage> requests = getLastRequestsOfUser(slackUser);
+	    List<GptMessage> responses = getLastResponsesToUser(slackUser);
+
+	    List<GptMessage> messages = new ArrayList<>();
+	    int contextSize = Math.min(requests.size(), responses.size());
+
+	    for (int i = contextSize - 1; i >= 0; i--) {
+	        messages.add(requests.get(i));
+	        messages.add(responses.get(i));
+	    }
+
+	    messages.add(getInitialSystemMessage(normalizedSlackId));
+	    messages.add(new GptMessage(ROLE_USER, query, normalizedSlackId));
+
+	    return messages;
+	}
+
+	private GptRequest buildGptRequest(List<GptMessage> messages, SlackUser slackUser) {
+	    GptRequest gptRequest = new GptRequest();
+	    gptRequest.setModel(model);
+	    gptRequest.setTemperature(temperature);
+	    gptRequest.setPresencePenalty(presencePenalty);
+	    gptRequest.setMaxTokens(maxTokens);
+	    gptRequest.setMessages(messages);
+	    gptRequest.setAuthor(slackUser.getSlackId());
+	    gptRequest.setAuthorRealname(slackUser.getRealName());
+	    return gptRequest;
+	}
+
+	private void addFunctionsToRequest(GptRequest gptRequest, GptFunction... gptFunctions) {
+	    if (gptFunctions != null && gptFunctions.length > 0) {
+	        List<GptTool> tools = new ArrayList<>();
+	        for (GptFunction function : gptFunctions) {
+	            tools.add(new GptTool("function", function));
+	        }
 	        gptRequest.setTools(tools);
-	        
-	        log.debug("gptRequest : " + gptRequest.toString() );
+	    }
+	}
 
-	        return getResponseFromGpt(gptRequest, slackUserRequestAuthor);  
-
-    	}
-    	catch (Exception e)
-    	{
-    		log.error("Error in getAnswerToSingleQuery");
-    		e.printStackTrace();
-    	}
-    	
-		log.error("Returning null from getAnswerToSingleQuery");
-		
-		return null;
-	}	
-	
-	/* When userName is not known */
 	
 	@Async("defaultExecutor")
-	public CompletableFuture<String> getResponseFromGpt(GptRequest gptRequest, SlackUser slackUserRequestAuthor) 
-	{
-		gptRequest.setAuthor(slackUserRequestAuthor.getSlackId());
-		gptRequest.setAuthorRealname(slackUserRequestAuthor.getRealName());
-		saveGptRequest(gptRequest);
-		
-        log.debug("saveGptRequest : " + gptRequest.toString() );
+	public CompletableFuture<String> getResponseFromGpt(GptRequest gptRequest, SlackUser slackUserRequestAuthor) throws IOException {
+	    gptRequest.setAuthor(slackUserRequestAuthor.getSlackId());
+	    gptRequest.setAuthorRealname(slackUserRequestAuthor.getRealName());
 
-		HttpPost postRequest = prepareHttpPostRequest(gptRequest);
-		
-		CompletableFuture<String> response = CompletableFuture.completedFuture("");
-		
-		// Save request to JSON
-		JsonSaver jsonSaver = new JsonSaver();
-		try {
-			String requestBody = objectMapper.writeValueAsString(gptRequest);
-			jsonSaver.saveGptRequestToJson(requestBody);
-		}
-		catch(Exception e)
-		{
-			log.error("Error saving response json!");
-			e.printStackTrace();
-		}
-		
-		for (int i = 0; i < retryAttempts ; i++)
-		{
-			try 
-			{
-				response = extractGptResponseContent(postRequest, gptRequest, slackUserRequestAuthor);
-		        log.debug("response : " + gptRequest.toString() );
+	    saveGptRequest(gptRequest);
 
-				return response;
-			}
-			catch(IOException | RuntimeException e) 
-			{
-				e.printStackTrace();
-				try 
-				{
-					TimeUnit.SECONDS.sleep(waitSeconds);
-				}
-				catch (InterruptedException e1)
-				{
-					e1.printStackTrace();
-				}
-			}                                                                   
-		}
-		return response;
+	    return sendRequest(gptRequest, slackUserRequestAuthor, retryAttempts);
 	}
+
+	private CompletableFuture<String> sendRequest(GptRequest request, SlackUser slackUser, int retries) throws IOException {
+	    for (int i = 0; i < retries; i++) {
+	        try {
+	            GptResponse response = restClient.post()
+	                    .body(request)
+	                    .retrieve()
+	                    .body(GptResponse.class);
+
+	            return extractGptResponseContent(request, response, slackUser);
+
+	        } catch (RuntimeException e) {
+	            log.warn("Attempt {} failed, retrying after {} seconds", i + 1, waitSeconds, e);
+	            try {
+	                TimeUnit.SECONDS.sleep(waitSeconds);
+	            } catch (InterruptedException ignored) {}
+	        }
+	    }
+	    log.error("All {} retry attempts failed", retries);
+	    return CompletableFuture.completedFuture(null);
+	}
+
 	
 	@Async("defaultExecutor")
-	private CompletableFuture<String> extractGptResponseContent(HttpPost postRequest, GptRequest gptRequest, SlackUser slackUserRequestAuthor) throws ParseException, IOException  
-	{
-		HttpResponse response = httpClient.execute(postRequest);
-		int statusCode = response.getStatusLine().getStatusCode();
-		HttpEntity entity = response.getEntity();
-		
-		
-		if (entity != null) // Return status BAD_REQUEST when sending POST request failed.
-		{
-			String responseBody = EntityUtils.toString(entity);
-			if (statusCode == HttpStatus.SC_BAD_REQUEST)
-			{
-		        log.error("Error sending POST request to ChatGPT!");
+	private CompletableFuture<String> extractGptResponseContent(
+	        GptRequest gptRequest,
+	        GptResponse gptResponse,
+	        SlackUser slackUserRequestAuthor) throws ParseException, IOException {
 
-				return CompletableFuture.completedFuture(responseBody);
-			}
+	    if (gptResponse == null || gptResponse.getChoices() == null || gptResponse.getChoices().isEmpty()) {
+	        log.info("GPT response has no choices or is null");
+	        return CompletableFuture.completedFuture("");
+	    }
 
-			GptResponse gptResponse = objectMapper.readValue(responseBody, GptResponse.class); // Parse response JSON to GptResponse object
-			
-			if (gptResponse.getChoices() != null && !gptResponse.getChoices().isEmpty()) {
-			    GptMessage message = gptResponse.getChoices().get(0).getMessage();																																																																																																																																																	if (message != null && message.getContent() != null) {
-			        gptResponse.setContent(message.getContent());
-			    } else {
-			        log.info("GPT message content is null, cannot save response content!");
-			        gptResponse.setContent("GPT message content is null.");
-			    }
-			} else {
-			    log.info("GPT response has no choices!");
-			    gptResponse.setContent("No answer from GPT");
-			}
-			
-			gptResponse.setRequestId(gptRequest.getId()); // Assign requst_id to GptResponse (for DB column)
-			log.debug("gptRequest.getId() " + gptRequest.getId());
-			gptResponse.setRequestSlackID(gptRequest.getAuthor()); // Assign request_author_slackid to GptResponse (later to return context of last responses)
-			log.debug("gptRequest.getAuthor() " + gptRequest.getAuthor());
-			saveResponse(gptResponse); // Store response into DB
+	    GptMessage message = gptResponse.getChoices().get(0).getMessage();
+	    String content = message != null && message.getContent() != null ? message.getContent() : "";
 
-			// Save response to JSON
-			try {
-				JsonSaver jsonSaver = new JsonSaver();
-				jsonSaver.saveResponseJson(responseBody);
-			}
-			catch(Exception e)
-			{
-				log.info("Error saving json!");
-				e.printStackTrace();
-			}
-			
-			log.debug("extractGptResponseContent responseBody: "  + responseBody);
+	    gptResponse.setContent(content);
+	    gptResponse.setRequestId(gptRequest.getId());
+	    gptResponse.setRequestSlackID(gptRequest.getAuthor());
+	    saveResponse(gptResponse);
 
-			
-			GptMessage message = gptResponse.getChoices().get(0).getMessage(); // Extract message from response
-			List<GptMessage.Tool> toolCalls = message.getToolCalls(); // Extract tools - any function calls by GPT
+	    List<GptMessage.Tool> toolCalls = message != null ? message.getToolCalls() : null;
 
-			if (toolCalls != null && toolCalls.size() != 0)
-			{	
-				log.info("message by GPT = " + message.toString());
-				log.info("toolCalls by GPT " + toolCalls.toString() );
-				
-				for ( GptMessage.Tool tool : toolCalls) // If there is any tool (function) to be used
-				{
-					GptMessage.Tool.FunctionCall functionCall = tool.getFunctionCall(); // Get object of function_call
-					
-					Function function = functionFactory.getFunctionByFunctionName(functionCall.getName()); // Get name of function
-					
-					log.info("Calling function '{}' with arguments: {}", functionCall.getName(), functionCall.getArguments());
+	    if (toolCalls != null && !toolCalls.isEmpty()) {
+	        return processToolCalls(gptRequest, toolCalls, slackUserRequestAuthor);
+	    }
 
-					CompletableFuture<String> functionResponse = function.execute(functionCall.getArguments()); // Execute function and store response as string 
-					
-					/*
-					 *  Because function was executed, we need to return result of function to GPT, so GPT answers to user
-					 */
-					return functionResponse.thenCompose(funcResp -> {  
-					    GptMessage gptMessage = new GptMessage();
-					    gptMessage.setRole("function");
-					    gptMessage.setContent(funcResp); 
-					    gptMessage.setName(functionCall.getName());
-					    tool.setFunctionCall(functionCall);
-					    gptRequest.getMessages().add(gptMessage);
-					    gptRequest.setFunctions(null);
-
-
-					    log.debug("Function call arguments : " + gptRequest.toString() );
-
-					    return getResponseFromGpt(gptRequest, slackUserRequestAuthor); 
-					});
-				}
-			}
-			
-			 return CompletableFuture.completedFuture(message.getContent());
-
-		}
-		return  CompletableFuture.completedFuture("");
+	    return CompletableFuture.completedFuture(content);
 	}
+
+	private CompletableFuture<String> processToolCalls(
+	        GptRequest gptRequest,
+	        List<GptMessage.Tool> toolCalls,
+	        SlackUser slackUserRequestAuthor) {
+
+	    for (GptMessage.Tool tool : toolCalls) {
+	        GptMessage.Tool.FunctionCall functionCall = tool.getFunctionCall();
+	        Function function = functionFactory.getFunctionByFunctionName(functionCall.getName());
+
+	        log.info("Calling function '{}' with args: {}", functionCall.getName(), functionCall.getArguments());
+
+	        CompletableFuture<String> functionResponse = function.execute(functionCall.getArguments());
+
+	        return functionResponse.thenCompose(funcResp -> {
+	            GptMessage gptMessage = new GptMessage();
+	            gptMessage.setRole("function");
+	            gptMessage.setContent(funcResp);
+	            gptMessage.setName(functionCall.getName());
+
+	            gptRequest.getMessages().add(gptMessage);
+	            gptRequest.setFunctions(null); 
+
+	            log.debug("Calling GPT with updated request after function call");
+	            try {
+	                return getResponseFromGpt(gptRequest, slackUserRequestAuthor);
+	            } catch (IOException e) {
+	                log.error("Error in getResponseFromGpt after function call", e);
+	                return CompletableFuture.completedFuture(funcResp);
+	            }
+	        });
+	    }
+
+	    return CompletableFuture.completedFuture("");
+	}
+
 	
-	public HttpPost prepareHttpPostRequest(GptRequest gptRequest)
-	{
-		String authenticationHeader = "Bearer " + chatGptApiKey;
-		String contentTypeHeader = "application/json";
-		String requestBody = "";
-		try {
-			requestBody = objectMapper.writeValueAsString(gptRequest);
-		}
-		catch(Exception e)
-		{
-			log.error("Error in objectMapper.writeValueAsString(gptRequest)!");
-			e.printStackTrace();
-		}
-		
-		StringEntity stringEntity = new StringEntity(requestBody, ContentType.APPLICATION_JSON);
-
-	    log.debug("stringEntity : " + stringEntity.toString() );
-
-		HttpPost postRequest = new HttpPost(chatGptApiUrl);
-		postRequest.setHeader(HttpHeaders.AUTHORIZATION, authenticationHeader);
-		postRequest.setHeader(HttpHeaders.CONTENT_TYPE, contentTypeHeader);
-		postRequest.setEntity(stringEntity);
-		
-	    log.debug("postRequest : " + postRequest.toString() );
-
-		return postRequest;
-	}
 	
 	public void saveGptRequest(GptRequest request) 
 	{
+		saveGptRequestToJsonFile(request);
 		jpaGptRequestRepo.save(request);
 	}
 	
 	public void saveResponse(GptResponse gptResponse)
 	{
+		saveGptResponseToJsonFile(gptResponse);
 		jpaGptResponseRepo.save(gptResponse);
 	}
 	
@@ -435,4 +371,32 @@ public class DefaultGptService implements GptService {
 			);
 			return new GptMessage(ROLE_SYSTEM, content);
 	}
+	
+	public void saveGptRequestToJsonFile(GptRequest gptRequest) {
+	    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
+	    String filePath = "C:\\tmp\\JSON\\request\\request" + timestamp + ".json";
+	    ObjectMapper objectMapper = new ObjectMapper();
+	    try {
+	        objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(filePath), gptRequest);
+	        System.out.println("Saved GptRequest to " + filePath);
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	public void saveGptResponseToJsonFile(GptResponse gptResponse) {
+	    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
+	    String filePath = "C:\\tmp\\JSON\\response\\response" + timestamp + ".json";
+	    ObjectMapper objectMapper = new ObjectMapper();
+	    try {
+	        objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(filePath), gptResponse);
+	        System.out.println("Saved GptResponse to " + filePath);
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+	}
+
+
+	
+	
 }

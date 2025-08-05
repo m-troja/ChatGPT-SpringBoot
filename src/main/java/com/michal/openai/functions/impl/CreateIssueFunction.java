@@ -19,7 +19,7 @@ public class CreateIssueFunction implements Function
 	public CompletableFuture<String> execute(String requestBody) {
 		log.info(" execute CreateIssueFunction with arguments: " + requestBody);
 		
-		
+	
 		return jiraService.createJavaIssue(requestBody);
 	}
 	

@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.michal.openai.entity.GetReposParameterProperties;
 import com.michal.openai.entity.GptFunction;
 import com.michal.openai.entity.JiraCreateIssueParameterProperties;
 import com.michal.openai.entity.WeatherParameterProperties;
@@ -15,6 +16,7 @@ import com.michal.openai.entity.WeatherParameterProperties.MeasurementUnit;
 import com.michal.openai.functions.Function;
 import com.michal.openai.functions.impl.CreateIssueFunction;
 import com.michal.openai.functions.impl.GetAllJiraIssues;
+import com.michal.openai.functions.impl.GetReposFunction;
 import com.michal.openai.functions.impl.GetWeatherInfoFunction;
 import com.slack.api.Slack;
 import com.slack.api.methods.MethodsClient;
@@ -52,7 +54,12 @@ public class BeansConfiguration {
 	public Function createJiraIssueCall() {
 		return new CreateIssueFunction();
 	}
-	 
+	
+	@Bean("getReposFunctionCall")
+	public Function getReposFunctionCall() {
+		return new GetReposFunction();
+	}
+	
 	/* Disabled mailing feauture due to security 
 	
 	@Bean("sendEmailFunction")
@@ -144,6 +151,32 @@ public class BeansConfiguration {
 		gptFunction.setParameters(parameters);
 
 		return gptFunction;
+	}
+
+	@Bean("defineGetReposFunction")
+	public GptFunction getRepos( 
+			@Value("${github.function.desc}") String functionDescription,
+			@Value("${github.function.name}") String functionName,
+			@Value("${github.function.attr.login}") String attrLogin,
+			@Value("${github.function.attr.login.desc}") String attrLoginDesc
+			
+			) {
+		var getReposFunction = new GptFunction();
+		getReposFunction.setName(functionName);
+		getReposFunction.setDescription(functionDescription);
+		
+		GptFunction.Parameters gptFunctionParameters = getReposFunction.new Parameters();
+		gptFunctionParameters.setType("object");		
+		gptFunctionParameters.setRequired(new String[] {attrLogin});
+		
+		var properties = new GetReposParameterProperties();
+		var login = properties.new LoginAttr("string", attrLoginDesc);
+		
+		properties.setLogin(login);
+		gptFunctionParameters.setProperties(properties);
+		getReposFunction.setParameters(gptFunctionParameters);
+		
+		return getReposFunction;
 	}
 	
 	@Bean("defineAllJiraIssuesFunction")
