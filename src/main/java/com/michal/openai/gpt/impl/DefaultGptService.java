@@ -184,7 +184,9 @@ public class DefaultGptService implements GptService {
 	    messages.add(getInitialSystemMessage(normalizedSlackId));
 	    messages.add(new GptMessage(ROLE_USER, query, normalizedSlackId));
 
-	    return messages;
+	    return messages.stream()
+	            .filter(msg -> msg.getContent() != null && !msg.getContent().trim().isEmpty())
+	            .toList();
 	}
 
 	private GptRequest buildGptRequest(List<GptMessage> messages, SlackUser slackUser) {
@@ -214,9 +216,10 @@ public class DefaultGptService implements GptService {
 	public CompletableFuture<String> getResponseFromGpt(GptRequest gptRequest, SlackUser slackUserRequestAuthor) throws IOException {
 	    gptRequest.setAuthor(slackUserRequestAuthor.getSlackId());
 	    gptRequest.setAuthorRealname(slackUserRequestAuthor.getRealName());
-
+	    log.debug("slackUserRequestAuthor.getSlackId() : " + slackUserRequestAuthor.getSlackId());
+	    log.debug("slackUserRequestAuthor.getRealName() : " + slackUserRequestAuthor.getRealName());
 	    saveGptRequest(gptRequest);
-
+	    log.debug("Sending request to GPT...");
 	    return sendRequest(gptRequest, slackUserRequestAuthor, retryAttempts);
 	}
 
@@ -231,7 +234,8 @@ public class DefaultGptService implements GptService {
 	            return extractGptResponseContent(request, response, slackUser);
 
 	        } catch (RuntimeException e) {
-	            log.warn("Attempt {} failed, retrying after {} seconds", i + 1, waitSeconds, e);
+	            log.debug("Attempt {} failed, retrying after {} seconds", i + 1, waitSeconds, e);
+	            log.debug("Attempt {} failed: {}", i + 1, e.getMessage(), e);
 	            try {
 	                TimeUnit.SECONDS.sleep(waitSeconds);
 	            } catch (InterruptedException ignored) {}

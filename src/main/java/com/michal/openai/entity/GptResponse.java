@@ -5,6 +5,8 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -22,6 +24,7 @@ import jakarta.persistence.Transient;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
 @Table(name = "gpt_response", schema = "chatgpt-integration") 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GptResponse {
 	
 	@Id
