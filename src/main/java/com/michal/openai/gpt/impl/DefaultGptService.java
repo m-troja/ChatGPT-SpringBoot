@@ -163,12 +163,6 @@ public class DefaultGptService implements GptService {
 			gptRequest.setMessages(messages);
 			gptRequest.setAuthor(slackUserRequestAuthor.getSlackId());
 			gptRequest.setAuthorRealname(slackUserRequestAuthor.getRealName());
-			saveGptRequest(gptRequest);
-
-            JsonSaver jsonSaver = new JsonSaver("C:/tmp/JSON");
-            jsonSaver.saveRequest(gptRequest);
-
-	        log.debug("saveGptRequest : " + gptRequest.toString() );
 
 	        log.debug("found " + gptFunctions.length + " GPT Functions");
 	        if (gptFunctions != null && gptFunctions.length > 0) {
@@ -181,10 +175,12 @@ public class DefaultGptService implements GptService {
 	        		log.debug("added function : " + function.toString() );
 	        	}
 	        }
-	        
 	        gptRequest.setTools(tools);
-	        
-	        log.debug("builded request to gpt : " + gptRequest.toString() );
+
+            JsonSaver jsonSaver = new JsonSaver("C:/tmp/JSON");
+            jsonSaver.saveRequest(gptRequest);
+            saveGptRequest(gptRequest);
+            log.debug("built request to gpt : " + gptRequest.toString() );
 
 	        return getResponseFromGpt(gptRequest, slackUserRequestAuthor);  
 
@@ -207,7 +203,7 @@ public class DefaultGptService implements GptService {
 		gptRequest.setAuthorRealname(slackUserRequestAuthor.getRealName());
 		saveGptRequest(gptRequest);
 
-        log.debug("saved gpt request : " + gptRequest.toString() );
+        log.debug("Final gptRequest: " + gptRequest);
 		
         GptResponse gptResponse = new GptResponse();
 
@@ -219,7 +215,7 @@ public class DefaultGptService implements GptService {
 						.body(gptRequest)
 						.retrieve()
 		        		.body(GptResponse.class);
-		        log.debug("built response to gpt: " + gptRequest.toString() );
+		        log.debug("Rest client raw response: " + gptResponse);
 
 
 				return extractGptResponseContent(gptRequest, gptResponse, slackUserRequestAuthor);

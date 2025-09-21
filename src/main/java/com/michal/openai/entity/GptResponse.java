@@ -5,6 +5,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -104,8 +105,9 @@ public class GptResponse {
 		@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 		@JoinColumn(name = "response_id")  // Analogicznie, Hibernate doda response_id
 		private GptMessage message;
-		
-		@Transient
+
+        @JsonProperty("finish_reason")
+        @Transient
 		private String finishReason;
 		
 		public Integer getIndex() {
@@ -137,14 +139,17 @@ public class GptResponse {
 	
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class Usage {
-		
-		@Transient
+
+        @JsonProperty("prompt_tokens")
+        @Transient
 		private Integer promptTokens;
-		
-		@Transient
+
+        @JsonProperty("completion_tokens")
+        @Transient
 		private Integer completionTokens;
-		
-		@Transient
+
+        @JsonProperty("total_tokens")
+        @Transient
 		private Integer totalTokens;
 		
 		public Integer getPromptTokens() {

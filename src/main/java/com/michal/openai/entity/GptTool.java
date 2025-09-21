@@ -26,7 +26,12 @@ public class GptTool {
 	public void setFunction(GptFunction function) {
 		this.function = function;
 	}
-	
-	
 
+    @Override
+    public String toString() {
+        return "GptTool{" +
+                "type='" + type + '\'' +
+                ", function=" + function +
+                '}';
+    }
 }

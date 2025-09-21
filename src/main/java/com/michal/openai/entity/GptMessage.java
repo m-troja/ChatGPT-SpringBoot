@@ -22,11 +22,13 @@ public class GptMessage {
 
 	@Transient
 	private String content;
-	
-	@JsonIgnore
+
+    @JsonProperty("user_name")
+    @JsonIgnore
 	private String userName; // Just to assign author to message in DB -> for context setting
-	
-	@Transient
+
+    @JsonProperty("tool_calls")
+    @Transient
 	private List<Tool> toolCalls;
 	@Transient
 	private String name;
