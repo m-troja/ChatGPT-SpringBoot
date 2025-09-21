@@ -27,13 +27,7 @@ public class BeansConfiguration {
 	@Value("${slack.bot.oauth.token}")
 	private String slackSecurityTokenBot ;
 
-  @Bean
-    public ObjectMapper objectMapper() {
-        // Create and configure the ObjectMapper to use snake_case naming strategy
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-        return objectMapper;
-  }
+ 
 	        
 	@Bean
 	public HttpClient httpClient() {
