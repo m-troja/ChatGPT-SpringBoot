@@ -1,80 +1,50 @@
 package com.michal.openai.log;
 
-import java.io.FileWriter;
-import java.nio.file.Paths;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import lombok.extern.slf4j.Slf4j;
+
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.CompletableFuture;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+@Slf4j
 public class JsonSaver {
-	FileWriter writer;
 
-	String responsePath = Paths.get("C:", "tmp", "JSON", "response",  generateResponseFileName() ).toString();
-	String requestPath = Paths.get("C:", "tmp", "JSON", "request",  generateRequestFileName() ).toString();
- 
-    private final ObjectMapper objectMapper = new ObjectMapper(); 
+    private final ObjectMapper objectMapper;
 
-	private static String generateResponseFileName() {
-		LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
-        
-        String formattedDateTime = now.format(formatter);
-		String originalFilename = "response_" + formattedDateTime;
-		
-        return originalFilename + ".json";
+    private final String basePath;
+
+    public JsonSaver(String basePath) {
+        this.basePath = basePath;
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT); // pretty print
     }
-	
-	
-	private static String generateRequestFileName() {
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
-        
-        String formattedDateTime = now.format(formatter);
-        String originalFilename = "request_" + formattedDateTime;
-        		
-        return originalFilename + ".json";
+
+    public void saveResponse(Object response) {
+        saveJson(response, "response");
     }
-	
 
-	public void saveResponseJson(String responseBody) throws JsonProcessingException
-	{
-		JsonNode jsonNode = objectMapper.readTree(responseBody);
-		String responseJsonString = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
-		
-		saveFile(responseJsonString, responsePath);
-		
-	//	System.out.println("Response saved to file: " + responsePath);
-	//	System.out.println("Debug: " + prettyobjectMapper.writeValueAsString(je).toString());
-	}
-	
-	public void saveGptRequestToJson(String requestBody) throws JsonProcessingException
-	{
-		JsonNode jsonNode = objectMapper.readTree(requestBody);
-		String reqestJsonString = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
-		
-		saveFile(reqestJsonString, requestPath);
+    public void saveRequest(Object request) {
+        saveJson(request, "request");
+    }
 
-	//	System.out.println("Request saved to file: " + requestPath);
-	//	System.out.println("Debug: " + prettyobjectMapper.writeValueAsString(je).toString());
-	}
-	
-	private void saveFile(String jsonString, String path)
-	{
-		
-		try {
-			writer = new FileWriter(path);
-			writer.write(jsonString);
-			writer.close();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-	}
+    private void saveJson(Object object, String type) {
+        try {
+            String folderPath = basePath + File.separator + type;
+            File folder = new File(folderPath);
+            if (!folder.exists()) folder.mkdirs();
 
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss_SSS"));
+            String fileName = type + "_" + timestamp + ".json";
+
+            File file = new File(folder, fileName);
+            objectMapper.writeValue(file, object);
+
+            log.info("{} saved to {}", type, file.getAbsolutePath());
+        } catch (IOException e) {
+            log.error("Failed to save {} JSON: {}", type, e.getMessage(), e);
+        }
+    }
 }

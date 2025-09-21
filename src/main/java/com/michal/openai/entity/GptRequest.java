@@ -50,28 +50,34 @@ public class GptRequest {
 	private Integer n;
 	@Transient
 	private Double temperature;
-	@Transient
-	private Integer maxTokens;
+
+    @JsonProperty("max_tokens")
+    @Transient
+	private Integer maxOutputTokens;
 	@Transient
 	private boolean Stream;
-	@Transient
+    @JsonProperty("presence_penalty")
+    @Transient
 	private Double presencePenalty;
-	@Transient
+    @JsonProperty("frequency_penalty")
+    @Transient
 	private Double frequencyPenalty;
-	@Transient
+    @JsonProperty("top_p")
+    @Transient
 	private Double topP;
 	@Transient
 	private String stop;
-	@Transient
+    @JsonProperty("logit_bias")
+    @Transient
 	private Map<String, Integer> logitBias;
-	
+
 	@Transient
 	@JsonIgnore
 	private List<GptFunction> functions;
 	@Transient
 	private List<GptTool> tools;
 	
-	@JsonProperty("tool_choice")  // for correct key in JSON file
+	@JsonProperty("tool_choice")
 	@Transient
 	String toolChoice;
 	
@@ -140,11 +146,11 @@ public class GptRequest {
 	public void setTemperature(Double temperature) {
 		this.temperature = temperature;
 	}
-	public Integer getMaxTokens() {
-		return maxTokens;
+	public Integer getMaxOutputTokens() {
+		return maxOutputTokens;
 	}
-	public void setMaxTokens(Integer maxTokens) {
-		this.maxTokens = maxTokens;
+	public void setMaxOutputTokens(Integer maxOutputTokens) {
+		this.maxOutputTokens = maxOutputTokens;
 	}
 	public boolean isStream() {
 		return Stream;
@@ -208,7 +214,7 @@ public class GptRequest {
 	@Override
 	public String toString() {
 		return "GptRequest [id=" + id + ", content=" + content + ", model=" + model + ", messages=" + messages + ", n="
-				+ n + ", temperature=" + temperature + ", maxTokens=" + maxTokens + ", Stream=" + Stream
+				+ n + ", temperature=" + temperature + ", maxOutputToken=" + maxOutputTokens + ", Stream=" + Stream
 				+ ", presencePenalty=" + presencePenalty + ", frequencyPenalty=" + frequencyPenalty + ", topP=" + topP
 				+ ", stop=" + stop + ", logitBias=" + logitBias + ", author=" + author + ", authorRealname="
 				+ authorRealname + ", functions=" + functions + ", tools=" + tools + ", toolChoice=" + toolChoice + "]";

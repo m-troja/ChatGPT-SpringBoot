@@ -33,12 +33,11 @@ public class ChatGptIntegrationApplication {
         // set log_path into env variable
         System.setProperty("LOG_PATH", logPath);
         
-        // Tworzenie katalogu jeśli nie istnieje
         File logDir = new File(logPath);
         if (!logDir.exists()) {
             boolean created = logDir.mkdirs();
             if (!created) {
-                System.err.println(" Failed to create log folder: " + logPath);
+                log.debug(" Failed to create log folder: " + logPath);
             }
         }
         

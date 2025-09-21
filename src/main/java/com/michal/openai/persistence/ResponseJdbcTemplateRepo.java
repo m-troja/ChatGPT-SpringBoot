@@ -37,8 +37,7 @@ public class ResponseJdbcTemplateRepo {
             (ResultSet rs, int rowNum) -> rs.getString("content")
         );
         
-        log.info("Response messages found: " + messages.size());
-       
+        log.debug("Response messages found: " + messages.size());
         for (String message : messages) {
         	log.debug("message : " + message);
         }

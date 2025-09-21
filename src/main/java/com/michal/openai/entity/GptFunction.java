@@ -58,6 +58,11 @@ public class GptFunction {
 	public void setParameters(Parameters parameters) {
 		this.parameters = parameters;
 	}
+
+	@Override
+	public String toString() {
+		return "GptFunction [name=" + name + ", description=" + description + ", parameters=" + parameters + "]";
+	}
 	
 	
 }
