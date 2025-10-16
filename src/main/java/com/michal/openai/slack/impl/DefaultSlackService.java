@@ -59,20 +59,20 @@ public class DefaultSlackService implements SlackService {
 	
 	@Async("defaultExecutor")
 	@Override
-	public void processOnMentionEvent(String requestBody) {
-		SlackRequestData slackRequestData = extractSlackRequestData(requestBody);
-		log.debug("processOnMentionEvent requestBody : " + requestBody);
+    public void processOnMentionEvent(String requestBody) {
+        SlackRequestData slackRequestData = extractSlackRequestData(requestBody);
+        log.debug("processOnMentionEvent requestBody : " + requestBody);
 
-		// String gptResponseString = gptService.getAnswerToSingleQuery(slackRequestData.getMessage(), slackRequestData.getMessageAuthorId());
-		CompletableFuture<String> gptResponseString = gptService.getAnswerToSingleQuery(CompletableFuture.completedFuture(slackRequestData.getMessage()), CompletableFuture.completedFuture( slackRequestData.getMessageAuthorId() ) ,functions.toArray(GptFunction[]::new));
+        CompletableFuture<String> gptResponseFuture = gptService.getAnswerToSingleQuery(
+                CompletableFuture.completedFuture(slackRequestData.getMessage()),
+                CompletableFuture.completedFuture(slackRequestData.getMessageAuthorId()),
+                functions.toArray(GptFunction[]::new)
+        );
 
-		log.info("call sendMessageToSlack: " + gptResponseString+", channel: " + slackRequestData.getChannelIdFrom());
-		
-		System.out.println("processOnMentionEvent channel: " + slackRequestData.getChannelIdFrom());
-		sendMessageToSlack(gptResponseString, slackRequestData.getChannelIdFrom());
-	//	sendMessageToSlack(gptResponseString, "C08RLDBCRB9");
-	}
-	
+        sendMessageToSlack(gptResponseFuture, slackRequestData.getChannelIdFrom());
+    }
+
+
 	private SlackRequestData extractSlackRequestData(String requestBody) {
 		log.info("extractSlackRequestData....");
 		JsonNode jsonNode = null;

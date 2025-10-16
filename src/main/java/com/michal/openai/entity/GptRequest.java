@@ -20,7 +20,7 @@ import jakarta.persistence.Transient;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
-@Table(name = "gpt_request", schema = "chatgpt-integration")  
+@Table(name = "gpt_request")
 public class GptRequest {
 
 	@Id

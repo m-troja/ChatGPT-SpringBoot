@@ -24,7 +24,7 @@ import jakarta.persistence.Transient;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
-@Table(name = "gpt_response", schema = "chatgpt-integration") 
+@Table(name = "gpt_response")
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GptResponse {
 	

@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "slack_user", schema = "chatgpt-integration")  // Specify the schema name here
+@Table(name = "slack_user")  // Specify the schema name here
 public class SlackUser {
     
     @Id
