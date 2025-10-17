@@ -159,7 +159,7 @@ public class DefaultSlackService implements SlackService {
 		while (matcher.find()) {
 			userIds.add(matcher.group(1));
 		}
-		log.info("extractUserIds : " + userIds.toArray().toString() );
+		log.info("extractUserIds : " + userIds.toString() );
 
 		return userIds.toArray(new String[userIds.size()]);
 	}

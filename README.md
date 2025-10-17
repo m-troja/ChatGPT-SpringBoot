@@ -30,8 +30,8 @@
 ## Technology Stack
 
 | Component       | Details                                |
-| --------------- | -------------------------------------- |
-| **Language**    | Java 17                                |
+| --------------- |----------------------------------------|
+| **Language**    | Java 21                                |
 | **Framework**   | Spring Boot 3.4.1                      |
 | **Build Tool**  | Maven                                  |
 | **Slack SDK**   | Custom `SlackService` integration      |
@@ -62,8 +62,8 @@ Database and Jira config is stored in application.properties.
 
 ## Logging
 
-App saves incoming and outgoing JSON files.
+App saves incoming and outgoing JSON files. Env variables needed to configure file path:
 
-- Outgoing: C:\tmp\JSON\request
-- Incoming: C:\tmp\JSON\response
-- Info and debug logfiles: C:\tmp\log
+CHAT_LOG_DIR=C:\\tmp\\log
+CHAT_JSON_DIR=C:\\tmp\\JSON
+CHAT_LOG_FILENAME=chatgpt

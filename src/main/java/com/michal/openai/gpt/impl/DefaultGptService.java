@@ -16,7 +16,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.entity.GptFunction;
 import com.michal.openai.entity.GptMessage;
 import com.michal.openai.functions.Function;
@@ -38,78 +37,53 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class DefaultGptService implements GptService {
-	
-	public DefaultGptService(JpaGptRequestRepo jpaGptRequestRepo, RequestJdbcTemplateRepo requestTemplateRepo,
-			@Qualifier("gptRestClient") RestClient restClient, ObjectMapper objectMapper, HttpClient httpClient, FunctionFacory functionFactory,
-			JpaGptResponseRepo jpaGptResponseRepo, JpaGptMessageRepo meesageRepo,
-			ResponseJdbcTemplateRepo responseJdbc) {
-		super();
-		this.jpaGptRequestRepo = jpaGptRequestRepo;
-		this.requestTemplateRepo = requestTemplateRepo;
-		this.restClient = restClient;
-		this.httpClient = httpClient;
-		this.functionFactory = functionFactory;
-		this.jpaGptResponseRepo = jpaGptResponseRepo;
-		this.meesageRepo = meesageRepo;
-		this.responseJdbc = responseJdbc;
-	}
 
 	private static final String ROLE_USER = "user";
 	private static final String ROLE_SYSTEM = "system";
 	private static final String ROLE_ASSISTANT = "assistant";
-	
+    @Value("${CHAT_MODEL}")
+    private String model;
+    @Value("${gpt.chat.temperature}")
+    private Double temperature;
+    @Value("${gpt.chat.presence.penalty}")
+    private Double presencePenalty;
+    @Value("${CHAT_MAX_TOKENS}")
+    private Integer maxTokens;
+    @Value("${gpt.chat.sendrequest.retryattempts}")
+    private Integer retryAttempts;
+    @Value("${gpt.chat.sendrequest.waitforretry.seconds}")
+    private Integer waitSeconds;
+    @Value("${gpt.chat.qty.context.messages}")
+    private Integer qtyOfContextMessages;
+    @Value("${gpt.chat.system.initial.message}")
+    private String systemInitialMessage;
+    @Value("${CHAT_JSON_DIR}")
+    private String jsonDir;
+    @Autowired
+    private JpaGptRequestRepo jpaGptRequestRepo;
 	@Autowired
-	JpaGptRequestRepo jpaGptRequestRepo;
-	
-	@Autowired
-	RequestJdbcTemplateRepo requestTemplateRepo;
-	
-	@Value("${CHAT_MODEL}")
-	private String model;
-
-	@Value("${gpt.chat.temperature}")
-	private Double temperature;
-	
-	@Value("${gpt.chat.presence.penalty}")
-	private Double presencePenalty;
-	
-	@Value("${CHAT_MAX_TOKENS}")
-	private Integer maxTokens;
-	
-	@Value("${gpt.chat.sendrequest.retryattempts}")
-	private Integer retryAttempts;
-	
-	@Value("${gpt.chat.sendrequest.waitforretry.seconds}")
-	private Integer waitSeconds;
-	
-	@Value("${gpt.chat.qty.context.messages}")
-	private int qtyOfContextMessages;
-	
-	@Value("${gpt.chat.system.initial.message}")
-	private String systemInitialMessage;
-	
-	RestClient restClient;
-	
-	@Autowired
-	HttpClient httpClient;
-
-	FunctionFacory functionFactory;
-		
-	JpaGptResponseRepo jpaGptResponseRepo;
-	
-	JpaGptMessageRepo meesageRepo;
-	
-	ResponseJdbcTemplateRepo responseJdbc;
-	
-	List<GptTool> tools = new ArrayList<>();
-
+    private final RequestJdbcTemplateRepo requestTemplateRepo;
+    @Qualifier("gptRestClient")
+    private final RestClient restClient;
+    private final FunctionFacory functionFactory;
+    private final JpaGptResponseRepo jpaGptResponseRepo;
+    private final JpaGptMessageRepo meesageRepo;
+    private final ResponseJdbcTemplateRepo responseJdbc;
+    private List<GptTool> tools = new ArrayList<>();
 	private SlackService slackService;
 
-	@Autowired
-	public void setSlackService(SlackService slackService) {
-	    this.slackService = slackService;
-	}
-	
+    public DefaultGptService(JpaGptRequestRepo jpaGptRequestRepo, RequestJdbcTemplateRepo requestTemplateRepo, @Qualifier("gptRestClient") RestClient restClient, HttpClient httpClient, FunctionFacory functionFactory, JpaGptResponseRepo jpaGptResponseRepo,
+                             JpaGptMessageRepo meesageRepo, ResponseJdbcTemplateRepo responseJdbc, List<GptTool> tools, SlackService slackService) {
+        this.jpaGptRequestRepo = jpaGptRequestRepo;
+        this.requestTemplateRepo = requestTemplateRepo;
+        this.restClient = restClient;
+        this.functionFactory = functionFactory;
+        this.jpaGptResponseRepo = jpaGptResponseRepo;
+        this.meesageRepo = meesageRepo;
+        this.responseJdbc = responseJdbc;
+        this.tools = tools;
+        this.slackService = slackService;
+    }
 	/*
 	 * Called by SlackAPI controller.
 	 * Builds object of GPTRequest and forwards it to send to GPT.
@@ -177,7 +151,7 @@ public class DefaultGptService implements GptService {
 	        }
 	        gptRequest.setTools(tools);
 
-            JsonSaver jsonSaver = new JsonSaver("C:/tmp/JSON");
+            JsonSaver jsonSaver = new JsonSaver(jsonDir);
             jsonSaver.saveRequest(gptRequest);
             saveGptRequest(gptRequest);
             log.debug("built request to gpt : " + gptRequest.toString() );
@@ -263,9 +237,8 @@ public class DefaultGptService implements GptService {
 			log.debug("gptRequest.getAuthor() " + gptRequest.getAuthor());
 			saveResponse(gptResponse); // Store response into DB
 
-			// Save response to JSON
 			try {
-                JsonSaver jsonSaver = new JsonSaver("C:/tmp/JSON");
+                JsonSaver jsonSaver = new JsonSaver(jsonDir);
 				jsonSaver.saveResponse(gptResponse);
 			}
 			catch(Exception e)

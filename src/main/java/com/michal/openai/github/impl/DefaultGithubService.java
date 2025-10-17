@@ -27,12 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class DefaultGithubService implements GithubService {
 
-	RepoCnv repoCnv;
-	
-	RestClient githubRestClient;
-	
+    private RepoCnv repoCnv;
+    private RestClient githubRestClient;
     private ObjectMapper objectMapper;
-
     private record ReposResult(HttpStatus status, String responseBody) {}
 
     @Override
