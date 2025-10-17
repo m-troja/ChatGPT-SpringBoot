@@ -22,3 +22,6 @@ src/main/resources/secrets.properties
 *.jar
 logs/*
 Dockerfile
+/.idea/compiler.xml
+/.idea/dbnavigator.xml
+/.idea/encodings.xml
