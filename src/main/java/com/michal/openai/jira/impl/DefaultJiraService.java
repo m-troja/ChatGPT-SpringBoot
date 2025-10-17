@@ -58,23 +58,23 @@ public class DefaultJiraService implements JiraService {
 
     public String getIssueJson(String id) {
         String urlToGet = url + issue + "/" + id;
-        log.info("getIssueJson urlToGet: " + urlToGet);
+        log.info("getIssueJson urlToGet: {}", urlToGet);
 
         HttpGet httpGet = new HttpGet(urlToGet);
         httpGet.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + jiraKey);
         httpGet.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
-        log.debug("httpGet: " + httpGet.toString());
+        log.debug("httpGet: {}", httpGet.toString());
 
         try {
             HttpResponse httpResponse = httpClient.execute(httpGet);
             String responseBody = EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8);
 
-            log.debug("responseBody: " + responseBody);
+            log.debug("responseBody: {}", responseBody);
 
             return responseBody;
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
 
         return null;
@@ -85,14 +85,14 @@ public class DefaultJiraService implements JiraService {
      */
     public CompletableFuture<List<JiraIssue>> getIssues() {
         String urlToGet = url + search + "?jql=project=" + projectName;
-        log.info("getIssues() urlToGet: " + urlToGet);
+        log.info("getIssues() urlToGet: {}", urlToGet);
 
         HttpGet httpGet = new HttpGet(urlToGet);
         httpGet.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + jiraKey);
         httpGet.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
         httpGet.setHeader(HttpHeaders.ACCEPT, "application/json");
 
-        log.debug("httpGet: " + httpGet.toString());
+        log.debug("httpGet: {}", httpGet.toString());
 
         List<JiraIssue> issues = new ArrayList<>();
 
@@ -100,7 +100,7 @@ public class DefaultJiraService implements JiraService {
             HttpResponse response = httpClient.execute(httpGet);
             String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
 
-            log.info("responseBody: " + responseBody);
+            log.debug("GetIssues HttpGet ResponseBody: {}", responseBody);
 
             // Use Jackson to parse the response
             JsonNode rootNode = objectMapper.readTree(responseBody);
@@ -108,22 +108,28 @@ public class DefaultJiraService implements JiraService {
             // Extract 'issues' array
             JsonNode issuesNode = rootNode.path("issues");
 
+            String key = null;
+            String summary = null;
+            String description = null;
+            String duedate = null;
+            String assignee = null;
+            String issueType = null;
+
             // Process each issue
             for (JsonNode issueNode : issuesNode) {
-                JiraIssue jiraIssue = new JiraIssue();
-                jiraIssue.setKey(issueNode.path("key").asText());
+                key = issueNode.path("key").asText();
 
                 JsonNode fieldsNode = issueNode.path("fields");
 
                 if (fieldsNode.has("summary")) {
-                    jiraIssue.setSummary(fieldsNode.path("summary").asText());
+                    summary = fieldsNode.path("summary").asText();
                 }
 
                 // Extract issue type description
                 if (fieldsNode.has("issuetype")) {
                     JsonNode issuetypeNode = fieldsNode.path("issuetype");
                     if (issuetypeNode.has("description")) {
-                        jiraIssue.setDescription(issuetypeNode.path("description").asText());
+                        description = issuetypeNode.path("description").asText();
                     }
                 }
 
@@ -131,21 +137,27 @@ public class DefaultJiraService implements JiraService {
                 if (fieldsNode.has("assignee")) {
                     JsonNode assigneeNode = fieldsNode.path("assignee");
                     if (assigneeNode.has("displayName")) {
-                        jiraIssue.setAssignee(assigneeNode.path("displayName").asText());
+                        assignee =assigneeNode.path("displayName").asText();
                     }
                 }
 
                 // Extract due date
                 if (fieldsNode.has("duedate")) {
-                    jiraIssue.setDuedate(fieldsNode.path("duedate").asText());
+                    duedate = fieldsNode.path("duedate").asText();
                 }
 
+                // Extract issueType
+                if (fieldsNode.has("issueType")) {
+                    issueType = fieldsNode.path("issueType").asText();
+                }
+
+                JiraIssue jiraIssue = new JiraIssue(key, summary, description, duedate, assignee, issueType);
                 issues.add(jiraIssue);
-                log.debug("jiraIssue: " + jiraIssue.toString());
+                log.debug("Created jiraIssue: {}", jiraIssue.toString());
             }
             return CompletableFuture.completedFuture(issues);
         } catch (Exception e) {
-            e.printStackTrace();
+           log.error(e.getMessage());
         }
 
         return null;
@@ -157,8 +169,8 @@ public class DefaultJiraService implements JiraService {
     public CompletableFuture<String> createJavaIssue(String requestBody) {
     	
         String urlToCall = url + "/issue";
-        log.info("createJavaIssue() urlToCall: " + urlToCall);
-        log.debug("requestBody : " + requestBody);
+        log.info("createJavaIssue() urlToCall: {}", urlToCall);
+        log.debug("requestBody : {}", requestBody);
 
         // Parse GPT response JSON using Jackson
         try {
@@ -203,7 +215,7 @@ public class DefaultJiraService implements JiraService {
             log.debug(fieldsObject.toString());
             log.debug(project.toString());
 
-            log.info("urlToCall = " + urlToCall);
+            log.info("urlToCall = {}", urlToCall);
             StringEntity stringEntity = new StringEntity(objectMapper.writeValueAsString(requestObject), "UTF-8");
             HttpPost httpPost = new HttpPost(urlToCall);
             httpPost.setEntity(stringEntity);
@@ -213,22 +225,22 @@ public class DefaultJiraService implements JiraService {
             HttpResponse response = httpClient.execute(httpPost);
             HttpEntity httpEntity = response.getEntity();
 
-            log.debug("httpEntity : " + httpEntity.toString());
+            log.debug("Jira response httpEntity: {}", httpEntity.toString());
 
             String responseBody = EntityUtils.toString(httpEntity);
 
-            log.debug("RESPONSE : " + responseBody);
+            log.debug("Jira response: {}", responseBody);
 
             JsonNode responseObject = objectMapper.readTree(responseBody);
             String returnedKey = "ticketID:" + responseObject.path("key").asText();
             requestObject.setReturnedKey(returnedKey);
 
-            log.debug("requestObject : " + objectMapper.writeValueAsString(requestObject));
+            log.debug("requestObject : {}", objectMapper.writeValueAsString(requestObject));
 
             return CompletableFuture.completedFuture(objectMapper.writeValueAsString(requestObject));
             
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
 
         return null;

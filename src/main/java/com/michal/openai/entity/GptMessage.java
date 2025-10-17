@@ -8,11 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -26,6 +22,7 @@ public class GptMessage {
 	private int id;
 
 	@Transient
+    @Column(name = "content", columnDefinition = "text")
 	private String content;
 
     @JsonProperty("user_name")

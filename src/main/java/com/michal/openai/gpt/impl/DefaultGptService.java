@@ -150,10 +150,6 @@ public class DefaultGptService implements GptService {
 	        	}
 	        }
 	        gptRequest.setTools(tools);
-
-            JsonSaver jsonSaver = new JsonSaver(jsonDir);
-            jsonSaver.saveRequest(gptRequest);
-            saveGptRequest(gptRequest);
             log.debug("Built request to gpt: {}", gptRequest.toString() );
 
 	        return getResponseFromGpt(gptRequest, slackUserRequestAuthor);  
@@ -177,7 +173,7 @@ public class DefaultGptService implements GptService {
 		gptRequest.setAuthorRealname(slackUserRequestAuthor.getRealName());
 		saveGptRequest(gptRequest);
 
-        log.debug("Final request to GPT: " + gptRequest);
+        log.debug("Final request to GPT: {}", gptRequest);
 		
         GptResponse gptResponse = new GptResponse();
 
@@ -243,15 +239,6 @@ public class DefaultGptService implements GptService {
 			log.info("gptRequest.getAuthor(): {}", gptRequest.getAuthor());
 			saveResponse(gptResponse); // Store response into DB
 
-			try {
-                JsonSaver jsonSaver = new JsonSaver(jsonDir);
-				jsonSaver.saveResponse(gptResponse);
-			}
-			catch(Exception e)
-			{
-				log.error("Error saving json!");
-				e.printStackTrace();
-			}
 
 			log.debug("Extracted gptResponse from GPT: {}", gptResponse.toString());
 
@@ -306,14 +293,24 @@ public class DefaultGptService implements GptService {
 	}
 	
 	
-	public void saveGptRequest(GptRequest request) 
-	{
-		jpaGptRequestRepo.save(request);
+	public void saveGptRequest(GptRequest gptRequest)  {
+        JsonSaver jsonSaver = new JsonSaver(jsonDir);
+        jsonSaver.saveRequest(gptRequest);
+		jpaGptRequestRepo.save(gptRequest);
 	}
 	
-	public void saveResponse(GptResponse gptResponse)
-	{
-		jpaGptResponseRepo.save(gptResponse);
+	public void saveResponse(GptResponse gptResponse) {
+        try { JsonSaver jsonSaver = new JsonSaver(jsonDir);
+            jsonSaver.saveResponse(gptResponse);
+        }
+        catch(Exception e) {
+            log.error("Error saving json!");
+            e.printStackTrace();
+        }
+		try{ jpaGptResponseRepo.save(gptResponse); }
+        catch(Exception e) {
+            log.error("Error when saving gptResponse into DB: {}", e.getMessage());
+        }
 	}
 	
 	/* Get last messages of user to build context for GPT */ 
@@ -328,7 +325,7 @@ public class DefaultGptService implements GptService {
 		for (String message : messages)
 		{
 			GptMessage gptMessage = new GptMessage( ROLE_USER, message, user.getSlackId()  );
-			log.info("Message: {}, gptMessage: {}, slackID: {}", message.toString(), gptMessage.toString(), user.getSlackId() );
+			log.info("Message: {}, gptMessage: {}, slackID: {}", message, gptMessage.toString(), user.getSlackId() );
 			gptMessages.add(gptMessage);
 		}
 		
@@ -349,11 +346,11 @@ public class DefaultGptService implements GptService {
 		for (String message : messages)
 		{
 			GptMessage gptMessage = new GptMessage( ROLE_ASSISTANT, message, user.getSlackId()  );
-            log.info("meesage: {}, gptMessage: {}", message.toString(), gptMessage.toString() );
+            log.debug("Message: {}, gptMessage: {}", message.toString(), gptMessage.toString() );
 			gptMessages.add(gptMessage);
 		}
-		
-		log.info("gptMessages.toString() " + gptMessages.toString());
+
+        log.info("gptMessages.toString() {}", gptMessages.toString());
 		
 		return gptMessages;
 	}

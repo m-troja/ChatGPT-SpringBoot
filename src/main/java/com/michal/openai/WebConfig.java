@@ -25,9 +25,11 @@ import org.springframework.web.servlet.view.JstlView;
             .requestMatchers("/css/**", "/fonts/**", "/images/**", "/js/**", "/vendor/**").permitAll()
             .requestMatchers("/favicon.ico", "/error").permitAll()  
 
-            .requestMatchers("/chatgpt", "/", "/WEB-INF/jsp/**", "/v1/**", "/v1/jira/**", "/v1/jira/issue").permitAll()
+            .requestMatchers("/chatgpt", "/", "/WEB-INF/jsp/**", "/v1/slack", "/v1/jira/**", "/v1/jira/issue").permitAll()
             .requestMatchers("/admin/**").permitAll()
             .requestMatchers("/authorize", "/oauth2callback").permitAll()
+            .requestMatchers("/swagger").permitAll()
+            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
             .anyRequest().authenticated()
         );
 

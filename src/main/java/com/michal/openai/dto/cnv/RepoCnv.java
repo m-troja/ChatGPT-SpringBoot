@@ -16,12 +16,12 @@ public class RepoCnv {
 	public GithubRepoDto convertRepoToRepoDto(GithubRepo repo)
 	{
 		GithubRepoDto repoDto = new GithubRepoDto();
-		repoDto.setOwnerLogin(repo.getOwner().getLogin());
-		repoDto.setRepositoryName(repo.getName());
+		repoDto.setOwnerLogin(repo.owner().login());
+		repoDto.setRepositoryName(repo.name());
 		List<BranchDto> branchDtos = new ArrayList<>();
 		
-		for (GithubBranch branch : repo.getBranches()) {
-			BranchDto branchDto = new BranchDto(branch.getName(), branch.getCommit().getSha());
+		for (GithubBranch branch : repo.branches()) {
+			BranchDto branchDto = new BranchDto(branch.name(), branch.commit().sha());
 			branchDtos.add(branchDto);
 		}
 		

@@ -8,20 +8,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
+import lombok.Data;
 
+@Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
 @Table(name = "gpt_response")
@@ -42,8 +32,8 @@ public class GptResponse {
 	private String requestSlackID; // for DB column
 	
 	@JsonIgnore
-	@Column(name = "content")
-	private String content; // for DB column
+	@Column(name = "content", columnDefinition = "text")
+    private String content; // for DB column
 	
 	@Transient
 	private String object;
@@ -56,50 +46,7 @@ public class GptResponse {
 	@Transient
 	private Usage usage;
 
-	public Long getId() {
-		return id;
-	}
-	public void setId(Long id) {
-		this.id = id;
-	}
-	public String getObject() {
-		return object;
-	}
-	public void setObject(String object) {
-		this.object = object;
-	}
-	public Long getCreated() {
-		return created;
-	}
-	public void setCreated(Long created) {
-		this.created = created;
-	}
-	public String getModel() {
-		return model;
-	}
-	public void setModel(String model) {
-		this.model = model;
-	}
-	public List<Choice> getChoices() {
-		return choices;
-	}
-	public void setChoices(List<Choice> choices) {
-		this.choices = choices;
-	}
-	public Usage getUsage() {
-		return usage;
-	}
-	public void setUsage(Usage usage) {
-		this.usage = usage;
-	}
-	
-	public String getContent() {
-		return content;
-	}
-	public void setContent(String content) {
-		this.content = content;
-	}
-	
+        @Data
 	    @JsonIgnoreProperties(ignoreUnknown = true)
         public static class Choice {
 
@@ -114,24 +61,6 @@ public class GptResponse {
             @Transient
             private String finishReason;
 
-            public Integer getIndex() {
-                return index;
-            }
-            public void setIndex(Integer index) {
-                this.index = index;
-            }
-            public GptMessage getMessage() {
-                return message;
-            }
-            public void setMessage(GptMessage message) {
-                this.message = message;
-            }
-            public String getFinishReason() {
-                return finishReason;
-            }
-            public void setFinishReason(String finishReason) {
-                this.finishReason = finishReason;
-            }
             @Override
             public String toString() {
                 return "Choice [index=" + index + ", message=" + message + ", finishReason=" + finishReason + "]";
@@ -141,6 +70,7 @@ public class GptResponse {
             }
         }
 
+        @Data
         @JsonIgnoreProperties(ignoreUnknown = true)
         public static class Usage {
 
@@ -156,24 +86,6 @@ public class GptResponse {
             @Transient
             private Integer totalTokens;
 
-            public Integer getPromptTokens() {
-                return promptTokens;
-            }
-            public void setPromptTokens(Integer promptTokens) {
-                this.promptTokens = promptTokens;
-            }
-            public Integer getCompletionTokens() {
-                return completionTokens;
-            }
-            public void setCompletionTokens(Integer completionTokens) {
-                this.completionTokens = completionTokens;
-            }
-            public Integer getTotalTokens() {
-                return totalTokens;
-            }
-            public void setTotalTokens(Integer totalTokens) {
-                this.totalTokens = totalTokens;
-            }
             @Override
             public String toString() {
                 return "Usage [promptTokens=" + promptTokens + ", completionTokens=" + completionTokens + ", totalTokens="
@@ -181,18 +93,6 @@ public class GptResponse {
             }
 
         }
-	public Long getRequestId() {
-		return requestId;
-	}
-	public void setRequestId(Long requestId) {
-		this.requestId = requestId;
-	}
-	public String getRequestSlackID() {
-		return requestSlackID;
-	}
-	public void setRequestSlackID(String requestSlackID) {
-		this.requestSlackID = requestSlackID;
-	}
 
     @Override
 	public String toString() {

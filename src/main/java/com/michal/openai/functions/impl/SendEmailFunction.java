@@ -2,6 +2,7 @@ package com.michal.openai.functions.impl;
 
 import java.util.concurrent.CompletableFuture;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -10,7 +11,7 @@ import com.michal.openai.entity.EmailData;
 import com.michal.openai.functions.Function;
 import com.michal.openai.mail.GmailService;
 
-
+@Slf4j
 public class SendEmailFunction implements Function {
 
 	@Autowired
@@ -20,28 +21,21 @@ public class SendEmailFunction implements Function {
 		   
 	@Override
 	public CompletableFuture<String> execute(String arguments) {
-		EmailData emailData = new EmailData();
+		EmailData emailData = null;
 		try {
-			emailData = objectMapper.readValue(arguments, EmailData.class);
+            emailData = objectMapper.readValue(arguments, EmailData.class);
 		} 
 		catch (JsonProcessingException e) {
-			e.printStackTrace();
+			log.error("Error processing emailData: {}", e.getMessage());
 		}
-		 
-		if (emailData.getAddresseeEmail() == null & emailData.getAddresseeName() == null) {
+
+		if (emailData !=null && emailData.emailAddress() == null & emailData.emailAddress() == null) {
 			return CompletableFuture.completedFuture("Email was not sent. Please, specify full name or email of addressee");
 		}
-		if (emailData.getAddresseeEmail() == null & emailData.getAddresseeName() != null) {
-			emailData.setAddresseeEmail(gmailService.extractEmailByFullName(emailData.getAddresseeName()));
-			if (emailData.getAddresseeEmail() == null) {
-				return CompletableFuture.completedFuture("Email was not sent. Please, specify email of addressee");
-			}
-		}
-		
-		if (gmailService.sendEmail(emailData)) {
+        if (gmailService.sendEmail(emailData)) {
 			return CompletableFuture.completedFuture("Email was sent successfully");
 		} else {
-			return  CompletableFuture.completedFuture("Email was not sent. Some exception is happened, please, try one more time later");
+			return  CompletableFuture.completedFuture("Email was not sent. Some exception happened, please, try one more time later");
 		}
 	}
 }

@@ -90,9 +90,9 @@ public class DefaultGmailService implements GmailService {
 
 	@Override
 	public boolean sendEmail(EmailData emailData) {
-		log.info("emailData " + emailData.toString());
+        log.info("emailData {}", emailData.toString());
 
-		return sendEmail(emailData.getAddresseeEmail(), emailData.getSubject(), emailData.getContent());
+		return sendEmail(emailData.emailAddress(), emailData.subject(), emailData.content());
 	}
 
 	/* TODO: implement integration with email addresses data source. 
@@ -105,8 +105,8 @@ public class DefaultGmailService implements GmailService {
 		Map<String, String> fullNameToEmailMap = new HashMap<>();
 		fullNameToEmailMap.put("Andrey Pyatakha", "andrey.pyatakha@example.com");
 		fullNameToEmailMap.put("John Doe", receiverTestEmail);
-		log.info("extractEmailByFullName fullNameToEmailMap : " + fullNameToEmailMap.toString());
-		log.info("extractEmailByFullName addresseeName : " + addresseeName);
+        log.debug("extractEmailByFullName fullNameToEmailMap : {}", fullNameToEmailMap);
+        log.debug("extractEmailByFullName emailAddress : {}", addresseeName);
 
 		return fullNameToEmailMap.get(addresseeName);
 	}

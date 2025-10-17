@@ -1,43 +1,14 @@
 package com.michal.openai.entity;
 
+import lombok.Data;
+
+@Data
 public class JiraCreateIssueParameterProperties implements ParameterProperties {
 	
 	private Description description;
 	private Summary summary;
 	private DueDate duedate;
 	private IssueType issueType;
-	
-	public Summary getSummary() {
-		return summary;
-	}
-
-	public void setSummary(Summary summary) {
-		this.summary = summary;
-	}
-
-	public DueDate getDuedate() {
-		return duedate;
-	}
-
-	public void setDuedate(DueDate duedate) {
-		this.duedate = duedate;
-	}
-
-	public IssueType getIssueType() {
-		return issueType;
-	}
-
-	public void setIssueType(IssueType issueType) {
-		this.issueType = issueType;
-	}
-
-	public Description getDescription() {
-		return description;
-	}
-
-	public void setDescription(Description description) {
-		this.description = description;
-	}
 
 	public class Description extends ParameterPropertyAttribute 
 	{
@@ -51,7 +22,7 @@ public class JiraCreateIssueParameterProperties implements ParameterProperties {
 		}
 	
 	}
-	
+	@Data
 	public class IssueType extends ParameterPropertyAttribute
 	{
 		private String[] issueTypes;
@@ -62,14 +33,6 @@ public class JiraCreateIssueParameterProperties implements ParameterProperties {
 
 		public IssueType(String type, String description, String[] issueTypes) {
 			super(type, description);
-			this.issueTypes = issueTypes;
-		}
-
-		String[] getIssueTypes() {
-			return issueTypes;
-		}
-
-		public void setIssueTypes(String[] issueTypes) {
 			this.issueTypes = issueTypes;
 		}
 	}

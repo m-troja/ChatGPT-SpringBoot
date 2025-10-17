@@ -1,5 +1,8 @@
 package com.michal.openai.entity;
 
+import lombok.Data;
+
+@Data
 public class SendEmailParameterProperties implements ParameterProperties {
 	private Subject subject;
 	private Content content;
@@ -32,37 +35,5 @@ public class SendEmailParameterProperties implements ParameterProperties {
 		public AddresseeName(String type, String description) {
 			super(type, description);
 		}
-	}
-
-	public Subject getSubject() {
-		return subject;
-	}
-
-	public void setSubject(Subject subject) {
-		this.subject = subject;
-	}
-
-	public Content getContent() {
-		return content;
-	}
-
-	public void setContent(Content content) {
-		this.content = content;
-	}
-
-	public AddresseeEmail getAddresseeEmail() {
-		return addresseeEmail;
-	}
-
-	public void setAddresseeEmail(AddresseeEmail addressee) {
-		this.addresseeEmail = addressee;
-	}
-
-	public AddresseeName getAddresseeName() {
-		return addresseeName;
-	}
-
-	public void setAddresseeName(AddresseeName addresseeName) {
-		this.addresseeName = addresseeName;
 	}
 }

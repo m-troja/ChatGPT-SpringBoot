@@ -6,8 +6,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
 @Entity
+@NoArgsConstructor
 @Table(name = "slack_user")  // Specify the schema name here
 public class SlackUser {
     
@@ -20,28 +24,6 @@ public class SlackUser {
     
     @Column(name = "real_name")
     private String realName;
-
-    // Default constructor
-    public SlackUser() {
-        super();
-    }
-
-    // Getters and setters
-    public String getSlackId() {
-        return slackId;
-    }
-
-    public void setSlackId(String slackId) {
-        this.slackId = slackId;
-    }
-
-    public String getRealName() {
-        return realName;
-    }
-
-    public void setRealName(String realName) {
-        this.realName = realName;
-    }
 
 	@Override
 	public String toString() {

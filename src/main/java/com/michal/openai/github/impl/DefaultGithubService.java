@@ -1,6 +1,7 @@
 package com.michal.openai.github.impl;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -27,9 +28,9 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class DefaultGithubService implements GithubService {
 
-    private RepoCnv repoCnv;
-    private RestClient githubRestClient;
-    private ObjectMapper objectMapper;
+    private final RepoCnv repoCnv;
+    private final RestClient githubRestClient;
+    private final ObjectMapper objectMapper;
     private record ReposResult(HttpStatus status, String responseBody) {}
 
     @Override
@@ -47,14 +48,14 @@ public class DefaultGithubService implements GithubService {
     private ReposResult fetchUserRepos(String username) throws IOException {
         String uri = "/users/" + username + "/repos";
 
-        log.debug("fetching repos from url : " + uri);
+        log.debug("fetching repos from url : {}", uri);
 
         try {
             String body = githubRestClient.get()
         			.uri(uri)
 	        		.retrieve()
 	        		.body(String.class);
-            log.debug("github response: " + body);
+            log.debug("github response: {}", body);
 
             return new ReposResult(HttpStatus.OK, body);
 
@@ -67,7 +68,7 @@ public class DefaultGithubService implements GithubService {
         	throw new RuntimeException("Github API error: " + e.getStatusCode() + " " + e.getResponseBodyAsString());
         }
         catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
             throw new RuntimeException("Unexpected error calling GitHub API", e);
         }
     }
@@ -80,22 +81,24 @@ public class DefaultGithubService implements GithubService {
     }
 
     private List<GithubRepo> assignBranchesToRepos(List<GithubRepo> repos) throws IOException {
+        List<GithubRepo> updatedRepos = new ArrayList<>();
         for (GithubRepo repo : repos) {
-            repo.setBranches(fetchBranches(repo));
+            var branches = fetchBranches(repo);
+            updatedRepos.add(new GithubRepo(repo.name(), repo.owner(), branches, repo.isFork()));
         }
         return repos;
     }
 
     private List<GithubBranch> fetchBranches(GithubRepo repo) throws IOException {
-        String uri = "/repos/" + repo.getOwner().getLogin() + "/" + repo.getName() + "/branches";
-        log.debug("fetchBranches from uri : " + uri);
+        String uri = "/repos/" + repo.owner().login() + "/" + repo.name() + "/branches";
+        log.debug("fetchBranches from uri : {}", uri);
 
         List<GithubBranch> branches = githubRestClient.get()
     			.uri(uri)
-        		.retrieve() 
+        		.retrieve()
         		.body(new ParameterizedTypeReference<List<GithubBranch>>() {});
-        
-        log.debug("fetchBranches: " + branches.toString());
+
+        log.debug("fetchBranches: {}", branches.toString());
 
         return branches;
     }

@@ -7,9 +7,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +33,7 @@ import com.slack.api.methods.response.users.UsersListResponse;
 
 @Slf4j
 @Service
+@Data
 public class DefaultSlackService implements SlackService {
 
 	@Autowired
@@ -52,11 +53,6 @@ public class DefaultSlackService implements SlackService {
 
     private GptService gptService;
 
-    @Autowired
-    public void setGptService(@Lazy GptService gptService) {
-        this.gptService = gptService;
-    }
-	
 	@Async("defaultExecutor")
 	@Override
     public void processOnMentionEvent(String requestBody) {
@@ -64,12 +60,12 @@ public class DefaultSlackService implements SlackService {
         log.debug("processOnMentionEvent requestBody : " + requestBody);
 
         CompletableFuture<String> gptResponseFuture = gptService.getAnswerToSingleQuery(
-                CompletableFuture.completedFuture(slackRequestData.getMessage()),
-                CompletableFuture.completedFuture(slackRequestData.getMessageAuthorId()),
+                CompletableFuture.completedFuture(slackRequestData.message()),
+                CompletableFuture.completedFuture(slackRequestData.messageAuthorId()),
                 functions.toArray(GptFunction[]::new)
         );
 
-        sendMessageToSlack(gptResponseFuture, slackRequestData.getChannelIdFrom());
+        sendMessageToSlack(gptResponseFuture, slackRequestData.channelIdFrom());
     }
 
 
@@ -82,16 +78,16 @@ public class DefaultSlackService implements SlackService {
 		}
 		catch(Exception e)
 		{
-			log.info("Error in jsonObject = objectMapper.readValue(requestBody, JsonObject.class)!");
-			e.printStackTrace();
-		}
+			log.error("Error in jsonObject = objectMapper.readValue(requestBody, JsonObject.class)!");
+            log.error(e.getMessage());
+        }
 
         // Extract the 'event' object
         JsonNode eventNode = null;
 		try {
 			eventNode = jsonNode.path("event");
 		} catch (Exception e) {
-			e.printStackTrace();
+            log.error(e.getMessage());
 		}
         
         // Extract the fields from the 'event' object
@@ -106,19 +102,17 @@ public class DefaultSlackService implements SlackService {
 			{
 				log.info(" messageAuthorId not found! Extracting users...");
 				extractUsersIntoDatabase();
-				
-				 user = getSlackUserBySlackId(messageAuthorId);
-				
-				log.info("slackuser extracted :  " + user.toString());
+				user = getSlackUserBySlackId(messageAuthorId);
+                log.info("Slackuser extracted :  {}", user.toString());
 			}
 		}
 		catch( Exception e)
 		{
-			
-		}
+            log.error(e.getMessage());
+        }
 		String messageWithNames = substituteUserIdsWithUserNames(message);
-		
-		log.info("extractSlackRequestData: " + messageAuthorId + " : "+messageWithNames + " : "+channelIdFrom);
+
+        log.info("extractSlackRequestData: {} : {} : {}", messageAuthorId, messageWithNames, channelIdFrom);
 
 		return new SlackRequestData(messageAuthorId, messageWithNames, channelIdFrom);
 	}
@@ -129,7 +123,7 @@ public class DefaultSlackService implements SlackService {
 		String[] userIds = extractUserIds(message);
 		
 		StringBuilder stringBuilder = new StringBuilder(message);
-		log.info("stringBuilder : " + stringBuilder.toString() );
+        log.info("stringBuilder : {}", stringBuilder);
 
 		// For slackID in array of slackIDs, assign realName and switch slackID to realName
 		for(String userId : userIds)
@@ -141,12 +135,12 @@ public class DefaultSlackService implements SlackService {
 			{
 				int startIndex = stringBuilder.indexOf(mention);
 				int endIndex = startIndex + mention.length();
-				log.info("startIndex : " + startIndex, ", endIndex : " + endIndex );
+                log.info("startIndex : {}", startIndex, ", endIndex : " + endIndex);
 
 				stringBuilder.replace(startIndex, endIndex, name);
 			}
 		}
-		log.info("stringBuilder : " + stringBuilder.toString() );
+        log.info("stringBuilder : {}", stringBuilder.toString());
 
 		return stringBuilder.toString();
 	}
@@ -159,7 +153,7 @@ public class DefaultSlackService implements SlackService {
 		while (matcher.find()) {
 			userIds.add(matcher.group(1));
 		}
-		log.info("extractUserIds : " + userIds.toString() );
+        log.info("extractUserIds : {}", userIds);
 
 		return userIds.toArray(new String[userIds.size()]);
 	}
@@ -178,13 +172,13 @@ public class DefaultSlackService implements SlackService {
 					if ( getSlackUserBySlackId(user.getId()) == null)
 					{
 						registerUser(new SlackUser( user.getId(),user.getRealName() ));
-						log.info("registerUser : " + user.getId() + " : " + user.getRealName() );
+                        log.info("registerUser : {} : {}", user.getId(), user.getRealName());
 					}
 				}
 			} 
 			catch (Exception e) 
 			{
-				e.printStackTrace();
+                log.error(e.getMessage());
 			}
 	}
 	@Async("defaultExecutor")
@@ -199,25 +193,21 @@ public class DefaultSlackService implements SlackService {
 	                .channel(channelId)
 	                .text(stringToSend)
 	                .build();
-					log.info("Response = " + response);
-					log.info("stringToSend = " + stringToSend);
+                    log.debug(" sendMessageToSlack response = {}", response);
+                    log.debug("stringToSend = {}", stringToSend);
 
-			        try 
-			        {
-			        	log.info("sendMessageToSlack: Channel= " + channelId + ", Message= " + stringToSend);
+			        try {
+                        log.info("sendMessageToSlack: Channel= {}, Message= {}", channelId, stringToSend);
 			            slackBotClient.chatPostMessage(request);
 			        } 
-			        catch (IOException | SlackApiException e) 
-			        {
-			            e.printStackTrace();
+			        catch (IOException | SlackApiException e){
+                        log.error(e.getMessage());
 			        }
 		    }
 		)
-		.exceptionally
-		(ex -> 
+		.exceptionally(ex ->
 			{
-				log.error("Error in GPT response future: " + ex.getMessage());
-			       ex.printStackTrace();
+                log.error("Error in GPT response future: {}", ex.getMessage());
 			       return null;
 			}
 		);
@@ -231,21 +221,15 @@ public class DefaultSlackService implements SlackService {
 	public List<SlackUser> getAllSlackUsers()
 	{
 		List<SlackUser> users = jpaSlackrepo.findAllByOrderBySlackId();
+        log.debug("All slack users: {}", users.toString());
 		return users;
 	}
 	
 	@Override
 	public String registerUser(SlackUser user) {
-		if ( jpaSlackrepo.save(user) != null)
-		{
-			log.info(SUCCESSFULL_REGISTRATION_MESSAGE);
-			return SUCCESSFULL_REGISTRATION_MESSAGE  ;
-		}
-		else 
-		{
-			log.info(REGISTRATION_ERROR_MESSAGE);
-			return REGISTRATION_ERROR_MESSAGE;
-		}
-	}
+        jpaSlackrepo.save(user);
+        log.info(SUCCESSFULL_REGISTRATION_MESSAGE);
+        return SUCCESSFULL_REGISTRATION_MESSAGE  ;
+    }
 
 }
