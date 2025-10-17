@@ -64,7 +64,7 @@ public class DefaultGptService implements GptService {
 	@Autowired
 	RequestJdbcTemplateRepo requestTemplateRepo;
 	
-	@Value("${gpt.chat.model}")
+	@Value("${CHAT_MODEL}")
 	private String model;
 
 	@Value("${gpt.chat.temperature}")
@@ -73,7 +73,7 @@ public class DefaultGptService implements GptService {
 	@Value("${gpt.chat.presence.penalty}")
 	private Double presencePenalty;
 	
-	@Value("${gpt.chat.completion.maxtokens}")
+	@Value("${CHAT_MAX_TOKENS}")
 	private Integer maxTokens;
 	
 	@Value("${gpt.chat.sendrequest.retryattempts}")
