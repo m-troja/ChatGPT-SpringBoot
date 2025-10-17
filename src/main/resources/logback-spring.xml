@@ -1,24 +1,22 @@
 <configuration>
     <property name="LOG_PATH" value="${CHAT_LOG_DIR}" />
     <property name="LOG_FILE_NAME" value="${CHAT_LOG_FILENAME}" />
+
     <!-- INFO File Appender -->
     <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${CHAT_LOG_FILENAME}.info</file>
-        <file>${LOG_PATH}/${CHAT_LOG_FILENAME}.debug</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
             <fileNamePattern>${LOG_PATH}/${CHAT_LOG_FILENAME}.info.%i</fileNamePattern>
             <minIndex>1</minIndex>
             <maxIndex>5</maxIndex>
         </rollingPolicy>
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>10MB</maxFileSize>
+            <maxFileSize>50MB</maxFileSize>
         </triggeringPolicy>
-
         <!-- Accept DEBUG and higher (INFO, WARN, ERROR) -->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>DEBUG</level>
         </filter>
-
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>INFO</level>
             <onMatch>ACCEPT</onMatch>
@@ -38,10 +36,31 @@
             <maxIndex>5</maxIndex>
         </rollingPolicy>
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>10MB</maxFileSize>
+            <maxFileSize>50MB</maxFileSize>
         </triggeringPolicy>
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %class{1} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ERROR File Appender -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${CHAT_LOG_FILENAME}.error</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${CHAT_LOG_FILENAME}.error.%i</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>5</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>50MB</maxFileSize>
+        </triggeringPolicy>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
             <onMatch>ACCEPT</onMatch>
             <onMismatch>DENY</onMismatch>
         </filter>
@@ -80,7 +99,9 @@
 
     <!-- Only this root logger -->
     <root level="ERROR">
-        <appender-ref ref="CONSOLE" />
+        <!-- Custom loggers
+
+        <appender-ref ref="CONSOLE" /> -->
         <appender-ref ref="INFO_FILE" />
         <appender-ref ref="DEBUG_FILE" />
     </root>

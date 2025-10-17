@@ -204,7 +204,7 @@ public class DefaultSlackService implements SlackService {
 
 			        try 
 			        {
-			        	log.debug("sendMessageToSlack: Channel= " + channelId + ", Message= " + stringToSend);
+			        	log.info("sendMessageToSlack: Channel= " + channelId + ", Message= " + stringToSend);
 			            slackBotClient.chatPostMessage(request);
 			        } 
 			        catch (IOException | SlackApiException e) 

@@ -62,6 +62,11 @@ public class ChatGptIntegrationApplication {
         props.put("spring.datasource.password", dbPassword);
         app.setDefaultProperties(props);
 
+        // Env var log loop
+        for (String key: props.keySet()) {
+            log.debug("Env var check: {} = {}", key, props.get(key));
+            System.out.println("Env var check:   " + key + " = " + props.get(key));
+        }
         app.run(args);
     }
 

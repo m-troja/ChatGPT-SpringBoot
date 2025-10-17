@@ -100,87 +100,87 @@ public class GptResponse {
 		this.content = content;
 	}
 	
-	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static class Choice {
-		
-		@Transient
-		private Integer index;
-		
-		@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-		@JoinColumn(name = "response_id")  // Analogicznie, Hibernate doda response_id
-		private GptMessage message;
+	    @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class Choice {
 
-        @JsonProperty("finish_reason")
-        @Transient
-		private String finishReason;
-		
-		public Integer getIndex() {
-			return index;
-		}
-		public void setIndex(Integer index) {
-			this.index = index;
-		}
-		public GptMessage getMessage() {
-			return message;
-		}
-		public void setMessage(GptMessage message) {
-			this.message = message;
-		}
-		public String getFinishReason() {
-			return finishReason;
-		}
-		public void setFinishReason(String finishReason) {
-			this.finishReason = finishReason;
-		}
-		@Override
-		public String toString() {
-			return "Choice [index=" + index + ", message=" + message + ", finishReason=" + finishReason + "]";
-		}
-		public Choice() {
-			super();
-		}
-	}
-	
-	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static class Usage {
+            @Transient
+            private Integer index;
 
-        @JsonProperty("prompt_tokens")
-        @Transient
-		private Integer promptTokens;
+            @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+            @JoinColumn(name = "response_id")  // Analogicznie, Hibernate doda response_id
+            private GptMessage message;
 
-        @JsonProperty("completion_tokens")
-        @Transient
-		private Integer completionTokens;
+            @JsonProperty("finish_reason")
+            @Transient
+            private String finishReason;
 
-        @JsonProperty("total_tokens")
-        @Transient
-		private Integer totalTokens;
-		
-		public Integer getPromptTokens() {
-			return promptTokens;
-		}
-		public void setPromptTokens(Integer promptTokens) {
-			this.promptTokens = promptTokens;
-		}
-		public Integer getCompletionTokens() {
-			return completionTokens;
-		}
-		public void setCompletionTokens(Integer completionTokens) {
-			this.completionTokens = completionTokens;
-		}
-		public Integer getTotalTokens() {
-			return totalTokens;
-		}
-		public void setTotalTokens(Integer totalTokens) {
-			this.totalTokens = totalTokens;
-		}
-		@Override
-		public String toString() {
-			return "Usage [promptTokens=" + promptTokens + ", completionTokens=" + completionTokens + ", totalTokens="
-					+ totalTokens + "]";
-		}
-		
-	}
+            public Integer getIndex() {
+                return index;
+            }
+            public void setIndex(Integer index) {
+                this.index = index;
+            }
+            public GptMessage getMessage() {
+                return message;
+            }
+            public void setMessage(GptMessage message) {
+                this.message = message;
+            }
+            public String getFinishReason() {
+                return finishReason;
+            }
+            public void setFinishReason(String finishReason) {
+                this.finishReason = finishReason;
+            }
+            @Override
+            public String toString() {
+                return "Choice [index=" + index + ", message=" + message + ", finishReason=" + finishReason + "]";
+            }
+            public Choice() {
+                super();
+            }
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class Usage {
+
+            @JsonProperty("prompt_tokens")
+            @Transient
+            private Integer promptTokens;
+
+            @JsonProperty("completion_tokens")
+            @Transient
+            private Integer completionTokens;
+
+            @JsonProperty("total_tokens")
+            @Transient
+            private Integer totalTokens;
+
+            public Integer getPromptTokens() {
+                return promptTokens;
+            }
+            public void setPromptTokens(Integer promptTokens) {
+                this.promptTokens = promptTokens;
+            }
+            public Integer getCompletionTokens() {
+                return completionTokens;
+            }
+            public void setCompletionTokens(Integer completionTokens) {
+                this.completionTokens = completionTokens;
+            }
+            public Integer getTotalTokens() {
+                return totalTokens;
+            }
+            public void setTotalTokens(Integer totalTokens) {
+                this.totalTokens = totalTokens;
+            }
+            @Override
+            public String toString() {
+                return "Usage [promptTokens=" + promptTokens + ", completionTokens=" + completionTokens + ", totalTokens="
+                        + totalTokens + "]";
+            }
+
+        }
 	public Long getRequestId() {
 		return requestId;
 	}
@@ -193,13 +193,11 @@ public class GptResponse {
 	public void setRequestSlackID(String requestSlackID) {
 		this.requestSlackID = requestSlackID;
 	}
-	@Override
+
+    @Override
 	public String toString() {
 		return "GptResponse [id=" + id + ", requestId=" + requestId + ", requestSlackID=" + requestSlackID
 				+ ", content=" + content + ", object=" + object + ", created=" + created + ", model=" + model
 				+ ", choices=" + choices + ", usage=" + usage + "]";
 	}
-
-	
-	
 }

@@ -31,6 +31,7 @@ public class JsonSaver {
     }
 
     private void saveJson(Object object, String type) {
+        log.info("Saving {} json...", type);
         try {
             String folderPath = basePath + File.separator + type;
             File folder = new File(folderPath);
@@ -42,9 +43,9 @@ public class JsonSaver {
             File file = new File(folder, fileName);
             objectMapper.writeValue(file, object);
 
-            log.info("{} saved to {}", type, file.getAbsolutePath());
         } catch (IOException e) {
             log.error("Failed to save {} JSON: {}", type, e.getMessage(), e);
         }
+        log.info("Saved {} json", type);
     }
 }
