@@ -4,6 +4,7 @@
     <!-- INFO File Appender -->
     <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${CHAT_LOG_FILENAME}.info</file>
+        <file>${LOG_PATH}/${CHAT_LOG_FILENAME}.debug</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
             <fileNamePattern>${LOG_PATH}/${CHAT_LOG_FILENAME}.info.%i</fileNamePattern>
             <minIndex>1</minIndex>
@@ -12,6 +13,12 @@
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
             <maxFileSize>10MB</maxFileSize>
         </triggeringPolicy>
+
+        <!-- Accept DEBUG and higher (INFO, WARN, ERROR) -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>INFO</level>
             <onMatch>ACCEPT</onMatch>
