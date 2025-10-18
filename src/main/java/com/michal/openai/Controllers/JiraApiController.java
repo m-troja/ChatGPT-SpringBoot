@@ -3,7 +3,7 @@ package com.michal.openai.Controllers;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.entity.JiraIssue;
 import com.michal.openai.jira.JiraService;
 
@@ -21,14 +20,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 @RequestMapping()
+@AllArgsConstructor
 public class JiraApiController {
 
-	@Autowired
-	JiraService jiraService;
-	
-	@Autowired
-	ObjectMapper objectMapper;
-	
+	private JiraService jiraService;
+
 	// Example: http://localhost:8080/v1/jira/issue?id=JAVA-6
 	@GetMapping(value = "/v1/jira/issue", params = "id")
 	public ResponseEntity<String> getIssue(@RequestParam("id") String issueId)

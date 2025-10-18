@@ -25,7 +25,7 @@ public class RequestJdbcTemplateRepo {
     {
         String sql = "SELECT content FROM gpt_request WHERE author_slackid = ? ORDER BY id DESC LIMIT ?";
         String sqlDebug = "SELECT content FROM gpt_request WHERE author_slackid = " + slackId + " ORDER BY id DESC LIMIT " + limit;
-        log.info("findLastMessagesBySlackId Executing SQL: " + sqlDebug);
+        log.debug("findLastMessagesBySlackId Executing SQL: {}", sqlDebug);
         
         List<String> messages = jdbcTemplate.query(
             sql,
@@ -35,11 +35,11 @@ public class RequestJdbcTemplateRepo {
             },
             (ResultSet rs, int rowNum) -> rs.getString("content")
         );
-        
-        log.info("Request messages found: " + messages.size());
-       
+
+        log.debug("Request messages found: {}", messages.size());
+
         for (String msg : messages) {
-        	log.debug("message " + msg);
+            log.debug("message {}", msg);
         }
 
         return messages;

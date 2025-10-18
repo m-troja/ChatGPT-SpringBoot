@@ -1,18 +1,11 @@
 package com.michal.openai.Controllers;
 
-import java.util.concurrent.CompletableFuture;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import lombok.NoArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-
-import com.michal.openai.gpt.impl.DefaultGptService;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -22,11 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequestMapping( value = {"/admin" })
 @RestController
+@NoArgsConstructor
 public class AdminController {
-	
-	@Autowired
-	DefaultGptService gptService;
-	
+
 	@PersistenceContext
 	private EntityManager entityManager;
 	
@@ -37,7 +28,7 @@ public class AdminController {
 	@Transactional
 	public String clearDatabase(@RequestParam String cmd) 
 	{
-		log.info("GET /admin -> delete all data, cmd == " + cmd  );
+        log.info("GET /admin -> delete all data, cmd == {}", cmd);
 
 		if ( cmd.equals("ok"))
 		{

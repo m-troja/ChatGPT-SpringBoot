@@ -16,7 +16,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -65,7 +64,7 @@ public class DefaultJiraService implements JiraService {
         httpGet.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + jiraKey);
         httpGet.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
-        log.debug("getIssueJson httpGet: {}", httpGet.toString());
+        log.debug("getIssueJson httpGet: {}", httpGet);
 
         try {
             HttpResponse httpResponse = httpClient.execute(httpGet);
@@ -93,7 +92,7 @@ public class DefaultJiraService implements JiraService {
         httpGet.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
         httpGet.setHeader(HttpHeaders.ACCEPT, "application/json");
 
-        log.debug("getIssues httpGet object: {}", httpGet.toString());
+        log.debug("getIssues httpGet object: {}", httpGet);
 
         List<JiraIssue> issues = new ArrayList<>();
 
@@ -154,7 +153,7 @@ public class DefaultJiraService implements JiraService {
 
                 JiraIssue jiraIssue = new JiraIssue(key, summary, description, duedate, assignee, issueType);
                 issues.add(jiraIssue);
-                log.debug("Created jiraIssue: {}", jiraIssue.toString());
+                log.debug("Created jiraIssue: {}", jiraIssue);
             }
             return CompletableFuture.completedFuture(issues);
         } catch (Exception e) {

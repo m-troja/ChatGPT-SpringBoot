@@ -22,11 +22,11 @@ public class AppConfig {
         if (!logDirToCreate.exists()) {
             boolean created = logDirToCreate.mkdirs();
             if (!created) {
-                log.debug(" Failed to create log folder: " + logDirToCreate);
+                log.debug(" Failed to create log folder: {}", logDirToCreate);
             }
         }
 
-        log.debug("Log directory is " + logDir);
+        log.debug("Log directory is {}", logDir);
 
     }
 }
