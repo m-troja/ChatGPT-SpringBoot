@@ -6,8 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.michal.openai.entity.GetReposParameterProperties;
 import com.michal.openai.entity.GptFunction;
 import com.michal.openai.entity.JiraCreateIssueParameterProperties;
@@ -54,7 +52,7 @@ public class BeansConfiguration {
 		return new GetReposFunction();
 	}
 	
-	/* Disabled mailing feauture due to security 
+	/* Disabled mailing feature due to security
 	
 	@Bean("sendEmailFunction")
 	public Function sendEmailCall() {

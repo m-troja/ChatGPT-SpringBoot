@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -20,7 +21,7 @@ import org.springframework.web.servlet.view.JstlView;
 	@Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-        .csrf(csrf -> csrf.disable())
+        .csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/css/**", "/fonts/**", "/images/**", "/js/**", "/vendor/**").permitAll()
             .requestMatchers("/favicon.ico", "/error").permitAll()  
@@ -52,7 +53,6 @@ import org.springframework.web.servlet.view.JstlView;
           .addResourceHandler("/css/**", "/fonts/**", "/images/**", "/js/**", "/vendor/**")
        //   .addResourceLocations("/css/", "/fonts/", "/images/", "/js/", "/vendor/")
           .addResourceLocations("classpath:/public/css/", "classpath:/public/images/", "classpath:/public/", "classpath:/public/js/", "classpath:/public/vendor/");
-;
     }
     
 

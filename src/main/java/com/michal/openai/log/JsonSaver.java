@@ -30,6 +30,7 @@ public class JsonSaver {
         saveJson(request, "request");
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private void saveJson(Object object, String type) {
         log.info("Saving {} json...", type);
         try {

@@ -7,8 +7,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -31,33 +32,28 @@ import com.slack.api.methods.request.chat.ChatPostMessageRequest;
 import com.slack.api.methods.request.users.UsersListRequest;
 import com.slack.api.methods.response.users.UsersListResponse;
 
+@AllArgsConstructor
+@NoArgsConstructor
 @Slf4j
 @Service
 @Data
 public class DefaultSlackService implements SlackService {
 
-	@Autowired
 	@Qualifier("slackBotClient")
 	private MethodsClient slackBotClient;
 	public static final String SUCCESSFULL_REGISTRATION_MESSAGE = "User is registered!";
 	private static final String REGISTRATION_ERROR_MESSAGE = "Error - user already registered!.";
 
-	@Autowired
 	private List<GptFunction> functions;
-	
-	@Autowired
-	ObjectMapper objectMapper;
-
-	@Autowired
-	JpaSlackRepo jpaSlackrepo;
-
+    private ObjectMapper objectMapper;
+    private JpaSlackRepo jpaSlackrepo;
     private GptService gptService;
 
 	@Async("defaultExecutor")
 	@Override
     public void processOnMentionEvent(String requestBody) {
         SlackRequestData slackRequestData = extractSlackRequestData(requestBody);
-        log.debug("processOnMentionEvent requestBody : " + requestBody);
+        log.debug("processOnMentionEvent requestBody : {}", requestBody);
 
         CompletableFuture<String> gptResponseFuture = gptService.getAnswerToSingleQuery(
                 CompletableFuture.completedFuture(slackRequestData.message()),
@@ -67,7 +63,6 @@ public class DefaultSlackService implements SlackService {
 
         sendMessageToSlack(gptResponseFuture, slackRequestData.channelIdFrom());
     }
-
 
 	private SlackRequestData extractSlackRequestData(String requestBody) {
 		log.info("extractSlackRequestData....");
@@ -94,7 +89,7 @@ public class DefaultSlackService implements SlackService {
         String messageAuthorId = eventNode.path("user").asText();
         String message = eventNode.path("text").asText();
         String channelIdFrom = eventNode.path("channel").asText();
-		SlackUser user = new SlackUser();
+		SlackUser user ;
 		try
 		{
 			// Use a Map to before sending request to Slack API
@@ -135,12 +130,12 @@ public class DefaultSlackService implements SlackService {
 			{
 				int startIndex = stringBuilder.indexOf(mention);
 				int endIndex = startIndex + mention.length();
-                log.info("startIndex : {}", startIndex, ", endIndex : " + endIndex);
+                log.info("startIndex : {}, endIndex: {}", startIndex, endIndex);
 
 				stringBuilder.replace(startIndex, endIndex, name);
 			}
 		}
-        log.info("stringBuilder : {}", stringBuilder.toString());
+        log.info("stringBuilder : {}", stringBuilder);
 
 		return stringBuilder.toString();
 	}
@@ -193,7 +188,7 @@ public class DefaultSlackService implements SlackService {
 	                .channel(channelId)
 	                .text(stringToSend)
 	                .build();
-                    log.debug(" sendMessageToSlack response = {}", response);
+                    log.debug("sendMessageToSlack response = {}", response);
                     log.debug("stringToSend = {}", stringToSend);
 
 			        try {
@@ -213,8 +208,7 @@ public class DefaultSlackService implements SlackService {
 		);
 	}
 	
-	public SlackUser getSlackUserBySlackId(String slackid)
-	{
+	public SlackUser getSlackUserBySlackId(String slackid) {
 		return jpaSlackrepo.findBySlackId(slackid);
 	}
 	
@@ -228,8 +222,7 @@ public class DefaultSlackService implements SlackService {
 	@Override
 	public String registerUser(SlackUser user) {
         jpaSlackrepo.save(user);
-        log.info(SUCCESSFULL_REGISTRATION_MESSAGE);
+        log.info("Registered user: {}", user);
         return SUCCESSFULL_REGISTRATION_MESSAGE  ;
     }
-
 }

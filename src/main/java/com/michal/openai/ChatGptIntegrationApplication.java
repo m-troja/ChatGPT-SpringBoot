@@ -1,11 +1,9 @@
 package com.michal.openai;
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.michal.openai.config.AppConfig;
 import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -69,5 +67,4 @@ public class ChatGptIntegrationApplication {
         }
         app.run(args);
     }
-
 }

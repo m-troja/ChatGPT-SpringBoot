@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
@@ -30,6 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @Async
+@AllArgsConstructor
+@NoArgsConstructor
 public class DefaultJiraService implements JiraService {
 
     @Value("${jira.url}")
@@ -50,11 +54,8 @@ public class DefaultJiraService implements JiraService {
     @Value("${jira.maxresults}")
     private String maxresults;
 
-    @Autowired
-    HttpClient httpClient;
-
-    @Autowired
-    ObjectMapper objectMapper;
+    private HttpClient httpClient;
+    private ObjectMapper objectMapper;
 
     public String getIssueJson(String id) {
         String urlToGet = url + issue + "/" + id;
@@ -64,13 +65,13 @@ public class DefaultJiraService implements JiraService {
         httpGet.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + jiraKey);
         httpGet.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
 
-        log.debug("httpGet: {}", httpGet.toString());
+        log.debug("getIssueJson httpGet: {}", httpGet.toString());
 
         try {
             HttpResponse httpResponse = httpClient.execute(httpGet);
             String responseBody = EntityUtils.toString(httpResponse.getEntity(), StandardCharsets.UTF_8);
 
-            log.debug("responseBody: {}", responseBody);
+            log.debug("getIssueJson responseBody: {}", responseBody);
 
             return responseBody;
         } catch (IOException e) {
@@ -92,7 +93,7 @@ public class DefaultJiraService implements JiraService {
         httpGet.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
         httpGet.setHeader(HttpHeaders.ACCEPT, "application/json");
 
-        log.debug("httpGet: {}", httpGet.toString());
+        log.debug("getIssues httpGet object: {}", httpGet.toString());
 
         List<JiraIssue> issues = new ArrayList<>();
 
@@ -159,7 +160,6 @@ public class DefaultJiraService implements JiraService {
         } catch (Exception e) {
            log.error(e.getMessage());
         }
-
         return null;
     }
 
