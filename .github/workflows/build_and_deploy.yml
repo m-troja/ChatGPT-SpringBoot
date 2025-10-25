@@ -45,9 +45,7 @@ jobs:
         id: gitversion
         uses: gittools/actions/gitversion/execute@v4
         with:
-          disableShallowCloneCheck: true
           updateAssemblyInfo: false
-          preferDynamicRepository: true
     
       - name: Build with Maven
         run: mvn -B clean package -DskipTests -Drevision=${{ steps.gitversion.outputs.fullSemVer }}
