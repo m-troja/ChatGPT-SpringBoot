@@ -9,6 +9,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      - name: Fetch full Git history
+        run: |
+          git fetch --prune --unshallow
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
