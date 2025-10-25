@@ -22,6 +22,15 @@ jobs:
           cache: maven
           cache-dependency-path: '**/pom.xml'
 
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+            
       - name: Set up Maven 3.9.9
         uses: s4u/setup-maven-action@v1.14.0
         with:
