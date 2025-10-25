@@ -12,7 +12,8 @@ jobs:
       - name: Full clone for GitVersion
         run: |
           rm -rf /tmp/repo
-          git clone https://github.com/m-troja/ChatGPT-SpringBoot.git /tmp/repo --branch main --depth 0
+          git clone https://github.com/m-troja/ChatGPT-SpringBoot.git /tmp/repo --branch main
+
 
       - name: Run GitVersion
         id: gitversion
@@ -34,16 +35,11 @@ jobs:
         with:
           maven-version: '3.9.9'
 
-      - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v4
-        with:
-          versionSpec: '6.x'
-
-
       - name: Build with Maven
         run: |
-          cd ChatGPT-SpringBoot
+          cd /tmp/repo
           mvn -B clean package -DskipTests -Drevision=${{ steps.gitversion.outputs.fullSemVer }}
+
 
       - name: Prepare SSH
         run: |
@@ -54,9 +50,8 @@ jobs:
 
       - name: Deploy build via rsync
         run: |
-          cd ChatGPT-SpringBoot
           VERSION=${{ steps.gitversion.outputs.fullSemVer }}
-          BUILD_JAR=$(find target -name "*.jar" | head -n 1)
+          BUILD_JAR=$(find /tmp/repo/target -name "*.jar" | head -n 1)
           echo "Deploying version: $VERSION"
           echo "Uploading $BUILD_JAR"
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
@@ -64,6 +59,7 @@ jobs:
             ln -sfn '$VERSION' '${{ secrets.WORK_DIR }}/latest';
           "
           rsync -avz "$BUILD_JAR" ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR }}/$VERSION/
+
 
       - name: Restart app on server
         run: |
