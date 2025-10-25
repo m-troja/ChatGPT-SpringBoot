@@ -9,23 +9,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Full clone for GitVersion
-        run: |
-          rm -rf /tmp/repo
-          git clone https://github.com/m-troja/ChatGPT-SpringBoot.git /tmp/repo --branch main
-
-      - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v4
+      - name: Checkout repository
+        uses: actions/checkout@v5
         with:
-          versionSpec: '6.x'
-      
-      - name: Run GitVersion
-        id: gitversion
-        uses: gittools/actions/gitversion/execute@v4
-        with:
-          targetPath: /tmp/repo
-          updateAssemblyInfo: false
-
+          fetch-depth: 0
+          persist-credentials: false
+          fetch-tags: true
+          ref: main
 
       - name: Set up Java 25
         uses: actions/setup-java@v5
@@ -40,11 +30,20 @@ jobs:
         with:
           maven-version: '3.9.9'
 
-      - name: Build with Maven
-        run: |
-          cd /tmp/repo
-          mvn -B clean package -DskipTests -Drevision=${{ steps.gitversion.outputs.fullSemVer }}
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v4
+        with:
+          versionSpec: '6.x'
 
+      - name: Run GitVersion
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v4
+        with:
+          updateAssemblyInfo: false
+          disableShallowCloneCheck: true
+
+      - name: Build with Maven
+        run: mvn -B clean package -DskipTests -Drevision=${{ steps.gitversion.outputs.fullSemVer }}
 
       - name: Prepare SSH
         run: |
@@ -56,7 +55,7 @@ jobs:
       - name: Deploy build via rsync
         run: |
           VERSION=${{ steps.gitversion.outputs.fullSemVer }}
-          BUILD_JAR=$(find /tmp/repo/target -name "*.jar" | head -n 1)
+          BUILD_JAR=$(find target -name "*.jar" | head -n 1)
           echo "Deploying version: $VERSION"
           echo "Uploading $BUILD_JAR"
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
@@ -65,11 +64,8 @@ jobs:
           "
           rsync -avz "$BUILD_JAR" ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR }}/$VERSION/
 
-
       - name: Restart app on server
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "sudo systemctl restart chatgpt.service"
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "sudo systemctl restart chatgpt.service"
 
       - name: Cleanup SSH
         run: rm -rf ~/.ssh
