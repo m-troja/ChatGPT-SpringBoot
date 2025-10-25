@@ -37,7 +37,8 @@ jobs:
           java-version: '21'
           cache: maven
           cache-dependency-path: '**/pom.xml'
-
+      - name: Check Java version
+        run: java -version
       - name: Set up Maven 3.9.9
         uses: s4u/setup-maven-action@v1.19.0
         with:
