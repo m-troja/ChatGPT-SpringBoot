@@ -13,6 +13,7 @@
       <item index="8" class="java.lang.String" itemvalue="org.springframework.web.bind.annotation.RestController" />
     </list>
     <writeAnnotations>
+      <writeAnnotation name="jakarta.persistence.PersistenceContext" />
       <writeAnnotation name="org.springframework.beans.factory.annotation.Autowired" />
       <writeAnnotation name="org.springframework.beans.factory.annotation.Value" />
     </writeAnnotations>

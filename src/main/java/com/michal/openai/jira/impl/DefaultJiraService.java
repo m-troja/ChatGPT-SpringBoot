@@ -6,8 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
@@ -31,8 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @Async
-@AllArgsConstructor
-@NoArgsConstructor
+@RequiredArgsConstructor
 public class DefaultJiraService implements JiraService {
 
     @Value("${jira.url}")
@@ -53,8 +51,8 @@ public class DefaultJiraService implements JiraService {
     @Value("${jira.maxresults}")
     private String maxresults;
 
-    private HttpClient httpClient;
-    private ObjectMapper objectMapper;
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
 
     public String getIssueJson(String id) {
         String urlToGet = url + issue + "/" + id;
@@ -81,7 +79,7 @@ public class DefaultJiraService implements JiraService {
     }
 
     /*
-     * Send request of all issue to Jira API, then return list of issue-objects
+     * Send all-issues request to Jira API, then return list of issue-objects
      */
     public CompletableFuture<List<JiraIssue>> getIssues() {
         String urlToGet = url + search + "?jql=project=" + projectName;
