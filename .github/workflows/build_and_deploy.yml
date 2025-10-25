@@ -16,7 +16,8 @@ jobs:
           fetch-depth: 0
           clean: all
           persist-credentials: false
-
+      - name: Unshallow repository for GitVersion
+        run: git fetch --prune --unshallow
 
       - name: Set up Java 25
         uses: actions/setup-java@v5
