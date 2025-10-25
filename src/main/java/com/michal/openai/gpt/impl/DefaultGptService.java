@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import com.michal.openai.log.JsonSaver;
+import lombok.Data;
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,7 @@ import com.michal.openai.slack.SlackService;
 
 import lombok.extern.slf4j.Slf4j;
 
+@Data
 @Slf4j
 @Service
 public class DefaultGptService implements GptService {
@@ -59,9 +61,7 @@ public class DefaultGptService implements GptService {
     private String systemInitialMessage;
     @Value("${CHAT_JSON_DIR}")
     private String jsonDir;
-    @Autowired
     private JpaGptRequestRepo jpaGptRequestRepo;
-	@Autowired
     private final RequestJdbcTemplateRepo requestTemplateRepo;
     @Qualifier("gptRestClient")
     private final RestClient restClient;

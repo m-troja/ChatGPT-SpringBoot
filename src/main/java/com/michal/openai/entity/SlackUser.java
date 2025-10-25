@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Data
 @Entity
@@ -19,10 +20,10 @@ public class SlackUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // Use Identity for MySQL auto-increment
     private int id;
     
-    @Column(name = "slackid")
+    @Column(name = "slackid") @Setter
     private String slackId;
     
-    @Column(name = "real_name")
+    @Column(name = "real_name") @Setter
     private String realName;
 
 	@Override

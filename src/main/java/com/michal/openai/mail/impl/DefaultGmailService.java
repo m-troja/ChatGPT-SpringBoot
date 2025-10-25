@@ -2,6 +2,7 @@ package com.michal.openai.mail.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import jakarta.mail.Authenticator;
@@ -46,9 +47,9 @@ public class DefaultGmailService implements GmailService {
 			Properties props = new Properties();
 			props.put("mail.smtp.auth", "true");
 			props.put("mail.smtp.socketFactory.class", "jakarta.net.ssl.SSLSocketFactory");
-			props.put("mail.smtp.socketFactory.port", smtpPort);
+			props.put(Optional.of("mail.smtp.socketFactory.port"), smtpPort);
 			props.put("mail.smtp.host", smtpHost);
-			props.put("mail.smtp.port", smtpPort);
+			props.put(Optional.of("mail.smtp.port"), smtpPort);
 
 			// Create a Session object with authentication
 			Session session = Session.getInstance(props, new Authenticator() {
