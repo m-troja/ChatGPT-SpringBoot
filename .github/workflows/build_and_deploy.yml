@@ -23,7 +23,7 @@ jobs:
           cache-dependency-path: '**/pom.xml'
 
       - name: Set up Maven 3.9.9
-        uses: s4u/setup-maven-action@v2
+        uses: s4u/setup-maven-action@v1.19.0
         with:
           maven-version: '3.9.9'
 
