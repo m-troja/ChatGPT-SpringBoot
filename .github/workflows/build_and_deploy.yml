@@ -40,10 +40,10 @@ jobs:
       - name: Check Java version
         run: java -version
     
-      - name: Set up Maven 3.12.1
+      - name: Set up Maven 3.9.9
         uses: s4u/setup-maven-action@v1.19.0
         with:
-            maven-version: '3.12.1'
+            maven-version: '3.9.9'
             java-version: '25'
 
       - name: Build with Maven
