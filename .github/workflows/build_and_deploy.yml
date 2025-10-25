@@ -10,13 +10,11 @@ jobs:
 
     steps:
 
-      - name: Fetch full Git history
-        run: |
-          git fetch --prune --unshallow
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          tags: true
 
       - name: Set up Java 25
         uses: actions/setup-java@v5
