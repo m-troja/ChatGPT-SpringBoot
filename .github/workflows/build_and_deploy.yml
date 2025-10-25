@@ -15,6 +15,7 @@ jobs:
         with:
           fetch-depth: 0
           clean: all
+          persist-credentials: false
 
 
       - name: Set up Java 25
