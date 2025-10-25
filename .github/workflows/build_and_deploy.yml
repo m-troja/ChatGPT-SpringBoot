@@ -16,7 +16,13 @@ jobs:
           clean: all
           persist-credentials: false
           fetch-tags: true
-          ref: main
+  
+      - name: Ensure full Git history
+        run: |
+          if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+            git fetch --prune --unshallow
+          fi  
+        
       - name: Set up Java 25
         uses: actions/setup-java@v5
         with:
