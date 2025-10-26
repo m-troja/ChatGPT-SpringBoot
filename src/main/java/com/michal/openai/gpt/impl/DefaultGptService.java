@@ -7,10 +7,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import com.michal.openai.log.JsonSaver;
+import com.michal.openai.persistence.*;
 import lombok.Data;
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -26,12 +26,6 @@ import com.michal.openai.entity.GptResponse;
 import com.michal.openai.entity.GptTool;
 import com.michal.openai.entity.SlackUser;
 import com.michal.openai.gpt.GptService;
-import com.michal.openai.persistence.JpaGptMessageRepo;
-import com.michal.openai.persistence.JpaGptRequestRepo;
-import com.michal.openai.persistence.JpaGptResponseRepo;
-import com.michal.openai.persistence.RequestJdbcTemplateRepo;
-import com.michal.openai.persistence.ResponseJdbcTemplateRepo;
-import com.michal.openai.slack.SlackService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class DefaultGptService implements GptService {
-    private String test = "testtt";
+
 	private static final String ROLE_USER = "user";
 	private static final String ROLE_SYSTEM = "system";
 	private static final String ROLE_ASSISTANT = "assistant";
@@ -61,6 +55,7 @@ public class DefaultGptService implements GptService {
     private String systemInitialMessage;
     @Value("${CHAT_JSON_DIR}")
     private String jsonDir;
+    private List<GptTool> tools = new ArrayList<>();
     private JpaGptRequestRepo jpaGptRequestRepo;
     private final RequestJdbcTemplateRepo requestTemplateRepo;
     @Qualifier("gptRestClient")
@@ -69,11 +64,11 @@ public class DefaultGptService implements GptService {
     private final JpaGptResponseRepo jpaGptResponseRepo;
     private final JpaGptMessageRepo meesageRepo;
     private final ResponseJdbcTemplateRepo responseJdbc;
-    private List<GptTool> tools = new ArrayList<>();
-	private SlackService slackService;
+    private final JpaSlackRepo jpaSlackrepo;
 
+    // Constructor needed because of @Qualifier("gptRestClient")
     public DefaultGptService(JpaGptRequestRepo jpaGptRequestRepo, RequestJdbcTemplateRepo requestTemplateRepo, @Qualifier("gptRestClient") RestClient restClient, HttpClient httpClient, FunctionFacory functionFactory, JpaGptResponseRepo jpaGptResponseRepo,
-                             JpaGptMessageRepo meesageRepo, ResponseJdbcTemplateRepo responseJdbc, List<GptTool> tools, SlackService slackService) {
+                             JpaGptMessageRepo meesageRepo, ResponseJdbcTemplateRepo responseJdbc, List<GptTool> tools, JpaSlackRepo jpaSlackrepo) {
         this.jpaGptRequestRepo = jpaGptRequestRepo;
         this.requestTemplateRepo = requestTemplateRepo;
         this.restClient = restClient;
@@ -82,7 +77,7 @@ public class DefaultGptService implements GptService {
         this.meesageRepo = meesageRepo;
         this.responseJdbc = responseJdbc;
         this.tools = tools;
-        this.slackService = slackService;
+        this.jpaSlackrepo = jpaSlackrepo;
     }
 	/*
 	 * Called by SlackAPI controller.
@@ -92,9 +87,9 @@ public class DefaultGptService implements GptService {
 	public CompletableFuture<String> getAnswerToSingleQuery(CompletableFuture<String> queryFuture, CompletableFuture<String> userNameFuture, GptFunction... gptFunctions ) {
 		GptRequest gptRequest = new GptRequest();
     	try {
-    		
+
 			String userSlackId = userNameFuture.get();
-			String userRealName = slackService.getSlackUserBySlackId(userSlackId).getRealName();
+			String userRealName = getSlackUserBySlackId(userSlackId).getRealName();
 			String query = queryFuture.get();
 			
     		SlackUser slackUserRequestAuthor = new SlackUser(userSlackId, userRealName);
@@ -102,8 +97,8 @@ public class DefaultGptService implements GptService {
 	    	gptRequest.setAuthor(userSlackId);
 	    	gptRequest.setContent(query);
 	    	gptRequest.setAuthorRealname(userRealName);
-	    
-			log.info("getAnswerToSingleQuery : " + query + ", userName : " + userSlackId + ", gptFunctions : " + gptFunctions.toString());
+
+            log.info("getAnswerToSingleQuery : {}, userName : {}, gptFunctions : {}", query, userSlackId, gptFunctions.toString());
 	
 			if (userSlackId != null) {
 				userSlackId = userSlackId.replaceAll("\\s+", "_");
@@ -111,8 +106,8 @@ public class DefaultGptService implements GptService {
 			
 			/* Define list of messages to sent to GPT */ 
 			
-			List<GptMessage> requests = getLastRequestsOfUser(slackService.getSlackUserBySlackId(userSlackId));
-			List<GptMessage> responses = getLastResponsesToUser(slackService.getSlackUserBySlackId(userSlackId));
+			List<GptMessage> requests = getLastRequestsOfUser(getSlackUserBySlackId(userSlackId));
+			List<GptMessage> responses = getLastResponsesToUser(getSlackUserBySlackId(userSlackId));
 			List<GptMessage> messages = new ArrayList<>();	
 			
 			GptMessage message = new GptMessage(ROLE_USER, query, userSlackId);
@@ -164,8 +159,8 @@ public class DefaultGptService implements GptService {
 		log.error("Returning null from getAnswerToSingleQuery");
 		
 		return null;
-	}	
-	
+	}
+
 	@Async("defaultExecutor")
 	public CompletableFuture<String> getResponseFromGpt(GptRequest gptRequest, SlackUser slackUserRequestAuthor) throws IOException 
 	{
@@ -365,5 +360,9 @@ public class DefaultGptService implements GptService {
 			);
 			return new GptMessage(ROLE_SYSTEM, content);
 	}
+
+    public SlackUser getSlackUserBySlackId(String slackId) {
+        return jpaSlackrepo.findBySlackId(slackId);
+    }
 	
 }

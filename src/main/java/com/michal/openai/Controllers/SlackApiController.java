@@ -22,7 +22,7 @@ public class SlackApiController {
 	public String doPost(@RequestBody String requestBody)
 	{
         log.info("Received POST /v1/slack");
-        log.debug("Received POST /v1/slack with body: {}", requestBody);
+        log.debug("Received POST /v1/slack with body: {} \n", requestBody);
 
 		slackService.processOnMentionEvent(requestBody);
 

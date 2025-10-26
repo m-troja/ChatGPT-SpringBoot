@@ -7,9 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -32,22 +30,20 @@ import com.slack.api.methods.request.chat.ChatPostMessageRequest;
 import com.slack.api.methods.request.users.UsersListRequest;
 import com.slack.api.methods.response.users.UsersListResponse;
 
-@AllArgsConstructor
-@NoArgsConstructor
+@Data
 @Slf4j
 @Service
-@Data
 public class DefaultSlackService implements SlackService {
 
-	@Qualifier("slackBotClient")
-	private MethodsClient slackBotClient;
-	public static final String SUCCESSFULL_REGISTRATION_MESSAGE = "User is registered!";
-	private static final String REGISTRATION_ERROR_MESSAGE = "Error - user already registered!.";
+    public static final String SUCCESSFULL_REGISTRATION_MESSAGE = "User is registered!";
+    public static final String REGISTRATION_ERROR_MESSAGE = "Error - user already registered!.";
 
-	private List<GptFunction> functions;
-    private ObjectMapper objectMapper;
-    private JpaSlackRepo jpaSlackrepo;
-    private GptService gptService;
+    @Qualifier("slackBotClient")
+	private final MethodsClient slackBotClient;
+	private final List<GptFunction> functions;
+    private final ObjectMapper objectMapper;
+    private final JpaSlackRepo jpaSlackrepo;
+    private final GptService gptService;
 
 	@Async("defaultExecutor")
 	@Override
@@ -66,6 +62,7 @@ public class DefaultSlackService implements SlackService {
 
 	private SlackRequestData extractSlackRequestData(String requestBody) {
 		log.info("extractSlackRequestData....");
+        log.debug("Request body: {} \n", requestBody);
 		JsonNode jsonNode = null;
 		
 		try {
@@ -208,8 +205,8 @@ public class DefaultSlackService implements SlackService {
 		);
 	}
 	
-	public SlackUser getSlackUserBySlackId(String slackid) {
-		return jpaSlackrepo.findBySlackId(slackid);
+	public SlackUser getSlackUserBySlackId(String slackId) {
+		return jpaSlackrepo.findBySlackId(slackId);
 	}
 	
 	public List<SlackUser> getAllSlackUsers()
