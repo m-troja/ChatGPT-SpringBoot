@@ -81,13 +81,11 @@
 
     <!-- Custom loggers -->
     <logger name="com.michal.openai" level="DEBUG" />
-
     <logger name="org.springframework.boot" level="INFO" />
     <logger name="org.springframework.boot.context" level="INFO"/>
     <logger name="org.springframework.boot.SpringApplication" level="INFO"/>
     <logger name="org.springframework.boot.StartupInfoLogger" level="INFO"/>
     <logger name="org.springframework.boot.autoconfigure" level="INFO"/>
-    
     <logger name="org.apache.catalina" level="INFO"/>
     <logger name="org.apache.coyote" level="INFO"/>
     <logger name="org.hibernate" level="INFO"/>
