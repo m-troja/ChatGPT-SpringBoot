@@ -33,6 +33,11 @@ jobs:
             maven-version: '3.9.9'
             java-version: '21'
 
+      - name: Unshallow repo for GitVersion
+        run: |
+          git fetch --unshallow || echo "Already complete"
+          git fetch --tags
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v4
