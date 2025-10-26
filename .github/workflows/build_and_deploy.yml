@@ -20,9 +20,7 @@ jobs:
 
       - name: Ensure full Git history
         run: |
-          git fetch --unshallow || true
           git fetch --tags
-          git fetch origin +refs/heads/*:refs/remotes/origin/*
           git describe --tags --always
           
       - name: Set up Maven 3.9.9
