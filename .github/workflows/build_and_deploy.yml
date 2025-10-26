@@ -33,6 +33,11 @@ jobs:
             maven-version: '3.9.9'
             java-version: '21'
 
+      - name: Unshallow repo for GitVersion
+        run: |
+          git fetch --unshallow || echo "Already complete"
+          git fetch --tags
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v4
@@ -69,12 +74,6 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean package -DskipTests -Dmaven.compiler.showDeprecation=true -Djava.compiler.args="--enable-preview"
 
-      - name: Rename artifact
-        run: |
-          VERSION=${{ steps.gitversion.outputs.fullSemVer }}
-          mv target/chatgpt-integration-*.jar target/chatgpt-integration-${VERSION}.jar
-          echo "Built artifact: target/chatgpt-integration-${VERSION}.jar"
-          
       - name: Prepare SSH
         run: |
           mkdir -p ~/.ssh
