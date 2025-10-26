@@ -12,16 +12,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0    
+          fetch-depth: 0
           clean: true
           persist-credentials: false
           fetch-tags: true
           ref: main
 
-      - name: Ensure full Git history
+      - name: Ensure full Git history and tags for GitVersion
         run: |
-          git fetch --tags
-          git describe --tags --always
+          git fetch --prune --unshallow || true
+          git fetch --tags --force
+          echo "Git history depth: $(git rev-list --count HEAD)"
+          echo "Latest tag:"
+          git describe --tags --abbrev=0 || echo "No tags found"
+          git tag -l
           
       - name: Set up Maven 3.9.9
         uses: s4u/setup-maven-action@v1.19.0
