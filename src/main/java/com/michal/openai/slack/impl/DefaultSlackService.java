@@ -38,6 +38,7 @@ public class DefaultSlackService implements SlackService {
     public static final String SUCCESSFULL_REGISTRATION_MESSAGE = "User is registered!";
     public static final String REGISTRATION_ERROR_MESSAGE = "Error - user already registered!.";
     //test
+    // test 1.1
     @Qualifier("slackBotClient")
 	private final MethodsClient slackBotClient;
 	private final List<GptFunction> functions;
