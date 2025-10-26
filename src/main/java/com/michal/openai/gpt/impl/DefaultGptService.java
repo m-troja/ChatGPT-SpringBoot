@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class DefaultGptService implements GptService {
-    private String test = "test";
+    private String test = "testt";
 	private static final String ROLE_USER = "user";
 	private static final String ROLE_SYSTEM = "system";
 	private static final String ROLE_ASSISTANT = "assistant";
