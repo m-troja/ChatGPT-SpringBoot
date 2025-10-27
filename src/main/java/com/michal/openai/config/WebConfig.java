@@ -1,4 +1,4 @@
-package com.michal.openai;
+package com.michal.openai.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

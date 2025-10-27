@@ -1,5 +1,7 @@
-package com.michal.openai;
+package com.michal.openai.config;
 
+import com.michal.openai.functions.impl.*;
+import com.michal.openai.tasksystem.entity.TaskSystemCreateIssueParameterProperties;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,10 +14,6 @@ import com.michal.openai.entity.JiraCreateIssueParameterProperties;
 import com.michal.openai.entity.WeatherParameterProperties;
 import com.michal.openai.entity.WeatherParameterProperties.MeasurementUnit;
 import com.michal.openai.functions.Function;
-import com.michal.openai.functions.impl.CreateIssueFunction;
-import com.michal.openai.functions.impl.GetAllJiraIssues;
-import com.michal.openai.functions.impl.GetReposFunction;
-import com.michal.openai.functions.impl.GetWeatherInfoFunction;
 import com.slack.api.Slack;
 import com.slack.api.methods.MethodsClient;
 
@@ -25,8 +23,6 @@ public class BeansConfiguration {
 	@Value("${slack.bot.oauth.token}")
 	private String slackSecurityTokenBot ;
 
- 
-	        
 	@Bean
 	public HttpClient httpClient() {
 		return HttpClientBuilder.create().build();
@@ -38,9 +34,7 @@ public class BeansConfiguration {
 	}
 	
 	@Bean("getAllJiraIssuesFunction")
-	public Function allJiraIssuesFunctionCall() {
-		return new GetAllJiraIssues();
-	}
+	public Function allJiraIssuesFunctionCall() { return new GetAllJiraIssues(); }
 	
 	@Bean("createJiraIssueCall")
 	public Function createJiraIssueCall() {
@@ -51,7 +45,12 @@ public class BeansConfiguration {
 	public Function getReposFunctionCall() {
 		return new GetReposFunction();
 	}
-	
+
+//    Managed by @Component
+//    @Bean("getAllTaskSystemIssuesFunctionCall")
+//    public Function getAllTaskSystemIssuesFunctionCall() {
+//        return new GetAllTaskSystemIssuesFunction(); }
+
 	/* Disabled mailing feature due to security
 	
 	@Bean("sendEmailFunction")
@@ -145,6 +144,43 @@ public class BeansConfiguration {
 		return gptFunction;
 	}
 
+    @Bean("defineCreateTaskSystemIssueFunction")
+    public GptFunction defineCreateTaskSystemIssueFunction(
+            @Value("${gpt.function.tasksystem.create.issue.name}") String functionName,
+            @Value("${gpt.function.tasksystem.create.issue.description}") String description,
+            @Value("${gpt.function.tasksystem.create.issue.attr.description.desc}") String descrAttrDescription,
+            @Value("${gpt.function.tasksystem.create.issue.attr.priority.desc}") String priorityAttrDescription,
+            @Value("${gpt.function.tasksystem.create.issue.attr.authorid.desc}") String authorIdAttrDescription,
+            @Value("${gpt.function.tasksystem.create.issue.attr.assigneeid.desc}") String assigneeIdAttrDescription,
+            @Value("${gpt.function.tasksystem.create.issue.attr.duedate.desc}") String dueDateAttrDescription,
+            @Value("${gpt.function.tasksystem.create.issue.attr.projectid.desc}") String projectIdAttrDescription,
+            @Value("${gpt.function.tasksystem.create.issue.attr.duedate.format}") String dueDateFormat
+    )
+    {
+        var gptFunction = new GptFunction();
+        gptFunction.setName(functionName);
+        gptFunction.setDescription(description);
+
+        // Predefine function parameters
+        var properties = new TaskSystemCreateIssueParameterProperties();
+        properties.setDescription(properties.new Description("string",descrAttrDescription));
+        properties.setPriority(properties.new Priority("string",priorityAttrDescription, new String[]{"LOW", "NORMAL", "HIGH", "CRITICAL"}));
+        properties.setAuthorId(properties.new AuthorId("string",authorIdAttrDescription));
+        properties.setAssigneeId(properties.new AssigneeId("string",assigneeIdAttrDescription));
+        properties.setDueDate(properties.new DueDate("string",dueDateAttrDescription, dueDateFormat));
+        properties.setProjectId(properties.new ProjectId("string",projectIdAttrDescription));
+
+        // Define function's parameters
+        GptFunction.Parameters parameters = gptFunction.new Parameters();
+        parameters.setType("object");
+        parameters.setProperties(properties);
+        parameters.setRequired(new String[] {"description", "priority", "authorid","assigneeid", "duedate", "projectid"});
+
+        gptFunction.setParameters(parameters);
+
+        return gptFunction;
+    }
+
 	@Bean("defineGetReposFunction")
 	public GptFunction getRepos( 
 			@Value("${github.function.desc}") String functionDescription,
@@ -185,5 +221,14 @@ public class BeansConfiguration {
 		return Slack.getInstance().methods(slackSecurityTokenBot);
 	}
 
-
+    /*
+     *  Task-System Functions definition
+     */
+    @Bean("defineAllTaskSystemIssuesFunction")
+    public GptFunction defineGetAllTaskSystemIssuesFunction() {
+        var gptFunction = new GptFunction();
+        gptFunction.setName("getAllTaskSystemIssuesFunction");
+        gptFunction.setDescription("Get all issues in Task-System: key, assignee, description, summary, due date etc...");
+        return gptFunction;
+    }
 }

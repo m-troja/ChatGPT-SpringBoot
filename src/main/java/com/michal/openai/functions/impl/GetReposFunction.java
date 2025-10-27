@@ -20,7 +20,7 @@ public class GetReposFunction implements Function {
 	
 	@Override
 	public CompletableFuture<String> execute(String loginJson) {
-		log.info(" execute githubService with login Json: " + loginJson);
+        log.info("Execute githubService with login Json: {}", loginJson);
 		
 		String login = "";
 		try 
@@ -28,7 +28,7 @@ public class GetReposFunction implements Function {
 			ObjectMapper mapper = new ObjectMapper();
 	        JsonNode root = mapper.readTree(loginJson);
 	        login = root.get("login").asText();
-			log.debug( " extracted login : "  + login);
+            log.debug("Extracted login : {}", login);
 		}
 		catch (Exception e)
 		{
@@ -38,9 +38,9 @@ public class GetReposFunction implements Function {
 		try {
 			return githubService.getUserReposWithBranches(login);
 		} catch (IOException e) {
-			
-			 log.error("Failed to fetch repositories for user: " + loginJson, e);
-	            return CompletableFuture.failedFuture(e);
+
+            log.error("Failed to fetch repositories for user: {}", loginJson, e);
+	        return CompletableFuture.failedFuture(e);
 		}
 
 	}
