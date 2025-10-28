@@ -10,9 +10,9 @@ import com.michal.openai.entity.SlackUser;
 @Repository
 public interface JpaSlackRepo extends CrudRepository<SlackUser, Integer> {
 	
-	 List<SlackUser> findAllByOrderBySlackId();
+	 List<SlackUser> findAllByOrderBySlackUserId();
 	
-	 SlackUser findBySlackId(String slackId);
+	 SlackUser findBySlackUserId(String slackId);
 
 
 }

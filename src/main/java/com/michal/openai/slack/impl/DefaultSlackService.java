@@ -61,7 +61,6 @@ public class DefaultSlackService implements SlackService {
 
 	private SlackRequestData extractSlackRequestData(String requestBody) {
 		log.info("extractSlackRequestData....");
-        log.debug("Request body: {} \n", requestBody);
 		JsonNode jsonNode = null;
 		
 		try {
@@ -119,7 +118,7 @@ public class DefaultSlackService implements SlackService {
 		// For slackID in array of slackIDs, assign realName and switch slackID to realName
 		for(String userId : userIds)
 		{
-			String name = getSlackUserBySlackId(userId).getRealName();
+			String name = getSlackUserBySlackId(userId).getSlackName();
 			String mention = "<@" + userId + ">";
 			
 			if(name != null)
@@ -181,7 +180,8 @@ public class DefaultSlackService implements SlackService {
 				{
 					String stringToSend = response != null ? response : "[No response]";
 					ChatPostMessageRequest request = ChatPostMessageRequest.builder()
-	                .channel(channelId)
+//	                .channel(channelId)
+	                .channel("asdasd")
 	                .text(stringToSend)
 	                .build();
                     log.debug("sendMessageToSlack response = {}", response);
@@ -205,17 +205,17 @@ public class DefaultSlackService implements SlackService {
 	}
 	
 	public SlackUser getSlackUserBySlackId(String slackId) {
-		return jpaSlackrepo.findBySlackId(slackId);
+		return jpaSlackrepo.findBySlackUserId(slackId);
 	}
 	
 	public List<SlackUser> getAllSlackUsers()
 	{
-		List<SlackUser> users = jpaSlackrepo.findAllByOrderBySlackId();
-        log.debug("All slack users: {}", users.toString());
+		List<SlackUser> users = jpaSlackrepo.findAllByOrderBySlackUserId();
+        log.debug("All slack users: {}", users);
 		return users;
 	}
-	
-	@Override
+
+    @Override
 	public String registerUser(SlackUser user) {
         jpaSlackrepo.save(user);
         log.info("Registered user: {}", user);

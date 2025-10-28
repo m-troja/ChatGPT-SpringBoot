@@ -19,21 +19,23 @@ public class SlackUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // Use Identity for MySQL auto-increment
     private int id;
-    
-    @Column(name = "slackid") @Setter
-    private String slackId;
-    
-    @Column(name = "real_name") @Setter
-    private String realName;
+
+    @Setter
+    @Column(name = "slackid")
+    private String slackUserId;
+
+    @Setter
+    @Column(name = "real_name")
+    private String slackName;
 
 	@Override
 	public String toString() {
-		return "SlackUser [id=" + id + ", slackId=" + slackId + ", realName=" + realName + "]";
+		return "SlackUser [id=" + id + ", slackId=" + slackUserId + ", realName=" + slackName + "]";
 	}
 
-	public SlackUser(String slackId, String realName) {
+	public SlackUser(String slackUserId, String slackName) {
 		super();
-		this.slackId = slackId;
-		this.realName = realName;
+		this.slackUserId = slackUserId;
+		this.slackName = slackName;
 	}
 }

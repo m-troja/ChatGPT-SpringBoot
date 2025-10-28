@@ -2,6 +2,8 @@ package com.michal.openai.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -27,13 +29,13 @@ import org.springframework.web.servlet.view.JstlView;
             .requestMatchers("/favicon.ico", "/error").permitAll()  
 
             .requestMatchers("/chatgpt", "/", "/WEB-INF/jsp/**", "/v1/slack", "/v1/jira/**", "/v1/jira/issue").permitAll()
+            .requestMatchers("/api/v1/users/**").permitAll()
             .requestMatchers("/admin/**").permitAll()
             .requestMatchers("/authorize", "/oauth2callback").permitAll()
             .requestMatchers("/swagger").permitAll()
             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
             .anyRequest().authenticated()
         );
-
     return http.build();
 	}    
 	        

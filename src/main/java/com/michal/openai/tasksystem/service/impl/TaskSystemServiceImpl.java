@@ -23,7 +23,8 @@ import java.util.concurrent.CompletionException;
 public class TaskSystemServiceImpl implements TaskSystemService {
 
     private String getAllIssuesEndpoint = "/api/v1/issue/all";
-    private String createIssueEndpoint = "/api/v1/issue/create";
+    private String createIssueEndpoint = "/api/v1/chatgpt/issue/create";
+    private String getUserBySlackUserIdEndpoint = "/api/v1/chatgpt/user/slack-user-id";
 
     @Qualifier("taskSystemRestClient")
     private final RestClient restClient;
@@ -34,7 +35,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
     //   Send "CreateIssue" request to Task-System
     @Override
     public CompletableFuture<String> createIssue(String requestBody) {
-        log.debug("Inside createIssue...");
+        log.debug("Inside createIssue with requestBody: {}", requestBody);
         return CompletableFuture.supplyAsync(() -> {
             try
             {
@@ -48,6 +49,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
                 log.debug("Rest Client: Push Task-System-Request-JSON to Task-System-API");
                 TaskSystemIssueDto issueDtoResponse =
                         restClient.post()
+                        .uri(createIssueEndpoint)
                         .body(createIssueRequest)
                         .retrieve()
                         .body(TaskSystemIssueDto.class);
@@ -56,13 +58,11 @@ public class TaskSystemServiceImpl implements TaskSystemService {
             catch (JsonProcessingException e)
             {
                 log.error("Failed to serialize create issue request to JSON, {}", e.getMessage());
-                log.debug("Failed to serialize create issue request to JSON, {}", e.getMessage());
                 throw new CompletionException(e);
             }
             catch (Exception e)
             {
                 log.error("Error creating issue: {}", e.getMessage());
-                log.debug("Error creating issue: {}", e.getMessage());
                 throw new CompletionException(e);
             }
             return null;

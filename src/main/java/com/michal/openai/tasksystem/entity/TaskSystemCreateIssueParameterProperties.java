@@ -7,14 +7,25 @@ import lombok.Data;
 @Data
 public class TaskSystemCreateIssueParameterProperties implements ParameterProperties  {
 
+    private TaskSystemCreateIssueParameterProperties.Title title;
     private TaskSystemCreateIssueParameterProperties.Description description;
     private TaskSystemCreateIssueParameterProperties.Priority priority;
-    private TaskSystemCreateIssueParameterProperties.AuthorId authorId;
-    private TaskSystemCreateIssueParameterProperties.AssigneeId assigneeId;
+    private AuthorSlackId authorSlackId;
+    private AssigneeSlackId assigneeSlackId;
     private TaskSystemCreateIssueParameterProperties.DueDate dueDate;
     private TaskSystemCreateIssueParameterProperties.ProjectId projectId;
 
     @Data
+    public class Title extends ParameterPropertyAttribute
+    {
+        public Title() {
+            super();
+        }
+        public Title(String type, String description) {
+            super(type, description);
+        }
+
+    }@Data
     public class Description extends ParameterPropertyAttribute
     {
         public Description() {
@@ -38,23 +49,23 @@ public class TaskSystemCreateIssueParameterProperties implements ParameterProper
     }
 
     @Data
-    public class AuthorId extends ParameterPropertyAttribute
+    public class AuthorSlackId extends ParameterPropertyAttribute
     {
-        public AuthorId() {
+        public AuthorSlackId() {
             super();
         }
-        public AuthorId(String type, String description) {
+        public AuthorSlackId(String type, String description) {
             super(type, description);
         }
     }
 
     @Data
-    public class AssigneeId extends ParameterPropertyAttribute
+    public class AssigneeSlackId extends ParameterPropertyAttribute
     {
-        public AssigneeId() {
+        public AssigneeSlackId() {
             super();
         }
-        public AssigneeId(String type, String description) {
+        public AssigneeSlackId(String type, String description) {
             super(type, description); }
     }
 
@@ -82,4 +93,5 @@ public class TaskSystemCreateIssueParameterProperties implements ParameterProper
         }
 
     }
+
 }

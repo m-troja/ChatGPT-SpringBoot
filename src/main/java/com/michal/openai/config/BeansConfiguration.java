@@ -57,7 +57,6 @@ public class BeansConfiguration {
 	public Function sendEmailCall() {
 		return new SendEmailFunction();
 	}
-	
 
 	@Bean("gptSendEmailFunction")
 	public GptFunction gptSendEmailFunction(@Value("${gpt.function.gmail.send.email.name}") String functionName,
@@ -148,10 +147,11 @@ public class BeansConfiguration {
     public GptFunction defineCreateTaskSystemIssueFunction(
             @Value("${gpt.function.tasksystem.create.issue.name}") String functionName,
             @Value("${gpt.function.tasksystem.create.issue.description}") String description,
+            @Value("${gpt.function.tasksystem.create.issue.attr.title.desc}") String titleAttrDescription,
             @Value("${gpt.function.tasksystem.create.issue.attr.description.desc}") String descrAttrDescription,
             @Value("${gpt.function.tasksystem.create.issue.attr.priority.desc}") String priorityAttrDescription,
-            @Value("${gpt.function.tasksystem.create.issue.attr.authorid.desc}") String authorIdAttrDescription,
-            @Value("${gpt.function.tasksystem.create.issue.attr.assigneeid.desc}") String assigneeIdAttrDescription,
+            @Value("${gpt.function.tasksystem.create.issue.attr.authorslackid.desc}") String authorSlackIdAttrDescription,
+            @Value("${gpt.function.tasksystem.create.issue.attr.assigneeslackid.desc}") String assigneeSlackIdAttrDescription,
             @Value("${gpt.function.tasksystem.create.issue.attr.duedate.desc}") String dueDateAttrDescription,
             @Value("${gpt.function.tasksystem.create.issue.attr.projectid.desc}") String projectIdAttrDescription,
             @Value("${gpt.function.tasksystem.create.issue.attr.duedate.format}") String dueDateFormat
@@ -163,10 +163,12 @@ public class BeansConfiguration {
 
         // Predefine function parameters
         var properties = new TaskSystemCreateIssueParameterProperties();
+        properties.setTitle(properties.new Title("string",titleAttrDescription));
+        properties.setDescription(properties.new Description("string",descrAttrDescription));
         properties.setDescription(properties.new Description("string",descrAttrDescription));
         properties.setPriority(properties.new Priority("string",priorityAttrDescription, new String[]{"LOW", "NORMAL", "HIGH", "CRITICAL"}));
-        properties.setAuthorId(properties.new AuthorId("string",authorIdAttrDescription));
-        properties.setAssigneeId(properties.new AssigneeId("string",assigneeIdAttrDescription));
+        properties.setAuthorSlackId(properties.new AuthorSlackId("string",authorSlackIdAttrDescription));
+        properties.setAssigneeSlackId(properties.new AssigneeSlackId("string",assigneeSlackIdAttrDescription));
         properties.setDueDate(properties.new DueDate("string",dueDateAttrDescription, dueDateFormat));
         properties.setProjectId(properties.new ProjectId("string",projectIdAttrDescription));
 
@@ -174,7 +176,7 @@ public class BeansConfiguration {
         GptFunction.Parameters parameters = gptFunction.new Parameters();
         parameters.setType("object");
         parameters.setProperties(properties);
-        parameters.setRequired(new String[] {"description", "priority", "authorid","assigneeid", "duedate", "projectid"});
+        parameters.setRequired(new String[] {"title", "description", "priority", "authorSlackId","assigneeSlackId", "duedate", "projectid"});
 
         gptFunction.setParameters(parameters);
 
