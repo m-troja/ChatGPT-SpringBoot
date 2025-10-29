@@ -12,7 +12,4 @@ import com.michal.openai.entity.SlackUser;
 public interface GptService {
 	
 	 CompletableFuture<String> getAnswerToSingleQuery (CompletableFuture<String> query, CompletableFuture<String> userName,  GptFunction... functions  );
-	 void saveGptRequest(GptRequest request);
-	 void saveResponse(GptResponse gptResponse);
-	 public List<GptMessage> getLastRequestsOfUser(SlackUser user);
 }

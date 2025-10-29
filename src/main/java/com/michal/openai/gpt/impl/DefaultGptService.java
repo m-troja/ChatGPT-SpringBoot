@@ -87,51 +87,20 @@ public class DefaultGptService implements GptService {
 	 */
 	@Override
 	public CompletableFuture<String> getAnswerToSingleQuery(CompletableFuture<String> queryFuture, CompletableFuture<String> userNameFuture, GptFunction... gptFunctions ) {
-		GptRequest gptRequest = new GptRequest();
     	try {
 
 			String userSlackId = userNameFuture.get();
-			String userRealName = getSlackUserBySlackId(userSlackId).getSlackName();
+            if (userSlackId != null) {
+                userSlackId = userSlackId.replaceAll("\\s+", "_");
+            }
+
+            String userRealName = getSlackUserBySlackId(userSlackId).getSlackName();
 			String query = queryFuture.get();
-			
-    		SlackUser slackUserRequestAuthor = new SlackUser(userSlackId, userRealName);
-
-	    	gptRequest.setAuthor(userSlackId);
-	    	gptRequest.setContent(query);
-	    	gptRequest.setAuthorRealname(userRealName);
-
+            SlackUser slackUserRequestAuthor = new SlackUser(userSlackId, userRealName);
             log.info("getAnswerToSingleQuery : {}, userName : {}, gptFunctions : {}", query, userSlackId, gptFunctions);
-	
-			if (userSlackId != null) {
-				userSlackId = userSlackId.replaceAll("\\s+", "_");
-			}
 
-            List<GptMessage> messages = getLastMessagesOfUserSlackId(userSlackId, gptRequest, query);
-
-			/* Define request parameters */
-			
-			gptRequest.setModel(model);
-			gptRequest.setTemperature(temperature);
-			gptRequest.setPresencePenalty(presencePenalty);
-			gptRequest.setMaxOutputTokens(maxTokens);
-			gptRequest.setMessages(messages);
-			gptRequest.setAuthor(slackUserRequestAuthor.getSlackUserId());
-			gptRequest.setAuthorRealname(slackUserRequestAuthor.getSlackName());
-
-	        log.info("Found {} GPT Functions", gptFunctions.length);
-	        if (gptFunctions != null && gptFunctions.length > 0) {
-
-	        	// New OpenAI API says to wrap function into tool
-	        	for ( GptFunction function : gptFunctions)
-	        	{
-	        		tools.add(new GptTool("function", function));
-	        		log.debug("Added function: {}", function.toString() );
-	        	}
-	        }
-	        gptRequest.setTools(tools);
-
-	        return getResponseFromGpt(gptRequest, slackUserRequestAuthor);  
-
+            GptRequest gptRequest = buildGptRequest(query, slackUserRequestAuthor, List.of(gptFunctions));
+	        return getResponseFromGpt(gptRequest, slackUserRequestAuthor);
     	}
     	catch (Exception e)
     	{
@@ -144,8 +113,37 @@ public class DefaultGptService implements GptService {
 		return null;
 	}
 
+    private GptRequest buildGptRequest(String query, SlackUser slackUser, List<GptFunction> gptFunctions )
+    {
+        log.info("Building GPT request with params: {}, {}, {}", query, slackUser, gptFunctions );
+        GptRequest gptRequest = new GptRequest();
+        List<GptMessage> messages = getLastMessagesOfUserSlackId(slackUser.getSlackUserId(), gptRequest, query);
+
+        /* Define request parameters */
+        gptRequest.setAuthor(slackUser.getSlackUserId());
+        gptRequest.setContent(query);
+        gptRequest.setAuthorRealname(slackUser.getSlackName());
+        gptRequest.setModel(model);
+        gptRequest.setTemperature(temperature);
+        gptRequest.setPresencePenalty(presencePenalty);
+        gptRequest.setMaxOutputTokens(maxTokens);
+        gptRequest.setMessages(messages);
+        gptRequest.setTools(tools);
+
+        log.info("Found {} GPT Functions", gptFunctions.size());
+        if (gptFunctions != null && gptFunctions.size() > 0) {
+
+            // New OpenAI API says to wrap function into tool
+            for ( GptFunction function : gptFunctions)
+            {
+                tools.add(new GptTool("function", function));
+                log.debug("Added function: {}", function.toString() );
+            }
+        }
+        return gptRequest;
+    }
 	@Async("defaultExecutor")
-	public CompletableFuture<String> getResponseFromGpt(GptRequest gptRequest, SlackUser slackUserRequestAuthor) throws IOException 
+	private CompletableFuture<String> getResponseFromGpt(GptRequest gptRequest, SlackUser slackUserRequestAuthor) throws IOException
 	{
 		gptRequest.setAuthor(slackUserRequestAuthor.getSlackUserId());
 		gptRequest.setAuthorRealname(slackUserRequestAuthor.getSlackName());
@@ -267,13 +265,13 @@ public class DefaultGptService implements GptService {
 		return  CompletableFuture.completedFuture("");
 	}
 	
-	public void saveGptRequest(GptRequest gptRequest)  {
+	private void saveGptRequest(GptRequest gptRequest)  {
         JsonSaver jsonSaver = new JsonSaver(jsonDir);
         jsonSaver.saveRequest(gptRequest);
 		jpaGptRequestRepo.save(gptRequest);
 	}
-	
-	public void saveResponse(GptResponse gptResponse) {
+
+    private void saveResponse(GptResponse gptResponse) {
         try { JsonSaver jsonSaver = new JsonSaver(jsonDir);
             jsonSaver.saveResponse(gptResponse);
         }
@@ -287,9 +285,9 @@ public class DefaultGptService implements GptService {
         }
 	}
 	
-	/* Get last messages of user to build context for GPT */ 
-	
-	public List<GptMessage> getLastRequestsOfUser(SlackUser user)
+	/* Get last messages of user to build context for GPT */
+
+    private List<GptMessage> getLastRequestsOfUser(SlackUser user)
 	{
 		log.info("Calling getLastMessagesOfUser with params: {} <-> {}", user.toString(), qtyOfContextMessages);
 		
@@ -306,9 +304,9 @@ public class DefaultGptService implements GptService {
 		return gptMessages;
 	}
 	
-	/* Get last responses to user to build context for GPT */ 
+	/* Get last responses to user to build context for GPT */
 
-	public List<GptMessage> getLastResponsesToUser(SlackUser user)
+    private List<GptMessage> getLastResponsesToUser(SlackUser user)
 	{
         log.info("Calling getLastResponsesToUser with user: {}, qtyOfContextMessages: {}", user.toString(), qtyOfContextMessages);
 		
@@ -348,7 +346,7 @@ public class DefaultGptService implements GptService {
         return messages;
     }
 
-	public GptMessage getInitialSystemMessage(String userSlackId) 
+	private GptMessage getInitialSystemMessage(String userSlackId)
 	{
 		String content = String.format(
 			    "%sYou received message from %s. Type <@%s> to mention them.",
@@ -365,7 +363,7 @@ public class DefaultGptService implements GptService {
                     .writeValueAsString(obj);
             log.debug(prettyJson);
         } catch (Exception e) {
-            log.error("Could not create pretty print JSON", e);
+            log.error("Error creating pretty JSON: ", e);
         }
     }
     public SlackUser getSlackUserBySlackId(String slackId) {
