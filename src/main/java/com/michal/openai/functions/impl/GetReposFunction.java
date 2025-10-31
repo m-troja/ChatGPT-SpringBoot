@@ -19,7 +19,7 @@ public class GetReposFunction implements Function {
 	GithubService githubService;
 	
 	@Override
-	public CompletableFuture<String> execute(String loginJson) {
+	public String execute(String loginJson) {
         log.info("Execute githubService with login Json: {}", loginJson);
 		
 		String login = "";

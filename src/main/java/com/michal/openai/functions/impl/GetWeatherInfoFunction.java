@@ -19,7 +19,7 @@ public class GetWeatherInfoFunction implements Function {
     private ObjectMapper objectMapper;
 
     @Override
-    public CompletableFuture<String> execute(String arguments) {
+    public String execute(String arguments) {
         try {
             Map<String, String> argumentsMap = objectMapper.readValue(arguments, new TypeReference<>() {});
             String location = argumentsMap.get("location");

@@ -19,7 +19,7 @@ public class CreateTaskSystemIssueFunction implements Function
 	private final TaskSystemService taskSystemService;
 
 	@Override
-	public CompletableFuture<String> execute(String requestBody) {
+	public String execute(String requestBody) {
         log.debug("Execute CreateTaskSystemIssueFunction with requestBody: {}", requestBody);
         try {
             return taskSystemService.createIssue(requestBody).exceptionally( ex -> {

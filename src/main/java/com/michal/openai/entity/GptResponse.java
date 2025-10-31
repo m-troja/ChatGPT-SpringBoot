@@ -54,7 +54,7 @@ public class GptResponse {
             private Integer index;
 
             @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-            @JoinColumn(name = "response_id")  // Analogicznie, Hibernate doda response_id
+            @JoinColumn(name = "response_id")
             private GptMessage message;
 
             @JsonProperty("finish_reason")

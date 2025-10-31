@@ -15,7 +15,7 @@ public class CreateIssueFunction implements Function
 	private JiraService jiraService;
 
 	@Override
-	public CompletableFuture<String> execute(String requestBody) {
+	public String execute(String requestBody) {
         log.info(" execute CreateIssueFunction with arguments: {}", requestBody);
 		
 	

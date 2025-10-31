@@ -24,7 +24,7 @@ public class GetAllTaskSystemIssuesFunction implements Function {
     private final ObjectMapper objectMapper;
 
 	@Override
-	public CompletableFuture<String> execute(String arguments) {
+	public String execute(String arguments) {
         log.info("Executing GetAllTaskSystemIssuesFunction arguments: {}", arguments);
 
         return CompletableFuture.supplyAsync(() -> {

@@ -24,7 +24,7 @@ public class GetAllJiraIssues implements Function {
     private ObjectMapper objectMapper;
 
     @Override
-    public CompletableFuture<String> execute(String arguments) {
+    public String execute(String arguments) {
         log.info("GetAllJiraIssues arguments: {}", arguments);
 
         return jiraService.getIssues()

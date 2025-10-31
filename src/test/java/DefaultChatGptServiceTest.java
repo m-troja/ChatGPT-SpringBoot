@@ -1,22 +1,14 @@
-import static org.mockito.Mockito.*;
-
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.entity.GptTool;
 import com.michal.openai.functions.FunctionFacory;
-import com.michal.openai.gpt.impl.DefaultGptService;
+import com.michal.openai.gpt.impl.GptServiceImpl;
 import com.michal.openai.persistence.*;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.michal.openai.slack.SlackService;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.client.RestClient;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,7 +36,7 @@ class DefaultChatGptServiceTest {
     @Mock private ResponseJdbcTemplateRepo responseJdbc;
     @Mock private JpaSlackRepo jpaSlackrepo;
     @Mock private ObjectMapper objectMapper;
-    @InjectMocks private DefaultGptService defaultGptService;
+    @InjectMocks private GptServiceImpl gptServiceImpl;
 
 
 

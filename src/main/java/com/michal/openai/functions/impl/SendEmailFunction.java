@@ -20,7 +20,7 @@ public class SendEmailFunction implements Function {
 	private ObjectMapper objectMapper;
 		   
 	@Override
-	public CompletableFuture<String> execute(String arguments) {
+	public String execute(String arguments) {
 		EmailData emailData = null;
 		try {
             emailData = objectMapper.readValue(arguments, EmailData.class);
