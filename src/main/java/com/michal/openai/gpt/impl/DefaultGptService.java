@@ -55,7 +55,6 @@ public class DefaultGptService implements GptService {
     private String systemInitialMessage;
     @Value("${CHAT_JSON_DIR}")
     private String jsonDir;
-    private List<GptTool> tools;
     private JpaGptRequestRepo jpaGptRequestRepo;
     private final RequestJdbcTemplateRepo requestTemplateRepo;
     @Qualifier("gptRestClient")
@@ -69,7 +68,7 @@ public class DefaultGptService implements GptService {
 
     // Constructor needed because of @Qualifier("gptRestClient")
     public DefaultGptService(JpaGptRequestRepo jpaGptRequestRepo, RequestJdbcTemplateRepo requestTemplateRepo, @Qualifier("gptRestClient") RestClient restClient, FunctionFacory functionFactory, JpaGptResponseRepo jpaGptResponseRepo,
-                             JpaGptMessageRepo messageRepo, ResponseJdbcTemplateRepo responseJdbc, List<GptTool> tools, JpaSlackRepo jpaSlackrepo, ObjectMapper objectMapper) {
+                             JpaGptMessageRepo messageRepo, ResponseJdbcTemplateRepo responseJdbc, JpaSlackRepo jpaSlackrepo, ObjectMapper objectMapper) {
         this.jpaGptRequestRepo = jpaGptRequestRepo;
         this.requestTemplateRepo = requestTemplateRepo;
         this.restClient = restClient;
@@ -77,7 +76,6 @@ public class DefaultGptService implements GptService {
         this.jpaGptResponseRepo = jpaGptResponseRepo;
         this.messageRepo = messageRepo;
         this.responseJdbc = responseJdbc;
-        this.tools = tools;
         this.jpaSlackrepo = jpaSlackrepo;
         this.objectMapper = objectMapper;
     }
@@ -86,36 +84,29 @@ public class DefaultGptService implements GptService {
 	 * Builds object of GPTRequest and forwards it to send to GPT.
 	 */
 	@Override
-	public CompletableFuture<String> getAnswerToSingleQuery(CompletableFuture<String> queryFuture, CompletableFuture<String> userNameFuture, GptFunction... gptFunctions ) {
-    	try {
+	public CompletableFuture<String> getAnswerWithSlack(CompletableFuture<String> queryFuture, CompletableFuture<String> userNameFuture, GptFunction... gptFunctions ) {
 
-			String userSlackId = userNameFuture.get();
-            if (userSlackId != null) {
-                userSlackId = userSlackId.replaceAll("\\s+", "_");
-            }
-
-            String userRealName = getSlackUserBySlackId(userSlackId).getSlackName();
-			String query = queryFuture.get();
-            SlackUser slackUserRequestAuthor = new SlackUser(userSlackId, userRealName);
-            log.info("getAnswerToSingleQuery : {}, userName : {}, gptFunctions : {}", query, userSlackId, gptFunctions);
-
-            GptRequest gptRequest = buildGptRequest(query, slackUserRequestAuthor, List.of(gptFunctions));
-	        return getResponseFromGpt(gptRequest, slackUserRequestAuthor);
-    	}
-    	catch (Exception e)
-    	{
-    		log.error("Error in getAnswerToSingleQuery");
-            log.error(e.getMessage());
-    	}
-    	
-		log.error("Returning null from getAnswerToSingleQuery");
-		
-		return null;
+        return queryFuture.thenCombine(userNameFuture, (query, slackUserId) -> {
+            return handleQuery(query, slackUserId, gptFunctions);
+        })
+                .exceptionally(e -> {
+                            log.error("Async error:", e);
+                            return "Error calling GPT";
+                });
 	}
+
+    private String handleQuery(String query, String slackUserId, GptFunction... gptFunctions) {
+        SlackUser slackUserRequestAuthor = getSlackUserBySlackId(slackUserId);
+        List<GptFunction> functions = List.of(gptFunctions);
+        log.debug("Building gptRequest with params: {}, {}, {}", query, slackUserId, functions);
+        GptRequest gptRequest = buildGptRequest(query, slackUserRequestAuthor, functions);
+
+        return callGptNoFunction(gptRequest, slackUserRequestAuthor);
+    }
 
     private GptRequest buildGptRequest(String query, SlackUser slackUser, List<GptFunction> gptFunctions )
     {
-        log.info("Building GPT request with params: {}, {}, {}", query, slackUser, gptFunctions );
+        log.debug("Building GPT request with params: {}, {}, {}", query, slackUser, gptFunctions );
         GptRequest gptRequest = new GptRequest();
         List<GptMessage> messages = getLastMessagesOfUserSlackId(slackUser.getSlackUserId(), gptRequest, query);
 
@@ -128,22 +119,18 @@ public class DefaultGptService implements GptService {
         gptRequest.setPresencePenalty(presencePenalty);
         gptRequest.setMaxOutputTokens(maxTokens);
         gptRequest.setMessages(messages);
-        gptRequest.setTools(tools);
+        List<GptTool> requestTools = new ArrayList<>();
+        log.debug("Found {} GPT Functions", gptFunctions.size());
+        gptFunctions.forEach(fn -> {
+            requestTools.add(new GptTool("function", fn);
+            log.debug("Added function {} into requestTools", fn);
+        });
+        gptRequest.setTools(requestTools);
 
-        log.info("Found {} GPT Functions", gptFunctions.size());
-        if (gptFunctions != null && gptFunctions.size() > 0) {
-
-            // New OpenAI API says to wrap function into tool
-            for ( GptFunction function : gptFunctions)
-            {
-                tools.add(new GptTool("function", function));
-                log.debug("Added function: {}", function.toString() );
-            }
-        }
         return gptRequest;
     }
-	@Async("defaultExecutor")
-	private CompletableFuture<String> getResponseFromGpt(GptRequest gptRequest, SlackUser slackUserRequestAuthor) throws IOException
+
+	private String callGptNoFunction(GptRequest gptRequest, SlackUser slackUserRequestAuthor)
 	{
 		gptRequest.setAuthor(slackUserRequestAuthor.getSlackUserId());
 		gptRequest.setAuthorRealname(slackUserRequestAuthor.getSlackName());
@@ -168,13 +155,13 @@ public class DefaultGptService implements GptService {
 			}
 			catch(RuntimeException e) 
 			{
-                log.error("Caught exception in getResponseFromGpt!");
+                log.error("Caught exception in callGptNoFunction!");
 				log.error(e.getMessage());
 				try
 				{
                     log.error("Sleep for {}s", waitSeconds);
 					TimeUnit.SECONDS.sleep(waitSeconds);
-                    log.error("Trying to getResponseFromGpt again...");
+                    log.error("Trying to callGptNoFunction again...");
 				}
 				catch (InterruptedException e1)
 				{
@@ -252,7 +239,7 @@ public class DefaultGptService implements GptService {
 						    log.debug("Function call arguments: {}", gptRequest);
 	
 						    try {
-								return getResponseFromGpt(gptRequest, slackUserRequestAuthor);
+								return callGptNoFunction(gptRequest, slackUserRequestAuthor);
 							} catch (IOException e) {
 								log.error(e.getMessage());
 							}

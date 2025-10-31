@@ -50,7 +50,7 @@ public class DefaultSlackService implements SlackService {
         SlackRequestData slackRequestData = extractSlackRequestData(requestBody);
         log.debug("processOnMentionEvent requestBody : {}", requestBody);
 
-        CompletableFuture<String> gptResponseFuture = gptService.getAnswerToSingleQuery(
+        CompletableFuture<String> gptResponseFuture = gptService.getAnswerWithSlack(
                 CompletableFuture.completedFuture(slackRequestData.message()),
                 CompletableFuture.completedFuture(slackRequestData.messageAuthorId()),
                 functions.toArray(GptFunction[]::new)

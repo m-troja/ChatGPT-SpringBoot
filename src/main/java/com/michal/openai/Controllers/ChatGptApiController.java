@@ -26,7 +26,7 @@ public class ChatGptApiController {
 	public CompletableFuture<String> askGpt(@RequestParam String query, @RequestParam String userSlackId)
 	{
 		log.info("GET /v1/ask-gpt with params: query={}, userSlackId={}", query, userSlackId );
-		return gptService.getAnswerToSingleQuery(CompletableFuture.completedFuture(query), CompletableFuture.completedFuture(userSlackId), functions.toArray(GptFunction[]::new));
+		return gptService.getAnswerWithSlack(CompletableFuture.completedFuture(query), CompletableFuture.completedFuture(userSlackId), functions.toArray(GptFunction[]::new));
 	}
 	
 
