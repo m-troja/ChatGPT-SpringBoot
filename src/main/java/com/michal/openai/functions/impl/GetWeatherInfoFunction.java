@@ -25,10 +25,10 @@ public class GetWeatherInfoFunction implements Function {
             String location = argumentsMap.get("location");
 
             WeatherInfo weatherInfo = new WeatherInfo(location,23, "Celsius");
-            return CompletableFuture.completedFuture("Temperature in " + weatherInfo.location() + " is " + weatherInfo.temperature() + " " + weatherInfo.measurementUnit());
+            return "Temperature in " + weatherInfo.location() + " is " + weatherInfo.temperature() + " " + weatherInfo.measurementUnit();
         } catch (Exception e) {
             log.error(e.getMessage());
-            return CompletableFuture.completedFuture("Error processing weather info.");
+            return "Error processing weather info.";
         }
     }
 }

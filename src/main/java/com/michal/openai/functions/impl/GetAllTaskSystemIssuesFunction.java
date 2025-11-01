@@ -26,9 +26,7 @@ public class GetAllTaskSystemIssuesFunction implements Function {
 	@Override
 	public String execute(String arguments) {
         log.info("Executing GetAllTaskSystemIssuesFunction arguments: {}", arguments);
-
-        return CompletableFuture.supplyAsync(() -> {
-            try {
+        try {
                 List<TaskSystemIssueDto> issues = taskSystemService.getAllIssues();
                 log.debug("Fetched {} issues from Task System", issues.size());
                 return objectMapper.writeValueAsString(issues);
@@ -39,6 +37,5 @@ public class GetAllTaskSystemIssuesFunction implements Function {
                 log.error("Unexpected error while fetching issues", e);
                 throw new RuntimeException("Failed to fetch Task System issues", e);
             }
-        });
     }
 }

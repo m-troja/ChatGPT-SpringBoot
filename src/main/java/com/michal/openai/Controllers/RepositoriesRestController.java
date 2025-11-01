@@ -26,7 +26,7 @@ public class RepositoriesRestController {
 	@GetMapping("/repos")
 	public ResponseEntity<?> getUserRepos(@RequestParam String login) throws IOException {
 	    try {
-	        CompletableFuture<String> json = githubService.getUserReposWithBranches(login);
+            String json = githubService.getUserReposWithBranches(login);
 	        return ResponseEntity.ok()
 	                .contentType(MediaType.APPLICATION_JSON)
 	                .body(json);

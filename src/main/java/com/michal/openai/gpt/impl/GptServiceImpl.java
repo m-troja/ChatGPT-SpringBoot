@@ -124,9 +124,6 @@ public class GptServiceImpl implements GptService {
         gptRequest.setAuthor(slackUserRequestAuthor.getSlackUserId());
         gptRequest.setAuthorRealname(slackUserRequestAuthor.getSlackName());
         saveGptRequest(gptRequest);
-        log.debug(" ===================== Final request to GPT: ========================== ");
-        log.debug("{}", gptRequest);
-        log.debug(" ====================================================================== ");
         return gptRequest;
     }
 
@@ -152,16 +149,12 @@ public class GptServiceImpl implements GptService {
 
             gptRequest.getMessages().add(toolMessage);
         }
-        log.debug(" ===================== Calling GPT tools: ============================= ");
-        log.debug("{}", gptRequest);
-        log.debug(" ====================================================================== ");
-
         return callGptNoFunction(gptRequest);
-
 	}
 
     private GptResponse sendRequestToGpt(GptRequest gptRequest) {
-        GptResponse gptResponse = new GptResponse();
+        saveGptRequest(gptRequest);
+        var gptResponse = new GptResponse();
         for (int i = 0; i < retryAttempts; i++) {
             log.debug("Calling GPT with RestClient");
             try {
@@ -169,7 +162,7 @@ public class GptServiceImpl implements GptService {
                         .body(gptRequest)
                         .retrieve()
                         .body(GptResponse.class);
-
+            saveResponse(gptResponse);
             } catch (RuntimeException e) {
                 log.error("Error calling GPT! ", e);
                 sleep(waitSeconds);
@@ -190,12 +183,14 @@ public class GptServiceImpl implements GptService {
     }
 
 	private void saveGptRequest(GptRequest gptRequest)  {
+        logPrettyJson(gptRequest);
         JsonSaver jsonSaver = new JsonSaver(jsonDir);
         jsonSaver.saveRequest(gptRequest);
 		jpaGptRequestRepo.save(gptRequest);
 	}
 
     private void saveResponse(GptResponse gptResponse) {
+        logPrettyJson(gptResponse);
         try { JsonSaver jsonSaver = new JsonSaver(jsonDir);
             jsonSaver.saveResponse(gptResponse);
         }

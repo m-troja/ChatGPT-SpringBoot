@@ -1,8 +1,9 @@
 package com.michal.openai.functions.impl;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.List;
 import java.util.concurrent.CompletionException;
 
+import com.michal.openai.entity.JiraIssue;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -26,9 +27,7 @@ public class GetAllJiraIssues implements Function {
     @Override
     public String execute(String arguments) {
         log.info("GetAllJiraIssues arguments: {}", arguments);
-
-        return jiraService.getIssues()
-                .thenApply(issues -> {
+        List<JiraIssue> issues = jiraService.getIssues();
                     try {
                         String json = objectMapper.writeValueAsString(issues);
                         log.debug("Serialized {} Jira issues to JSON", issues.size());
@@ -37,6 +36,5 @@ public class GetAllJiraIssues implements Function {
                         log.error("Failed to serialize Jira issues", e);
                         throw new CompletionException(e);
                     }
-                });
     }
 }

@@ -1,15 +1,13 @@
 package com.michal.openai.functions.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.functions.Function;
 import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
 import com.michal.openai.tasksystem.service.TaskSystemService;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -17,17 +15,24 @@ import java.util.concurrent.CompletableFuture;
 public class CreateTaskSystemIssueFunction implements Function
 {
 	private final TaskSystemService taskSystemService;
-
+    ObjectMapper objectMapper;
 	@Override
 	public String execute(String requestBody) {
         log.debug("Execute CreateTaskSystemIssueFunction with requestBody: {}", requestBody);
+        TaskSystemIssueDto dto;
+            try {
+                dto = taskSystemService.createIssue(requestBody);
+            } catch (Exception e) {
+                log.error("Error creating task-system issue ", e);
+                throw new RuntimeException(e);
+            }
+        String json;
         try {
-            return taskSystemService.createIssue(requestBody).exceptionally( ex -> {
-                log.error("Failed to create Task-System issue",  ex);
-                throw new RuntimeException("Failed to create Task-System issue");
-                });
-        } catch (Exception e) {
+            json = objectMapper.writeValueAsString(dto);
+        } catch (JsonProcessingException e) {
+            log.error("Error creating task-system create issue result json ", e);
             throw new RuntimeException(e);
         }
+        return json ;
     }
 }

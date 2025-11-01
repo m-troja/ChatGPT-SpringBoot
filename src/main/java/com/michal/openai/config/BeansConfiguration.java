@@ -35,12 +35,7 @@ public class BeansConfiguration {
 	
 	@Bean("getAllJiraIssuesFunction")
 	public Function allJiraIssuesFunctionCall() { return new GetAllJiraIssues(); }
-	
-	@Bean("createJiraIssueCall")
-	public Function createJiraIssueCall() {
-		return new CreateIssueFunction();
-	}
-	
+
 	@Bean("getReposFunctionCall")
 	public Function getReposFunctionCall() {
 		return new GetReposFunction();

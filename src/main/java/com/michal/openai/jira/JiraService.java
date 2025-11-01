@@ -7,8 +7,8 @@ import com.michal.openai.entity.JiraIssue;
 
 public interface JiraService {
 	
-	String getIssueJson(String id);
-	CompletableFuture<List<JiraIssue>> getIssues();
-	CompletableFuture<String> createJavaIssue(String requestBody);
+	JiraIssue getIssue(String id);
+    List<JiraIssue> getIssues();
+    JiraIssue createJavaIssue(String requestBody);
 	
 }

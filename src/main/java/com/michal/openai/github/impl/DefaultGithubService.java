@@ -34,7 +34,7 @@ public class DefaultGithubService implements GithubService {
     private record ReposResult(HttpStatus status, String responseBody) {}
 
     @Override
-    public CompletableFuture<String> getUserReposWithBranches(String username) throws IOException {
+    public String getUserReposWithBranches(String username) throws IOException {
        
     	ReposResult result = fetchUserRepos(username);
         
@@ -42,7 +42,7 @@ public class DefaultGithubService implements GithubService {
         List<GithubRepo> reposWithBranchesAssigned = assignBranchesToRepos(notForked);
         List<GithubRepoDto> repoDtos = repoCnv.convertReposToRepoDtos(reposWithBranchesAssigned);
 
-        return CompletableFuture.completedFuture(objectMapper.writeValueAsString(repoDtos));
+        return objectMapper.writeValueAsString(repoDtos);
     }
 
     private ReposResult fetchUserRepos(String username) throws IOException {

@@ -34,9 +34,9 @@ public class TaskSystemServiceImpl implements TaskSystemService {
     }
     //   Send "CreateIssue" request to Task-System
     @Override
-    public CompletableFuture<String> createIssue(String requestBody) {
+    public TaskSystemIssueDto createIssue(String requestBody) {
+        TaskSystemIssueDto issueDtoResponse;
         log.debug("Inside createIssue with requestBody: {}", requestBody);
-        return CompletableFuture.supplyAsync(() -> {
             try
             {
                 log.debug("Serialize GPT-request to Task-System-Request-JSON");
@@ -47,7 +47,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
 
                 // Push Task-System-Request-JSON to Task-System-API
                 log.debug("Rest Client: Push Task-System-Request-JSON to Task-System-API");
-                TaskSystemIssueDto issueDtoResponse =
+                issueDtoResponse =
                         restClient.post()
                         .uri(createIssueEndpoint)
                         .body(createIssueRequest)
@@ -65,8 +65,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
                 log.error("Error creating issue: {}", e.getMessage());
                 throw new CompletionException(e);
             }
-            return null;
-        });
+            return issueDtoResponse;
     }
 
     public List<TaskSystemIssueDto> getAllIssues() {

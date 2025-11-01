@@ -40,7 +40,7 @@ public class GetReposFunction implements Function {
 		} catch (IOException e) {
 
             log.error("Failed to fetch repositories for user: {}", loginJson, e);
-	        return CompletableFuture.failedFuture(e);
+            return null;
 		}
 
 	}

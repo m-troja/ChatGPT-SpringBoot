@@ -33,7 +33,7 @@ import com.slack.api.methods.response.users.UsersListResponse;
 @Data
 @Slf4j
 @Service
-public class DefaultSlackService implements SlackService {
+public class SlackServiceImpl implements SlackService {
 
     public static final String SUCCESSFULL_REGISTRATION_MESSAGE = "User is registered!";
     public static final String REGISTRATION_ERROR_MESSAGE = "Error - user already registered!.";

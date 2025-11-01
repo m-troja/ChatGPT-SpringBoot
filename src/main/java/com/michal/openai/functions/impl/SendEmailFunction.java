@@ -30,12 +30,12 @@ public class SendEmailFunction implements Function {
 		}
 
 		if (emailData !=null && emailData.emailAddress() == null & emailData.emailAddress() == null) {
-			return CompletableFuture.completedFuture("Email was not sent. Please, specify full name or email of addressee");
+			return "Email was not sent. Please, specify full name or email of addressee";
 		}
         if (gmailService.sendEmail(emailData)) {
-			return CompletableFuture.completedFuture("Email was sent successfully");
+			return "Email was sent successfully";
 		} else {
-			return  CompletableFuture.completedFuture("Email was not sent. Some exception happened, please, try one more time later");
+			return  "Email was not sent. Some exception happened, please, try one more time later";
 		}
 	}
 }

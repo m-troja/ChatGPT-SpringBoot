@@ -16,6 +16,10 @@ public class RestClientConfig {
 	private String chatGptApiKey;
 	@Value("${gpt.chat.api.url}")
 	private String chatGptApiUrl;
+    @Value("${jira.key}")
+    private String jiraKey;
+    @Value("${jira.url}")
+    private String jiraUrl;
 
     @Bean("githubRestClient")
     public RestClient githubRestClient()
@@ -33,7 +37,7 @@ public class RestClientConfig {
 	}
     
     @Bean("gptRestClient")
-    public RestClient gptRestClient()
+    public RestClient jiraRestClient()
     {
     	 RestClient.Builder builder = RestClient.builder()
     			.baseUrl(chatGptApiUrl)
@@ -42,7 +46,16 @@ public class RestClientConfig {
     	        
 			return builder.build();
 	}
+    @Bean("jiraRestClient")
+    public RestClient gptRestClient()
+    {
+        RestClient.Builder builder = RestClient.builder()
+                .baseUrl(jiraUrl)
+                .defaultHeader("Content-Type", "application/json")
+                .defaultHeader("Authorization",  "Bearer " + jiraKey);
 
+        return builder.build();
+    }
     @Bean("taskSystemRestClient")
     public RestClient taskSystemRestClient()
     {
