@@ -32,7 +32,7 @@ public class JsonSaver {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void saveJson(Object object, String type) {
-        log.info("Saving {} json...", type);
+        log.debug("Saving {} json...", type);
         try {
             String folderPath = basePath + File.separator + type;
             File folder = new File(folderPath);
@@ -47,6 +47,6 @@ public class JsonSaver {
         } catch (IOException e) {
             log.error("Failed to save {} JSON: {}", type, e.getMessage(), e);
         }
-        log.info("Saved {} json", type);
+        log.debug("Saved {} json", type);
     }
 }

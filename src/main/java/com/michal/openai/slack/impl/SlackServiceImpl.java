@@ -60,7 +60,7 @@ public class SlackServiceImpl implements SlackService {
     }
 
 	private SlackRequestData extractSlackRequestData(String requestBody) {
-		log.info("extractSlackRequestData....");
+		log.debug("extractSlackRequestData....");
 		JsonNode jsonNode = null;
 		
 		try {
@@ -90,10 +90,10 @@ public class SlackServiceImpl implements SlackService {
 			// Use a Map to before sending request to Slack API
 			if ( getSlackUserBySlackId(messageAuthorId) == null)
 			{
-				log.info(" messageAuthorId not found! Extracting users...");
+				log.debug(" messageAuthorId not found! Extracting users...");
 				extractUsersIntoDatabase();
 				user = getSlackUserBySlackId(messageAuthorId);
-                log.info("Slackuser extracted :  {}", user.toString());
+                log.debug("Slackuser extracted :  {}", user.toString());
 			}
 		}
 		catch( Exception e)
@@ -102,7 +102,7 @@ public class SlackServiceImpl implements SlackService {
         }
 		String messageWithNames = substituteUserIdsWithUserNames(message);
 
-        log.info("extractSlackRequestData: {} : {} : {}", messageAuthorId, messageWithNames, channelIdFrom);
+        log.debug("extractSlackRequestData: {} : {} : {}", messageAuthorId, messageWithNames, channelIdFrom);
 
 		return new SlackRequestData(messageAuthorId, messageWithNames, channelIdFrom);
 	}
@@ -113,7 +113,7 @@ public class SlackServiceImpl implements SlackService {
 		String[] userIds = extractUserIds(message);
 		
 		StringBuilder stringBuilder = new StringBuilder(message);
-        log.info("stringBuilder : {}", stringBuilder);
+        log.debug("stringBuilder : {}", stringBuilder);
 
 		// For slackID in array of slackIDs, assign realName and switch slackID to realName
 		for(String userId : userIds)
@@ -125,12 +125,12 @@ public class SlackServiceImpl implements SlackService {
 			{
 				int startIndex = stringBuilder.indexOf(mention);
 				int endIndex = startIndex + mention.length();
-                log.info("startIndex : {}, endIndex: {}", startIndex, endIndex);
+                log.debug("startIndex : {}, endIndex: {}", startIndex, endIndex);
 
 				stringBuilder.replace(startIndex, endIndex, name);
 			}
 		}
-        log.info("stringBuilder : {}", stringBuilder);
+        log.debug("stringBuilder : {}", stringBuilder);
 
 		return stringBuilder.toString();
 	}
@@ -143,7 +143,7 @@ public class SlackServiceImpl implements SlackService {
 		while (matcher.find()) {
 			userIds.add(matcher.group(1));
 		}
-        log.info("extractUserIds : {}", userIds);
+        log.debug("extractUserIds : {}", userIds);
 
 		return userIds.toArray(new String[userIds.size()]);
 	}
@@ -151,7 +151,7 @@ public class SlackServiceImpl implements SlackService {
 	private void extractUsersIntoDatabase() {
 			try 
 			{
-				log.info("extractUsersIntoDatabase()...");
+				log.debug("extractUsersIntoDatabase()...");
 				UsersListRequest usersListRequest = UsersListRequest.builder().build();
 				UsersListResponse userListResponse = slackBotClient.usersList(usersListRequest);          
 
@@ -162,7 +162,7 @@ public class SlackServiceImpl implements SlackService {
 					if ( getSlackUserBySlackId(user.getId()) == null)
 					{
 						registerUser(new SlackUser( user.getId(),user.getRealName() ));
-                        log.info("registerUser : {} : {}", user.getId(), user.getRealName());
+                        log.debug("registerUser : {} : {}", user.getId(), user.getRealName());
 					}
 				}
 			} 
