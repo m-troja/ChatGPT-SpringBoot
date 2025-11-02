@@ -1,25 +1,35 @@
 package com.michal.openai.functions.impl;
 
-import java.util.concurrent.CompletableFuture;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.functions.Function;
 import com.michal.openai.jira.JiraService;
 
-import lombok.NoArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
-@NoArgsConstructor
+@Data
 @Slf4j
+@Component
 public class CreateIssueFunction implements Function 
 {
-	private JiraService jiraService;
+	private final JiraService jiraService;
+    private ObjectMapper objectMapper;
 
 	@Override
-	public CompletableFuture<String> execute(String requestBody) {
-        log.info(" execute CreateIssueFunction with arguments: {}", requestBody);
-		
-	
-		return jiraService.createJavaIssue(requestBody);
+	public String execute(String requestBody) {
+
+        log.debug(" execute CreateIssueFunction with arguments: {}", requestBody);
+	    var jiraIssue = jiraService.createJavaIssue(requestBody);
+	    log.debug("Created JiraIssue: {}", jiraIssue);
+        String json;
+        try {
+            json = objectMapper.writeValueAsString(jiraIssue);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return json;
 	}
 	
 }

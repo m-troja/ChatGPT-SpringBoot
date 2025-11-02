@@ -8,7 +8,7 @@ import java.io.File;
 
 @Slf4j
 @Configuration
-public class AppConfig {
+public class LogConfig {
 
     @Value("${CHAT_LOG_DIR}")
     private String logDir;

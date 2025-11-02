@@ -33,12 +33,10 @@ import com.slack.api.methods.response.users.UsersListResponse;
 @Data
 @Slf4j
 @Service
-public class DefaultSlackService implements SlackService {
+public class SlackServiceImpl implements SlackService {
 
     public static final String SUCCESSFULL_REGISTRATION_MESSAGE = "User is registered!";
     public static final String REGISTRATION_ERROR_MESSAGE = "Error - user already registered!.";
-    //test
-    // test 1.1
     @Qualifier("slackBotClient")
 	private final MethodsClient slackBotClient;
 	private final List<GptFunction> functions;
@@ -52,7 +50,7 @@ public class DefaultSlackService implements SlackService {
         SlackRequestData slackRequestData = extractSlackRequestData(requestBody);
         log.debug("processOnMentionEvent requestBody : {}", requestBody);
 
-        CompletableFuture<String> gptResponseFuture = gptService.getAnswerToSingleQuery(
+        CompletableFuture<String> gptResponseFuture = gptService.getAnswerWithSlack(
                 CompletableFuture.completedFuture(slackRequestData.message()),
                 CompletableFuture.completedFuture(slackRequestData.messageAuthorId()),
                 functions.toArray(GptFunction[]::new)
@@ -62,8 +60,7 @@ public class DefaultSlackService implements SlackService {
     }
 
 	private SlackRequestData extractSlackRequestData(String requestBody) {
-		log.info("extractSlackRequestData....");
-        log.debug("Request body: {} \n", requestBody);
+		log.debug("extractSlackRequestData....");
 		JsonNode jsonNode = null;
 		
 		try {
@@ -93,10 +90,10 @@ public class DefaultSlackService implements SlackService {
 			// Use a Map to before sending request to Slack API
 			if ( getSlackUserBySlackId(messageAuthorId) == null)
 			{
-				log.info(" messageAuthorId not found! Extracting users...");
+				log.debug(" messageAuthorId not found! Extracting users...");
 				extractUsersIntoDatabase();
 				user = getSlackUserBySlackId(messageAuthorId);
-                log.info("Slackuser extracted :  {}", user.toString());
+                log.debug("Slackuser extracted :  {}", user.toString());
 			}
 		}
 		catch( Exception e)
@@ -105,7 +102,7 @@ public class DefaultSlackService implements SlackService {
         }
 		String messageWithNames = substituteUserIdsWithUserNames(message);
 
-        log.info("extractSlackRequestData: {} : {} : {}", messageAuthorId, messageWithNames, channelIdFrom);
+        log.debug("extractSlackRequestData: {} : {} : {}", messageAuthorId, messageWithNames, channelIdFrom);
 
 		return new SlackRequestData(messageAuthorId, messageWithNames, channelIdFrom);
 	}
@@ -116,24 +113,24 @@ public class DefaultSlackService implements SlackService {
 		String[] userIds = extractUserIds(message);
 		
 		StringBuilder stringBuilder = new StringBuilder(message);
-        log.info("stringBuilder : {}", stringBuilder);
+        log.debug("stringBuilder : {}", stringBuilder);
 
 		// For slackID in array of slackIDs, assign realName and switch slackID to realName
 		for(String userId : userIds)
 		{
-			String name = getSlackUserBySlackId(userId).getRealName();
+			String name = getSlackUserBySlackId(userId).getSlackName();
 			String mention = "<@" + userId + ">";
 			
 			if(name != null)
 			{
 				int startIndex = stringBuilder.indexOf(mention);
 				int endIndex = startIndex + mention.length();
-                log.info("startIndex : {}, endIndex: {}", startIndex, endIndex);
+                log.debug("startIndex : {}, endIndex: {}", startIndex, endIndex);
 
 				stringBuilder.replace(startIndex, endIndex, name);
 			}
 		}
-        log.info("stringBuilder : {}", stringBuilder);
+        log.debug("stringBuilder : {}", stringBuilder);
 
 		return stringBuilder.toString();
 	}
@@ -146,7 +143,7 @@ public class DefaultSlackService implements SlackService {
 		while (matcher.find()) {
 			userIds.add(matcher.group(1));
 		}
-        log.info("extractUserIds : {}", userIds);
+        log.debug("extractUserIds : {}", userIds);
 
 		return userIds.toArray(new String[userIds.size()]);
 	}
@@ -154,7 +151,7 @@ public class DefaultSlackService implements SlackService {
 	private void extractUsersIntoDatabase() {
 			try 
 			{
-				log.info("extractUsersIntoDatabase()...");
+				log.debug("extractUsersIntoDatabase()...");
 				UsersListRequest usersListRequest = UsersListRequest.builder().build();
 				UsersListResponse userListResponse = slackBotClient.usersList(usersListRequest);          
 
@@ -165,7 +162,7 @@ public class DefaultSlackService implements SlackService {
 					if ( getSlackUserBySlackId(user.getId()) == null)
 					{
 						registerUser(new SlackUser( user.getId(),user.getRealName() ));
-                        log.info("registerUser : {} : {}", user.getId(), user.getRealName());
+                        log.debug("registerUser : {} : {}", user.getId(), user.getRealName());
 					}
 				}
 			} 
@@ -179,11 +176,12 @@ public class DefaultSlackService implements SlackService {
 		
 		message.thenAccept
 		(
-				response -> 
+				response ->
 				{
 					String stringToSend = response != null ? response : "[No response]";
 					ChatPostMessageRequest request = ChatPostMessageRequest.builder()
-	                .channel(channelId)
+//	                .channel(channelId)
+	                .channel("asdasd")
 	                .text(stringToSend)
 	                .build();
                     log.debug("sendMessageToSlack response = {}", response);
@@ -207,17 +205,17 @@ public class DefaultSlackService implements SlackService {
 	}
 	
 	public SlackUser getSlackUserBySlackId(String slackId) {
-		return jpaSlackrepo.findBySlackId(slackId);
+		return jpaSlackrepo.findBySlackUserId(slackId);
 	}
 	
 	public List<SlackUser> getAllSlackUsers()
 	{
-		List<SlackUser> users = jpaSlackrepo.findAllByOrderBySlackId();
-        log.debug("All slack users: {}", users.toString());
+		List<SlackUser> users = jpaSlackrepo.findAllByOrderBySlackUserId();
+        log.debug("All slack users: {}", users);
 		return users;
 	}
-	
-	@Override
+
+    @Override
 	public String registerUser(SlackUser user) {
         jpaSlackrepo.save(user);
         log.info("Registered user: {}", user);

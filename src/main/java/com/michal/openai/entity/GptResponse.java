@@ -12,29 +12,36 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Data
-@JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
 @Table(name = "gpt_response")
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class GptResponse {
 	
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	@JsonIgnore
 	private Long id;
-	
+
+	 /*
+	  * Used for DB columns & context
+	  */
 	@JsonIgnore
 	@Column(name = "request_id")
-	private Long requestId; // for DB column
-	
+	private Long requestId;
 	@JsonIgnore
 	@Column(name = "request_author_slackid")
-	private String requestSlackID; // for DB column
-	
+	private String requestSlackID;
+    @JsonIgnore
+    @Column(name = "request_author_realname")
+    private String requestAuthorRealName;
 	@JsonIgnore
 	@Column(name = "content", columnDefinition = "text")
-    private String content; // for DB column
-	
+    private String content;
+    @JsonIgnore
+    @Column(name = "isFunctionCall")
+    private boolean isFunctionCall;
+
 	@Transient
 	private String object;
 	@Transient
@@ -54,7 +61,7 @@ public class GptResponse {
             private Integer index;
 
             @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-            @JoinColumn(name = "response_id")  // Analogicznie, Hibernate doda response_id
+            @JoinColumn(name = "response_id")
             private GptMessage message;
 
             @JsonProperty("finish_reason")
@@ -85,19 +92,5 @@ public class GptResponse {
             @JsonProperty("total_tokens")
             @Transient
             private Integer totalTokens;
-
-            @Override
-            public String toString() {
-                return "Usage [promptTokens=" + promptTokens + ", completionTokens=" + completionTokens + ", totalTokens="
-                        + totalTokens + "]";
-            }
-
         }
-
-    @Override
-	public String toString() {
-		return "GptResponse [id=" + id + ", requestId=" + requestId + ", requestSlackID=" + requestSlackID
-				+ ", content=" + content + ", object=" + object + ", created=" + created + ", model=" + model
-				+ ", choices=" + choices + ", usage=" + usage + "]";
-	}
 }

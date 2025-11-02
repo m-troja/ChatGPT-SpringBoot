@@ -19,16 +19,16 @@ public class GetWeatherInfoFunction implements Function {
     private ObjectMapper objectMapper;
 
     @Override
-    public CompletableFuture<String> execute(String arguments) {
+    public String execute(String arguments) {
         try {
             Map<String, String> argumentsMap = objectMapper.readValue(arguments, new TypeReference<>() {});
             String location = argumentsMap.get("location");
 
             WeatherInfo weatherInfo = new WeatherInfo(location,23, "Celsius");
-            return CompletableFuture.completedFuture("Temperature in " + weatherInfo.location() + " is " + weatherInfo.temperature() + " " + weatherInfo.measurementUnit());
+            return "Temperature in " + weatherInfo.location() + " is " + weatherInfo.temperature() + " " + weatherInfo.measurementUnit();
         } catch (Exception e) {
             log.error(e.getMessage());
-            return CompletableFuture.completedFuture("Error processing weather info.");
+            return "Error processing weather info.";
         }
     }
 }

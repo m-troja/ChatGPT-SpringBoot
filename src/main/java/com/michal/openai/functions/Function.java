@@ -4,6 +4,6 @@ import java.util.concurrent.CompletableFuture;
 
 public interface Function {
 	
-	CompletableFuture<String> execute(String arguments);
+	String execute(String arguments);
 
 }

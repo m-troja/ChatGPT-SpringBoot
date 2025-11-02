@@ -10,15 +10,16 @@ public class RestClientConfig {
 
     @Value("${github.token}")
     private String githubToken;
-    
     @Value("${github.api.url}")
     private String githubBaseApiUrl;
-    
 	@Value("${gpt.chat.api.key}")
 	private String chatGptApiKey;
-
 	@Value("${gpt.chat.api.url}")
 	private String chatGptApiUrl;
+    @Value("${jira.key}")
+    private String jiraKey;
+    @Value("${jira.url}")
+    private String jiraUrl;
 
     @Bean("githubRestClient")
     public RestClient githubRestClient()
@@ -36,9 +37,8 @@ public class RestClientConfig {
 	}
     
     @Bean("gptRestClient")
-    public RestClient gptRestClient()
+    public RestClient jiraRestClient()
     {
-
     	 RestClient.Builder builder = RestClient.builder()
     			.baseUrl(chatGptApiUrl)
     			.defaultHeader("Content-Type", "application/json")
@@ -46,4 +46,27 @@ public class RestClientConfig {
     	        
 			return builder.build();
 	}
+    @Bean("jiraRestClient")
+    public RestClient gptRestClient()
+    {
+        RestClient.Builder builder = RestClient.builder()
+                .baseUrl(jiraUrl)
+                .defaultHeader("Content-Type", "application/json")
+                .defaultHeader("Authorization",  "Bearer " + jiraKey);
+
+        return builder.build();
+    }
+    @Bean("taskSystemRestClient")
+    public RestClient taskSystemRestClient()
+    {
+        String taskSystemHost = System.getenv().getOrDefault("TS_HOST", "localhost");
+        String taskSystemPort = System.getenv().getOrDefault("TS_HTTP_PORT", "6901");
+        String taskSystemUrl = String.format("http://%s:%s", taskSystemHost, taskSystemPort);
+
+        RestClient.Builder builder = RestClient.builder()
+                .baseUrl(taskSystemUrl)
+                .defaultHeader("Content-Type", "application/json");
+
+        return builder.build();
+    }
 }
