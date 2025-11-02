@@ -258,7 +258,7 @@ public class GptServiceImpl implements GptService {
 
     private List<GptMessage> getLastRequestsOfUser(SlackUser user)
 	{
-		log.debug("Calling getLastRequestsOfUser with params: {} <-> {}", user, qtyOfContextMessages);
+		log.debug("Calling getLastRequestsOfUser with user={}, max allowed context= {}", user.getSlackUserId(), qtyOfContextMessages);
 		
 		List<String> messages = jpaGptRequestRepo.getLastRequestsBySlackId(user.getSlackUserId(), qtyOfContextMessages);
 		if (messages.isEmpty()) {
@@ -269,7 +269,7 @@ public class GptServiceImpl implements GptService {
 		for (String message : messages)
 		{
 			GptMessage gptMessage = new GptMessage( ROLE_USER, message, user.getSlackUserId()  );
-			log.debug("Added message into list of last messages: {}, authorSlackID: {}", message, user.getSlackUserId() );
+			log.debug("Found request: {}, authorSlackID: {}", message, user.getSlackUserId() );
 			gptMessages.add(gptMessage);
 		}
 		return gptMessages;
@@ -279,7 +279,7 @@ public class GptServiceImpl implements GptService {
 
     private List<GptMessage> getLastResponsesToUser(SlackUser user)
 	{
-        log.debug("Calling getLastResponsesToUser with user: {}, qtyOfContextMessages: {}", user.toString(), qtyOfContextMessages);
+        log.debug("Calling getLastResponsesToUser with user={}, max allowed context={}", user.getSlackUserId(), qtyOfContextMessages);
 		
 		List<String> messages = jpaGptResponseRepo.getLastResponsesToUser(user.getSlackUserId(), qtyOfContextMessages);
         if (messages.isEmpty()) {
