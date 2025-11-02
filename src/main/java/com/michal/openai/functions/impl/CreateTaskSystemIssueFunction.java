@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class CreateTaskSystemIssueFunction implements Function
 {
 	private final TaskSystemService taskSystemService;
-    ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 	@Override
 	public String execute(String requestBody) {
         log.debug("Execute CreateTaskSystemIssueFunction with requestBody: {}", requestBody);

@@ -3,6 +3,7 @@ package com.michal.openai.persistence;
 import java.sql.ResultSet;
 import java.util.List;
 
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -14,12 +15,12 @@ import lombok.extern.slf4j.Slf4j;
  * Allows simple use of SQL limit
  */
 
+@Data
 @Slf4j
 @Repository
 public class RequestJdbcTemplateRepo {
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     public List<String> getLastRequestsBySlackId(String slackId, int limit) 
     {

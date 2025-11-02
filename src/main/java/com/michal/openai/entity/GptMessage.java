@@ -11,10 +11,10 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.persistence.*;
 import lombok.Data;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@Entity
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Data
+@Entity
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GptMessage {
 	
 	@Id
@@ -49,55 +49,18 @@ public class GptMessage {
 		this.role = role;
 		this.content = content;
 	}
-	
-	@Override
-	public String toString() {
-		return "GptMessage [name=" + name + ", role=" + role + ", content=" + content + ", userName=" + userName
-				+ ", toolCalls=" + toolCalls + "]";
-	}
 
+    @Data
 	public static class Tool {
 		String id;
 		String type;
 		@JsonProperty("function")
-		FunctionCall function;
-		public Tool() {
-			super();
-		}
-		public FunctionCall getFunctionCall() {
-			return function;
-		}
-		public void setFunctionCall(FunctionCall function) {
-			this.function = function;
-		}
+		FunctionCall functionCall;
 
-	    @Override
-		public String toString() {
-			return "Tool [id=" + id + ", type=" + type + ", function=" + function + "]";
-		}
-
+        @Data
         public static class FunctionCall {
             String name;
             String arguments;
-
-            public String getName() {
-                return name;
-            }
-            public void setName(String name) {
-                this.name = name;
-            }
-            public String getArguments() {
-                return arguments;
-            }
-            public void setArguments(String arguments) {
-                this.arguments = arguments;
-            }
-
-            @Override
-            public String toString() {
-                return "FunctionCall [name=" + name + ", arguments=" + arguments + "]";
-            }
-
         }
 	}
 }
