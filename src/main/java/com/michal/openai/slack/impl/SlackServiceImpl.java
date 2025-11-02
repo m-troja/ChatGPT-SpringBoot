@@ -185,8 +185,6 @@ public class SlackServiceImpl implements SlackService {
 //	                .channel("asdasd")
 	                .text(stringToSend)
 	                .build();
-                    log.debug("sendMessageToSlack response = {}", response);
-                    log.debug("stringToSend = {}", stringToSend);
 
 			        try {
                         log.info("sendMessageToSlack: Channel= {}, Message= {}", channelId, stringToSend);

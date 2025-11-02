@@ -1,6 +1,7 @@
 package com.michal.openai.config;
 
 import com.michal.openai.functions.impl.*;
+import com.michal.openai.tasksystem.entity.TaskSystemAssignIssueParameterProperties;
 import com.michal.openai.tasksystem.entity.TaskSystemCreateIssueParameterProperties;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -19,20 +20,10 @@ import com.slack.api.methods.MethodsClient;
 
 @Configuration
 public class BeansConfiguration {
-	
+
 	@Value("${slack.bot.oauth.token}")
 	private String slackSecurityTokenBot ;
 
-	@Bean
-	public HttpClient httpClient() {
-		return HttpClientBuilder.create().build();
-	}
-	
-	@Bean("getWeatherInfoFunction")
-	public Function weatherFunctionCall() {
-		return new GetWeatherInfoFunction();
-	}
-	
 //	@Bean("getAllJiraIssuesFunction")
 //	public Function allJiraIssuesFunctionCall() { return new GetAllJiraIssues(); }
 
@@ -40,11 +31,6 @@ public class BeansConfiguration {
 	public Function getReposFunctionCall() {
 		return new GetReposFunction();
 	}
-
-//    Managed by @Component
-//    @Bean("getAllTaskSystemIssuesFunctionCall")
-//    public Function getAllTaskSystemIssuesFunctionCall() {
-//        return new GetAllTaskSystemIssuesFunction(); }
 
 	/* Disabled mailing feature due to security
 	
@@ -79,28 +65,7 @@ public class BeansConfiguration {
 	}
 	
 	 */
-	
-	// Define  weather fnc behavior and its parameters
-	@Bean("gptWeatherFunction")
-	public GptFunction defineGetWeatherFunction() {
-		var gptFunction = new GptFunction();
-		gptFunction.setName("getWeatherInfoFunction");
-		gptFunction.setDescription("Get weather in specified location");
-		
-		GptFunction.Parameters gptFunctionParameters = gptFunction.new Parameters();
-		gptFunctionParameters.setType("object");		
-		gptFunctionParameters.setRequired(new String[] {"location"});
-		
-		WeatherParameterProperties weatherParameterProperties = new WeatherParameterProperties();
-		weatherParameterProperties.setLocation(weatherParameterProperties.new Location("string", "Warsaw"));
-		weatherParameterProperties.setMeasurementUnit(weatherParameterProperties.new MeasurementUnit("string", "Celsius or fahrenheit. Temperature measurement unit", 
-				new String[] {MeasurementUnit.CELSIUS, MeasurementUnit.FAHRENHEIT}));
-		
-		gptFunctionParameters.setProperties(weatherParameterProperties);
-		gptFunction.setParameters(gptFunctionParameters);
-		return gptFunction;
-	}
-	
+
 //	@Bean("defineCreateJiraIssueFunction")
 //	public GptFunction defineCreateJiraIssueFunction(
 //			@Value("${gpt.function.jira.create.issue.name}") String functionName,
@@ -184,8 +149,7 @@ public class BeansConfiguration {
 			@Value("${github.function.name}") String functionName,
 			@Value("${github.function.attr.login}") String attrLogin,
 			@Value("${github.function.attr.login.desc}") String attrLoginDesc
-			
-			) {
+    ) {
 		var getReposFunction = new GptFunction();
 		getReposFunction.setName(functionName);
 		getReposFunction.setDescription(functionDescription);
@@ -203,6 +167,34 @@ public class BeansConfiguration {
 		
 		return getReposFunction;
 	}
+
+    @Bean("defineAssignTaskSystemIssueFunction")
+    public GptFunction assignTaskSystemIssue(
+            @Value("${gpt.function.tasksystem.assign.issue.desc}") String functionDescription,
+            @Value("${gpt.function.tasksystem.assign.issue.name}") String functionName,
+            @Value("${gpt.function.tasksystem.assign.issue.attr.key.desc}") String attrKey,
+            @Value("${gpt.function.tasksystem.assign.issue.attr.slackUserId.desc}") String attrSlackUserId
+
+    ) {
+        var getReposFunction = new GptFunction();
+        getReposFunction.setName(functionName);
+        getReposFunction.setDescription(functionDescription);
+
+        GptFunction.Parameters gptFunctionParameters = getReposFunction.new Parameters();
+        gptFunctionParameters.setType("object");
+        gptFunctionParameters.setRequired(new String[] {attrKey, attrSlackUserId});
+
+        var properties = new TaskSystemAssignIssueParameterProperties();
+        var key = properties.new Key("string", attrKey);
+        var slackUserId = properties.new SlackUserId("string", attrSlackUserId);
+
+        properties.setKey(key);
+        properties.setSlackUserId(slackUserId);
+        gptFunctionParameters.setProperties(properties);
+        getReposFunction.setParameters(gptFunctionParameters);
+
+        return getReposFunction;
+    }
 	
 //	@Bean("defineAllJiraIssuesFunction")
 //	public GptFunction defineGetAllJiraIssuesFunction() {

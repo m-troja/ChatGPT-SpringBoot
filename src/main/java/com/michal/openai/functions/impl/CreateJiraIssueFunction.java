@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Data
 @Slf4j
 @Component
-public class CreateIssueFunction implements Function 
+public class CreateJiraIssueFunction implements Function
 {
 	private final JiraService jiraService;
     private ObjectMapper objectMapper;
