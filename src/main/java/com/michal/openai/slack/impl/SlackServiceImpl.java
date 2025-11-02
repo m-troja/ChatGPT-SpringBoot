@@ -100,11 +100,12 @@ public class SlackServiceImpl implements SlackService {
 		{
             log.error(e.getMessage());
         }
-		String messageWithNames = substituteUserIdsWithUserNames(message);
+//		String messageWithNames = substituteUserIdsWithUserNames(message);
+		String messageWithoutNames = substituteUserIdsWithUserNames(message);
 
-        log.debug("extractSlackRequestData: {} : {} : {}", messageAuthorId, messageWithNames, channelIdFrom);
+        log.debug("extractSlackRequestData: {} : {} : {}", messageAuthorId, messageWithoutNames, channelIdFrom);
 
-		return new SlackRequestData(messageAuthorId, messageWithNames, channelIdFrom);
+		return new SlackRequestData(messageAuthorId, messageWithoutNames, channelIdFrom);
 	}
 
 	private String substituteUserIdsWithUserNames(String message) {
@@ -180,8 +181,8 @@ public class SlackServiceImpl implements SlackService {
 				{
 					String stringToSend = response != null ? response : "[No response]";
 					ChatPostMessageRequest request = ChatPostMessageRequest.builder()
-	                .channel(channelId)
-//	                .channel("asdasd")
+//	                .channel(channelId)
+	                .channel("asdasd")
 	                .text(stringToSend)
 	                .build();
                     log.debug("sendMessageToSlack response = {}", response);
