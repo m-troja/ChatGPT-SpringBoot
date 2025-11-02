@@ -101,7 +101,7 @@ public class SlackServiceImpl implements SlackService {
             log.error(e.getMessage());
         }
 //		String messageWithNames = substituteUserIdsWithUserNames(message);
-		String messageWithoutNames = substituteUserIdsWithUserNames(message);
+		String messageWithoutNames = message;
 
         log.debug("extractSlackRequestData: {} : {} : {}", messageAuthorId, messageWithoutNames, channelIdFrom);
 
