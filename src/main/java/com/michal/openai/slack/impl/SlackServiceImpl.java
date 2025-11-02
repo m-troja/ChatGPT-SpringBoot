@@ -219,4 +219,4 @@ public class SlackServiceImpl implements SlackService {
         log.info("Registered user: {}", user);
         return SUCCESSFULL_REGISTRATION_MESSAGE  ;
     }
-} // test tag 2.0
+} // test tag 2.0.3
