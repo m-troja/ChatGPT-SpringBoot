@@ -11,6 +11,6 @@ import java.util.List;
 @Repository
 public interface JpaGptResponseRepo extends CrudRepository<GptResponse, Integer> 
 {
-    @Query("SELECT content FROM GptResponse WHERE requestSlackID = ?1 ORDER BY id DESC LIMIT ?2")
+    @Query("SELECT content FROM GptResponse r WHERE r.requestSlackID = ?1 and r.isFunctionCall = false ORDER BY id DESC LIMIT ?2")
     List<String> getLastResponsesToUser(String slackId, int limit);
 }

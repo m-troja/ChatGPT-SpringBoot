@@ -39,8 +39,8 @@ public class GptResponse {
 	@Column(name = "content", columnDefinition = "text")
     private String content;
     @JsonIgnore
-    @Column(name = "role")
-    private String responseRole;
+    @Column(name = "isFunctionCall")
+    private boolean isFunctionCall;
 
 	@Transient
 	private String object;

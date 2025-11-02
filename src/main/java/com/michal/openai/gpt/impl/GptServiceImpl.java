@@ -167,27 +167,7 @@ public class GptServiceImpl implements GptService {
                     log.error("GPT returned null response!");
                     return null;
                 }
-                if (gptRequest.getId() != null) {
-                    gptResponse.setRequestId(gptRequest.getId());
-                }
-                else {
-                    gptResponse.setRequestId(0L);
-                    log.error("GPT Request was null");
-                }
-
-                // Persistence - save data into DB
-                String role = gptResponse.getChoices().getFirst().getMessage().getRole();
-                gptResponse.setResponseRole(role);
-                Long requestId = gptResponse.getRequestId();
-                gptResponse.setRequestId(requestId);
-                String requestSlackId = gptRequest.getAuthor();
-                gptResponse.setRequestSlackID(requestSlackId);
-                String authorRealName = gptRequest.getAuthorRealname();
-                gptResponse.setRequestAuthorRealName(authorRealName);
-                String content = gptResponse.getChoices().getFirst().getMessage().getContent();
-                gptResponse.setContent(content);
-                saveResponse(gptResponse);
-                log.debug("Setting RequestSlackID={}, Content={}, RequestId={}, Role={} for GptResponse.Id={}", requestSlackId, content, requestId, role,  requestId);
+                saveRequestAndResponseIntoDb(gptRequest, gptResponse);
                 return gptResponse;
 
             } catch (RuntimeException e) {
@@ -202,10 +182,45 @@ public class GptServiceImpl implements GptService {
                 sleep(waitSeconds);
             }
         }
-
         return null;
     }
 
+    private void saveRequestAndResponseIntoDb(GptRequest req, GptResponse resp) {
+        // Persistence - save data into DB
+
+        if (req.getId() != null) {
+            resp.setRequestId(req.getId());
+        }
+        else {
+            resp.setRequestId(0L);
+            log.error("GPT Request was null");
+        }
+
+        boolean isFunctionCall ;
+        String content;
+        GptMessage.Tool.FunctionCall functionCall ;
+        if (resp.getChoices().getFirst().getMessage().getToolCalls() != null)
+        {
+            isFunctionCall = true;
+            functionCall = resp.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall();
+            content = String.format("fn: %s, args: %s", functionCall.getName(), functionCall.getArguments());
+
+        }
+        else {
+            isFunctionCall = false;
+            content = resp.getChoices().getFirst().getMessage().getContent();
+        }
+        resp.setFunctionCall(isFunctionCall);
+        resp.setContent(content);
+        Long requestId = resp.getRequestId();
+        resp.setRequestId(requestId);
+        String requestSlackId = req.getAuthor();
+        resp.setRequestSlackID(requestSlackId);
+        String authorRealName = req.getAuthorRealname();
+        resp.setRequestAuthorRealName(authorRealName);
+        saveResponse(resp);
+        log.debug("GptResponseId {}: RequestSlackID={}, Content={}, RequestId={}, isFunctionCall={}", requestId, requestSlackId, content, requestId, isFunctionCall);
+    }
 
     private void sleep(int seconds) {
         try {
@@ -324,6 +339,7 @@ public class GptServiceImpl implements GptService {
             log.error("Error creating pretty JSON: ", e);
         }
     }
+
     public SlackUser getSlackUserBySlackId(String slackId) {
         return jpaSlackrepo.findBySlackUserId(slackId);
     }

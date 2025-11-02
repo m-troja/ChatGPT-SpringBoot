@@ -33,8 +33,8 @@ public class BeansConfiguration {
 		return new GetWeatherInfoFunction();
 	}
 	
-	@Bean("getAllJiraIssuesFunction")
-	public Function allJiraIssuesFunctionCall() { return new GetAllJiraIssues(); }
+//	@Bean("getAllJiraIssuesFunction")
+//	public Function allJiraIssuesFunctionCall() { return new GetAllJiraIssues(); }
 
 	@Bean("getReposFunctionCall")
 	public Function getReposFunctionCall() {
@@ -101,42 +101,42 @@ public class BeansConfiguration {
 		return gptFunction;
 	}
 	
-	@Bean("defineCreateJiraIssueFunction")
-	public GptFunction defineCreateJiraIssueFunction(
-			@Value("${gpt.function.jira.create.issue.name}") String functionName,
-			@Value("${gpt.function.jira.create.issue.description}") String description, 
-			@Value("${gpt.function.jira.create.issue.attr.description.desc}") String descrAttrDescription, 
-			@Value("${gpt.function.jira.create.issue.attr.issuetype.desc}") String issueTypeAttrDescription, 
-			@Value("${gpt.function.jira.create.issue.attr.issuetype.epic}") String epicIssueType, 
-			@Value("${gpt.function.jira.create.issue.attr.issuetype.story}") String storyIssueType, 
-			@Value("${gpt.function.jira.create.issue.attr.issuetype.task}") String taskIssueType, 
-			@Value("${gpt.function.jira.create.issue.attr.issuetype.bug}") String bugIssueType,
-			@Value("${gpt.function.jira.create.issue.attr.duedate.desc}") String dueDateAttrDescription, 
-			@Value("${gpt.function.jira.create.issue.attr.summary.format}") String dueDateFormat, 
-			@Value("${gpt.function.jira.create.issue.attr.summary.desc}") String summaryAttrDescription
-			) 
-	{
-		var gptFunction = new GptFunction();
-		gptFunction.setName(functionName);
-		gptFunction.setDescription(description);
-
-		// Predefine function parameters
-		JiraCreateIssueParameterProperties properties = new JiraCreateIssueParameterProperties();
-		properties.setDescription(properties.new Description("string",descrAttrDescription));
-		properties.setSummary(properties.new Summary("string",summaryAttrDescription));
-		properties.setDuedate(properties.new DueDate("string",dueDateAttrDescription, dueDateFormat));
-		properties.setIssueType(properties.new IssueType("string",issueTypeAttrDescription, new String[] {epicIssueType, storyIssueType, taskIssueType, bugIssueType} ));
-		
-		// Define function's parameters
-		GptFunction.Parameters parameters = gptFunction.new Parameters();
-		parameters.setType("object");
-		parameters.setProperties(properties);
-		parameters.setRequired(new String[] {"summary", "description", "issuetype"});
-		
-		gptFunction.setParameters(parameters);
-
-		return gptFunction;
-	}
+//	@Bean("defineCreateJiraIssueFunction")
+//	public GptFunction defineCreateJiraIssueFunction(
+//			@Value("${gpt.function.jira.create.issue.name}") String functionName,
+//			@Value("${gpt.function.jira.create.issue.description}") String description,
+//			@Value("${gpt.function.jira.create.issue.attr.description.desc}") String descrAttrDescription,
+//			@Value("${gpt.function.jira.create.issue.attr.issuetype.desc}") String issueTypeAttrDescription,
+//			@Value("${gpt.function.jira.create.issue.attr.issuetype.epic}") String epicIssueType,
+//			@Value("${gpt.function.jira.create.issue.attr.issuetype.story}") String storyIssueType,
+//			@Value("${gpt.function.jira.create.issue.attr.issuetype.task}") String taskIssueType,
+//			@Value("${gpt.function.jira.create.issue.attr.issuetype.bug}") String bugIssueType,
+//			@Value("${gpt.function.jira.create.issue.attr.duedate.desc}") String dueDateAttrDescription,
+//			@Value("${gpt.function.jira.create.issue.attr.summary.format}") String dueDateFormat,
+//			@Value("${gpt.function.jira.create.issue.attr.summary.desc}") String summaryAttrDescription
+//			)
+//	{
+//		var gptFunction = new GptFunction();
+//		gptFunction.setName(functionName);
+//		gptFunction.setDescription(description);
+//
+//		// Predefine function parameters
+//		JiraCreateIssueParameterProperties properties = new JiraCreateIssueParameterProperties();
+//		properties.setDescription(properties.new Description("string",descrAttrDescription));
+//		properties.setSummary(properties.new Summary("string",summaryAttrDescription));
+//		properties.setDuedate(properties.new DueDate("string",dueDateAttrDescription, dueDateFormat));
+//		properties.setIssueType(properties.new IssueType("string",issueTypeAttrDescription, new String[] {epicIssueType, storyIssueType, taskIssueType, bugIssueType} ));
+//
+//		// Define function's parameters
+//		GptFunction.Parameters parameters = gptFunction.new Parameters();
+//		parameters.setType("object");
+//		parameters.setProperties(properties);
+//		parameters.setRequired(new String[] {"summary", "description", "issuetype"});
+//
+//		gptFunction.setParameters(parameters);
+//
+//		return gptFunction;
+//	}
 
     @Bean("defineCreateTaskSystemIssueFunction")
     public GptFunction defineCreateTaskSystemIssueFunction(
@@ -204,14 +204,14 @@ public class BeansConfiguration {
 		return getReposFunction;
 	}
 	
-	@Bean("defineAllJiraIssuesFunction")
-	public GptFunction defineGetAllJiraIssuesFunction() {
-		var gptFunction = new GptFunction();
-		gptFunction.setName("getAllJiraIssuesFunction");
-		gptFunction.setDescription("Get basic data about all issues in my Jira: key, assignee, description, summary, due date.");
-
-		return gptFunction;
-	}
+//	@Bean("defineAllJiraIssuesFunction")
+//	public GptFunction defineGetAllJiraIssuesFunction() {
+//		var gptFunction = new GptFunction();
+//		gptFunction.setName("getAllJiraIssuesFunction");
+//		gptFunction.setDescription("Get basic data about all issues in my Jira: key, assignee, description, summary, due date.");
+//
+//		return gptFunction;
+//	}
 	
 	@Bean("slackBotClient")
 	public MethodsClient slackMethodClientBot() {
