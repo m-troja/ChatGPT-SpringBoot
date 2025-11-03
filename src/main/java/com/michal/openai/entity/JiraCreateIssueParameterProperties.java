@@ -52,8 +52,8 @@ public class JiraCreateIssueParameterProperties implements ParameterProperties {
 	
 	public class DueDate extends ParameterPropertyAttribute
 	{
-		
-		String format;
+
+        private String format;
 		
 		public DueDate() {
 			super();

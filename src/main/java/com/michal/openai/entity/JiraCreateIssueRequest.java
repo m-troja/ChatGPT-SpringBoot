@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class JiraCreateIssueRequest {
 
-	String returnedKey;
+    private String returnedKey;
 	private Fields fields;
 
 	@Override
@@ -37,7 +37,7 @@ public class JiraCreateIssueRequest {
         @Data
 		public class Project
 		{
-			String key;
+            private String key;
 
 			@Override
 			public String toString() {
@@ -71,8 +71,8 @@ public class JiraCreateIssueRequest {
         @Data
 		public class Description
 		{
-			String type;
-			Integer version;
+            private String type;
+            private Integer version;
 			private List<Content> content;
 
 			public Description(String type, Integer version) {
@@ -92,7 +92,7 @@ public class JiraCreateIssueRequest {
             @Data
 			public class Content
 			{
-				String type;
+                private String type;
 
 				@JsonProperty("content")
 				private List<ContentOfContent> contentOfContent;

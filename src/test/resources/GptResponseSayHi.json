@@ -1,0 +1,21 @@
+{
+  "object" : "chat.completion",
+  "created" : 1762191818,
+  "model" : "gpt-4.1-2025-04-14",
+  "choices" : [ {
+    "index" : 0,
+    "message" : {
+      "id" : 0,
+      "content" : "<@U08RU3LAKDH> Hi! \uD83D\uDC4B",
+      "name" : null,
+      "role" : "assistant",
+      "tool_calls" : null
+    },
+    "finish_reason" : "stop"
+  } ],
+  "usage" : {
+    "prompt_tokens" : 650,
+    "completion_tokens" : 15,
+    "total_tokens" : 665
+  }
+}
