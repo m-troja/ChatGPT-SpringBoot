@@ -152,7 +152,7 @@ public class SlackServiceImpl implements SlackService {
 	private void extractUsersIntoDatabase() {
 			try 
 			{
-				log.debug("extractUsersIntoDatabase()...");
+				log.debug("Calling extractUsersIntoDatabase");
 				UsersListRequest usersListRequest = UsersListRequest.builder().build();
 				UsersListResponse userListResponse = slackBotClient.usersList(usersListRequest);          
 
@@ -163,7 +163,6 @@ public class SlackServiceImpl implements SlackService {
 					if ( getSlackUserBySlackId(user.getId()) == null)
 					{
 						registerUser(new SlackUser( user.getId(),user.getRealName() ));
-                        log.debug("registerUser : {} : {}", user.getId(), user.getRealName());
 					}
 				}
 			} 
@@ -193,7 +192,7 @@ public class SlackServiceImpl implements SlackService {
 			        catch (IOException | SlackApiException e){
                         log.error(e.getMessage());
 			        }
-		    }
+                }
 		)
 		.exceptionally(ex ->
 			{

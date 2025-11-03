@@ -16,11 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 public class ChatGptApiController {
 	
-	@Autowired
-	private GptService gptService;
-	
-	@Autowired
-	private List<GptFunction> functions;
+	private final GptService gptService;
+    private final List<GptFunction> functions;
 	
 	@GetMapping("/v1/ask-gpt")
 	public CompletableFuture<String> askGpt(@RequestParam String query, @RequestParam String userSlackId)
@@ -28,6 +25,9 @@ public class ChatGptApiController {
 		log.info("GET /v1/ask-gpt with params: query={}, userSlackId={}", query, userSlackId );
 		return gptService.getAnswerWithSlack(CompletableFuture.completedFuture(query), CompletableFuture.completedFuture(userSlackId), functions.toArray(GptFunction[]::new));
 	}
-	
 
+    public ChatGptApiController(GptService gptService, List<GptFunction> functions) {
+        this.gptService = gptService;
+        this.functions = functions;
+    }
 }
