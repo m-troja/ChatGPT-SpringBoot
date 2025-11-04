@@ -127,6 +127,10 @@ public class GptServiceImpl implements GptService {
 	private String callGptNoFunction(GptRequest gptRequest)
 	{
         GptResponse gptResponse = sendRequestToGpt(gptRequest);
+        if (gptResponse == null || gptResponse.getChoices() == null || gptResponse.getChoices().isEmpty()) {
+            log.error("GPT response is null or empty");
+            return "GPT response error";
+        }
         GptMessage lastMessage = gptResponse.getChoices().getFirst().getMessage();
 
         List<GptMessage.Tool> toolsToCall = lastMessage.getToolCalls();

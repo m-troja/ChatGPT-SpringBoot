@@ -36,7 +36,7 @@ public class RestClientConfig {
 			return builder.build();
 	}
     
-    @Bean("gptRestClient")
+    @Bean("jiraRestClient")
     public RestClient jiraRestClient()
     {
     	 RestClient.Builder builder = RestClient.builder()
@@ -46,7 +46,7 @@ public class RestClientConfig {
     	        
 			return builder.build();
 	}
-    @Bean("jiraRestClient")
+    @Bean("gptRestClient")
     public RestClient gptRestClient()
     {
         RestClient.Builder builder = RestClient.builder()
