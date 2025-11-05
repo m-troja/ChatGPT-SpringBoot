@@ -36,6 +36,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
         "CHAT_MAX_TOKENS=100"})
 class GptServiceImplTest {
 
+    private static String chatGptApiUrl = "https://api.openai.com/v1/chat/completions";
     @Autowired MockRestServiceServer server;
     @Autowired ObjectMapper objectMapper;
     @Autowired GptServiceImpl service;
@@ -59,17 +60,15 @@ class GptServiceImplTest {
     }
 
     @Test
-    void checkAnswerNoFunctions() throws Exception {
+    void checkAnswerNoFunctions() throws JsonProcessingException {
         SlackUser user = new SlackUser("U12345678", "Slack Name");
         when(jpaSlackRepo.findBySlackUserId("U12345678")).thenReturn(user);
         when(jpaGptRequestRepo.getLastRequestsBySlackId("U12345678", 5)).thenReturn(List.of());
         when(jpaGptResponseRepo.getLastResponsesToUser("U12345678", 5)).thenReturn(List.of());
 
         GptResponse gptResponse = buildResponse("Hi there!", false);
-
-        server.expect(requestTo("https://api.openai.com/v1/chat/completions"))
-                .andRespond(withSuccess(objectMapper.writeValueAsString(gptResponse),
-                        MediaType.APPLICATION_JSON));
+        System.out.println(gptResponse.toString()); // to be deleted
+        mockGptResponse(gptResponse);
 
         CompletableFuture<String> query = CompletableFuture.completedFuture("Just say hi");
         CompletableFuture<String> userName = CompletableFuture.completedFuture(user.getSlackUserId());
@@ -87,6 +86,13 @@ class GptServiceImplTest {
         response.setChoices(List.of(choice));
         return response;
     }
+
+    private void mockGptResponse(GptResponse gptResponse) throws JsonProcessingException {
+        server.expect(requestTo(chatGptApiUrl))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(gptResponse), MediaType.APPLICATION_JSON));
+
+    }
+
     @TestConfiguration
     static class TestConfig {
         @Bean
