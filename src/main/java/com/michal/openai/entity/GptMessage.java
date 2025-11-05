@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
@@ -50,17 +51,8 @@ public class GptMessage {
 		this.content = content;
 	}
 
-    @Data
-	public static class Tool {
-		String id;
-		String type;
-		@JsonProperty("function")
-		FunctionCall functionCall;
-
-        @Data
-        public static class FunctionCall {
-            String name;
-            String arguments;
-        }
-	}
+    public record Tool(String id, String type, @JsonProperty("function") FunctionCall functionCall) {
+            public record FunctionCall(String name, String arguments) {
+            }
+    }
 }

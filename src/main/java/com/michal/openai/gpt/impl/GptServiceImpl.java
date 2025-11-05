@@ -142,13 +142,13 @@ public class GptServiceImpl implements GptService {
         }
         for (GptMessage.Tool tool : toolsToCall) {
             log.debug("Found tool call, GPT will be called: {}", tool);
-            Function fn = functionFactory.getFunctionByFunctionName(tool.getFunctionCall().getName());
-            String functionResult = fn.execute(tool.getFunctionCall().getArguments());
+            Function fn = functionFactory.getFunctionByFunctionName(tool.functionCall().name());
+            String functionResult = fn.execute(tool.functionCall().arguments());
             log.debug("Result of function call: {}", functionResult);
             GptMessage toolMessage = new GptMessage();
             toolMessage.setRole("function");
             toolMessage.setContent(functionResult);
-            toolMessage.setName(tool.getFunctionCall().getName());
+            toolMessage.setName(tool.functionCall().name());
             gptRequest.getMessages().add(toolMessage);
         }
         return callGptNoFunction(gptRequest);
@@ -206,8 +206,8 @@ public class GptServiceImpl implements GptService {
         if (resp.getChoices().getFirst().getMessage().getToolCalls() != null)
         {
             isFunctionCall = true;
-            functionCall = resp.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall();
-            content = String.format("fn: %s, args: %s", functionCall.getName(), functionCall.getArguments());
+            functionCall = resp.getChoices().getFirst().getMessage().getToolCalls().getFirst().functionCall();
+            content = String.format("fn: %s, args: %s", functionCall.name(), functionCall.arguments());
 
         }
         else {

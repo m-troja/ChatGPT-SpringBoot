@@ -3,6 +3,7 @@ package com.michal.openai.tasksystem.entity;
 import com.michal.openai.entity.ParameterProperties;
 import com.michal.openai.entity.ParameterPropertyAttribute;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
 public class TaskSystemCreateIssueParameterProperties implements ParameterProperties  {
@@ -15,6 +16,7 @@ public class TaskSystemCreateIssueParameterProperties implements ParameterProper
     private TaskSystemCreateIssueParameterProperties.DueDate dueDate;
     private TaskSystemCreateIssueParameterProperties.ProjectId projectId;
 
+    @EqualsAndHashCode(callSuper = true)
     @Data
     public class Title extends ParameterPropertyAttribute
     {
@@ -25,7 +27,9 @@ public class TaskSystemCreateIssueParameterProperties implements ParameterProper
             super(type, description);
         }
 
-    }@Data
+    }
+    @EqualsAndHashCode(callSuper = true)
+    @Data
     public class Description extends ParameterPropertyAttribute
     {
         public Description() {
@@ -36,6 +40,7 @@ public class TaskSystemCreateIssueParameterProperties implements ParameterProper
         }
 
     }
+    @EqualsAndHashCode(callSuper = true)
     @Data
     public class Priority extends ParameterPropertyAttribute
     {
@@ -48,6 +53,7 @@ public class TaskSystemCreateIssueParameterProperties implements ParameterProper
             this.priorities = priorities;  }
     }
 
+    @EqualsAndHashCode(callSuper = true)
     @Data
     public class AuthorSlackId extends ParameterPropertyAttribute
     {
@@ -59,6 +65,7 @@ public class TaskSystemCreateIssueParameterProperties implements ParameterProper
         }
     }
 
+    @EqualsAndHashCode(callSuper = true)
     @Data
     public class AssigneeSlackId extends ParameterPropertyAttribute
     {
@@ -69,6 +76,7 @@ public class TaskSystemCreateIssueParameterProperties implements ParameterProper
             super(type, description); }
     }
 
+    @EqualsAndHashCode(callSuper = true)
     @Data
     public class DueDate extends ParameterPropertyAttribute
     {
@@ -82,6 +90,7 @@ public class TaskSystemCreateIssueParameterProperties implements ParameterProper
         }
     }
 
+    @EqualsAndHashCode(callSuper = true)
     @Data
     public class ProjectId extends ParameterPropertyAttribute
     {
