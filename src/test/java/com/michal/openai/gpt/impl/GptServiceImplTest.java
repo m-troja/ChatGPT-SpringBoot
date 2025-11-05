@@ -7,6 +7,7 @@ import com.michal.openai.functions.FunctionFacory;
 import com.michal.openai.functions.impl.AssignTaskSystemIssueFunction;
 import com.michal.openai.persistence.*;
 import com.michal.openai.tasksystem.entity.TaskSystemAssignIssueParameterProperties;
+import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,8 +92,9 @@ class GptServiceImplTest {
         assertThat(answerFromService).isEqualTo("Hi there!");
     }
     @Test
-    void shouldReturnGptResponseFunctionCallThenGptResponseNoFunctionCall() throws JsonProcessingException {
+    void taskSystemAssignIssueFunctionTest() throws JsonProcessingException {
         // given
+        var expectedDtoString = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Title", "Desc", "NEW", "HIGH", 1 ,1));
         SlackUser slackRequestAuthor = new SlackUser("U12345678", "Slack Name");
         CompletableFuture<String> query = CompletableFuture.completedFuture("Assign ticket Dummy-1 to U12345678");
         CompletableFuture<String> userName = CompletableFuture.completedFuture("U12345678");
@@ -114,18 +116,18 @@ class GptServiceImplTest {
         // mock GptResponse - function call
         server.expect(requestTo(chatGptApiUrl)).andRespond(withSuccess(objectMapper.writeValueAsString(gptResponseFunctionCall), MediaType.APPLICATION_JSON));
 
-        var gptResponseNoFunctionCall = buildResponseNoFunctionCall("I have created the issue Dummy-1...", false);
+        var gptResponseNoFunctionCall = buildResponseNoFunctionCall(expectedDtoString, false);
 
         // mock GptResponse - no function call
         server.expect(requestTo(chatGptApiUrl)).andRespond(withSuccess(objectMapper.writeValueAsString(gptResponseNoFunctionCall), MediaType.APPLICATION_JSON));
-        assertThat(service.getAnswerWithSlack(query, userName).join()).isEqualTo("I have created the issue Dummy-1...");
+        assertThat(service.getAnswerWithSlack(query, userName).join()).isEqualTo(expectedDtoString);
 
         assertThat(gptResponseFunctionCall.getChoices().getFirst().getMessage().getToolCalls()).isNotNull();
         assertThat(gptResponseFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().functionCall().name()).isEqualTo("assignTaskSystemIssueFunction");
         assertThat(gptResponseFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().functionCall().arguments()).isEqualTo("{\\\"key\\\":\\\"Dummy-1\\\",\\\"slackUserId\\\":\\\"U12345678\\\"}");
 
         assertThat(gptResponseNoFunctionCall.getChoices().getFirst().getMessage().getToolCalls()).isNull();
-        assertThat(gptResponseNoFunctionCall.getChoices().getFirst().getMessage().getContent()).isEqualTo("I have created the issue Dummy-1...");
+        assertThat(gptResponseNoFunctionCall.getChoices().getFirst().getMessage().getContent()).isEqualTo(expectedDtoString);
     }
 
 
