@@ -36,7 +36,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
         "CHAT_MAX_TOKENS=100"})
 class GptServiceImplTest {
 
-    private static String chatGptApiUrl = "https://api.openai.com/v1/chat/completions";
+    private static final String chatGptApiUrl = "https://api.openai.com/v1/chat/completions";
     @Autowired MockRestServiceServer server;
     @Autowired ObjectMapper objectMapper;
     @Autowired GptServiceImpl service;
@@ -98,7 +98,7 @@ class GptServiceImplTest {
         @Bean
         @Qualifier("gptRestClient")
         RestClient gptRestClient(RestClient.Builder builder) {
-            return builder.baseUrl("https://api.openai.com/v1/chat/completions").build();
+            return builder.baseUrl(chatGptApiUrl).build();
         }
     }
 }
