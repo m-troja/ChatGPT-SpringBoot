@@ -109,7 +109,6 @@ public class GptServiceImpl implements GptService {
         GptRequest gptRequest = new GptRequest();
         List<GptMessage> messages = buildLastMessagesContextOfUserSlackId(slackUserRequestAuthor.getSlackUserId(), query);
 
-        /* Define request parameters */
         gptRequest.setAuthor(slackUserRequestAuthor.getSlackUserId());
         gptRequest.setContent(query);
         gptRequest.setAuthorRealname(slackUserRequestAuthor.getSlackName());
@@ -154,8 +153,12 @@ public class GptServiceImpl implements GptService {
             toolMessage.setRole("function");
             toolMessage.setContent(functionResult);
             toolMessage.setName(tool.getFunctionCall().name());
-            gptRequest.setMessages(gptRequest.getMessages().remove(gptRequest.getMessages().getFirst()));
             gptRequest.getMessages().add(toolMessage);
+            if (gptRequest.getMessages().size() > totalQtyMessagesInContext) {
+                List<GptMessage> messages = gptRequest.getMessages();
+                messages.removeFirst();
+                gptRequest.setMessages(messages);
+            }
         }
         return callGptNoFunction(gptRequest);
 	}
@@ -258,11 +261,6 @@ public class GptServiceImpl implements GptService {
         jsonSaver.saveResponse(gptResponse);
 		jpaGptResponseRepo.save(gptResponse);
 	}
-
-    private void saveGptMessage(GptMessage gptMessage) {
-        log.debug("Saving GPT Message: {} ", gptMessage);
-        jpaMessageRepo.save(gptMessage);
-    }
 
 	/* Get last messages of user to build context for GPT */
 

@@ -171,7 +171,6 @@ public class SlackServiceImpl implements SlackService {
                 log.error(e.getMessage());
 			}
 	}
-	@Async("defaultExecutor")
 	public void sendMessageToSlack(CompletableFuture<String> message, String channelId) {
 		
 		message.thenAccept
@@ -219,4 +218,4 @@ public class SlackServiceImpl implements SlackService {
         log.info("Registered user: {}", user);
         return SUCCESSFULL_REGISTRATION_MESSAGE  ;
     }
-} // test tag 1.0.0
+}
