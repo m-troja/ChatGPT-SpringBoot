@@ -40,9 +40,9 @@ public class RestClientConfig {
     public RestClient jiraRestClient()
     {
     	 RestClient.Builder builder = RestClient.builder()
-    			.baseUrl(chatGptApiUrl)
+    			.baseUrl(jiraUrl)
     			.defaultHeader("Content-Type", "application/json")
-    	        .defaultHeader("Authorization",  "Bearer " + chatGptApiKey);
+    	        .defaultHeader("Authorization",  "Bearer " + jiraKey);
     	        
 			return builder.build();
 	}
@@ -50,9 +50,9 @@ public class RestClientConfig {
     public RestClient gptRestClient()
     {
         RestClient.Builder builder = RestClient.builder()
-                .baseUrl(jiraUrl)
+                .baseUrl(chatGptApiUrl)
                 .defaultHeader("Content-Type", "application/json")
-                .defaultHeader("Authorization",  "Bearer " + jiraKey);
+                .defaultHeader("Authorization",  "Bearer " + chatGptApiKey);
 
         return builder.build();
     }
