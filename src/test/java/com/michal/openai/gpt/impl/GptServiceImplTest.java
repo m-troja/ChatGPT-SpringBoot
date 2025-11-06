@@ -94,7 +94,7 @@ class GptServiceImplTest {
     @Test
     void taskSystemAssignIssueFunctionTest() throws JsonProcessingException {
         // given
-        var expectedDtoString = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Title", "Desc", "NEW", "HIGH", 1 ,1));
+        var expectedDtoString = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678" ,"U12345678"));
         SlackUser slackRequestAuthor = new SlackUser("U12345678", "Slack Name");
         CompletableFuture<String> query = CompletableFuture.completedFuture("Assign ticket Dummy-1 to U12345678");
         CompletableFuture<String> userName = CompletableFuture.completedFuture("U12345678");
