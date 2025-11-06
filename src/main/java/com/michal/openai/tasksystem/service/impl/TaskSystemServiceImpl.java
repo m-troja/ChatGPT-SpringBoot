@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 @Data
@@ -70,7 +69,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
     }
 
     @Override
-    public TaskSystemIssueDto assignIssue(String requestBody) throws Exception {
+    public TaskSystemIssueDto assignIssue(String requestBody) {
         log.debug("Assign issue RequestBody to Task-System: {}", requestBody);
         var issueDto = restClient.put()
                 .uri(assignIssueEndpoint)
