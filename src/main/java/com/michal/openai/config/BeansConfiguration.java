@@ -1,22 +1,16 @@
 package com.michal.openai.config;
 
-import com.michal.openai.functions.impl.*;
+import com.michal.openai.entity.GetReposParameterProperties;
+import com.michal.openai.entity.GptFunction;
+import com.michal.openai.functions.Function;
+import com.michal.openai.functions.impl.GetReposFunction;
 import com.michal.openai.tasksystem.entity.TaskSystemAssignIssueParameterProperties;
 import com.michal.openai.tasksystem.entity.TaskSystemCreateIssueParameterProperties;
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import com.slack.api.Slack;
+import com.slack.api.methods.MethodsClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import com.michal.openai.entity.GetReposParameterProperties;
-import com.michal.openai.entity.GptFunction;
-import com.michal.openai.entity.JiraCreateIssueParameterProperties;
-import com.michal.openai.entity.WeatherParameterProperties;
-import com.michal.openai.entity.WeatherParameterProperties.MeasurementUnit;
-import com.michal.openai.functions.Function;
-import com.slack.api.Slack;
-import com.slack.api.methods.MethodsClient;
 
 @Configuration
 public class BeansConfiguration {
@@ -63,7 +57,7 @@ public class BeansConfiguration {
 		function.setParameters(parameters);
 		return function;
 	}
-	
+
 	 */
 
 //	@Bean("defineCreateJiraIssueFunction")
@@ -144,7 +138,7 @@ public class BeansConfiguration {
     }
 
 	@Bean("defineGetReposFunction")
-	public GptFunction getRepos( 
+	public GptFunction getRepos(
 			@Value("${github.function.desc}") String functionDescription,
 			@Value("${github.function.name}") String functionName,
 			@Value("${github.function.attr.login}") String attrLogin,
@@ -153,18 +147,18 @@ public class BeansConfiguration {
 		var getReposFunction = new GptFunction();
 		getReposFunction.setName(functionName);
 		getReposFunction.setDescription(functionDescription);
-		
+
 		GptFunction.Parameters gptFunctionParameters = getReposFunction.new Parameters();
-		gptFunctionParameters.setType("object");		
+		gptFunctionParameters.setType("object");
 		gptFunctionParameters.setRequired(new String[] {attrLogin});
-		
+
 		var properties = new GetReposParameterProperties();
-		var login = properties.new LoginAttr("string", attrLoginDesc);
-		
+		var login = new GetReposParameterProperties.LoginAttr("string", attrLoginDesc);
+
 		properties.setLogin(login);
 		gptFunctionParameters.setProperties(properties);
 		getReposFunction.setParameters(gptFunctionParameters);
-		
+
 		return getReposFunction;
 	}
 
@@ -195,7 +189,7 @@ public class BeansConfiguration {
 
         return getReposFunction;
     }
-	
+
 //	@Bean("defineAllJiraIssuesFunction")
 //	public GptFunction defineGetAllJiraIssuesFunction() {
 //		var gptFunction = new GptFunction();
@@ -204,7 +198,7 @@ public class BeansConfiguration {
 //
 //		return gptFunction;
 //	}
-	
+
 	@Bean("slackBotClient")
 	public MethodsClient slackMethodClientBot() {
 		return Slack.getInstance().methods(slackSecurityTokenBot);

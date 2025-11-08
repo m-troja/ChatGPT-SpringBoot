@@ -1,8 +1,8 @@
 package com.michal.openai.Controllers;
 
-import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-
+import com.michal.openai.entity.StatusResponse;
+import com.michal.openai.exception.UserNotFoundException;
+import com.michal.openai.github.GithubService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -12,9 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.michal.openai.entity.StatusResponse;
-import com.michal.openai.exception.UserNotFoundException;
-import com.michal.openai.github.GithubService;
+import java.io.IOException;
 
 @RequestMapping("/v1")
 @RestController

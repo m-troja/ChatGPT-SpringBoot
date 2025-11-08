@@ -1,17 +1,14 @@
 package com.michal.openai.Controllers;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import com.michal.openai.entity.GptFunction;
+import com.michal.openai.gpt.GptService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.michal.openai.entity.GptFunction;
-import com.michal.openai.gpt.GptService;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 @Slf4j
 @RestController
 public class ChatGptApiController {

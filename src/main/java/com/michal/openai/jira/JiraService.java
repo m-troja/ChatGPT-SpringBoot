@@ -1,9 +1,8 @@
 package com.michal.openai.jira;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
 import com.michal.openai.entity.JiraIssue;
+
+import java.util.List;
 
 public interface JiraService {
 	

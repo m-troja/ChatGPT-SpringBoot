@@ -6,10 +6,15 @@
     import com.michal.openai.functions.FunctionFacory;
     import com.michal.openai.functions.impl.AssignTaskSystemIssueFunction;
     import com.michal.openai.functions.impl.CreateTaskSystemIssueFunction;
-    import com.michal.openai.persistence.*;
+    import com.michal.openai.persistence.JpaGptMessageRepo;
+    import com.michal.openai.persistence.JpaGptRequestRepo;
+    import com.michal.openai.persistence.JpaGptResponseRepo;
+    import com.michal.openai.persistence.JpaSlackRepo;
     import com.michal.openai.tasksystem.entity.TaskSystemAssignIssueParameterProperties;
     import com.michal.openai.tasksystem.entity.TaskSystemCreateIssueParameterProperties;
     import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
+    import org.hamcrest.Matchers;
+    import org.junit.jupiter.api.Assertions;
     import org.junit.jupiter.api.BeforeEach;
     import org.junit.jupiter.api.Test;
     import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +33,10 @@
 
     import java.util.List;
     import java.util.concurrent.CompletableFuture;
+    import java.util.concurrent.CompletionException;
 
     import static org.assertj.core.api.Assertions.assertThat;
+    import static org.assertj.core.api.Assertions.assertThatThrownBy;
     import static org.mockito.Mockito.*;
     import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
     import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -52,15 +59,14 @@
         @Autowired MockRestServiceServer server;
         @Autowired ObjectMapper objectMapper;
         @Autowired GptServiceImpl service;
+        @MockitoBean JpaGptMessageRepo jpaGptMessageRepo;
 
         @MockitoBean JpaGptRequestRepo jpaGptRequestRepo;
         @MockitoBean JpaGptResponseRepo jpaGptResponseRepo;
-        @MockitoBean JpaGptMessageRepo jpaGptMessageRepo;
         @MockitoBean JpaSlackRepo jpaSlackRepo;
         @MockitoBean FunctionFacory functionFactory;
         @MockitoBean AssignTaskSystemIssueFunction assignTaskSystemIssueFunction;
         @MockitoBean CreateTaskSystemIssueFunction createTaskSystemIssueFunction;
-        @MockitoBean List<GptFunction> functions;
 
         @BeforeEach
         void setup() {
@@ -90,7 +96,7 @@
             // mock GptResponse
             server.expect(requestTo(chatGptApiUrl))
                     .andExpect(request -> {
-                        String json = new String(request.getBody().toString());
+                        String json = request.getBody().toString();
                         GptRequest req = objectMapper.readValue(json, GptRequest.class);
                         assertThat(req.getMessages()).isNotEmpty();
                     })
@@ -105,6 +111,40 @@
 
             assertThat(answerFromService).isEqualTo("Hi there!");
         }
+
+        @Test
+        void shouldThrowExceptionWhenInvalidGptResponse() {
+            SlackUser user = new SlackUser("U12345678", "Slack Name");
+            when(jpaSlackRepo.findBySlackUserId("U12345678")).thenReturn(user);
+            when(jpaGptRequestRepo.getLastRequestsBySlackId("U12345678", 5)).thenReturn(List.of());
+            when(jpaGptResponseRepo.getLastResponsesToUser("U12345678", 5)).thenReturn(List.of());
+            when(jpaGptRequestRepo.save(any())).thenAnswer(inv -> {
+                GptRequest req = inv.getArgument(0);
+                req.setId(1L);
+                return req;
+            });
+            String invalidJson = """
+                    {"key":"value"}
+                    """;
+            // mock GptResponse
+            server.expect(requestTo(chatGptApiUrl))
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(content().string(Matchers.containsString("messages")))
+                    .andRespond(withSuccess(invalidJson, MediaType.APPLICATION_JSON));
+            server.expect(requestTo(chatGptApiUrl))
+                    .andRespond(withSuccess(invalidJson, MediaType.APPLICATION_JSON));
+
+            server.expect(requestTo(chatGptApiUrl))
+                    .andRespond(withSuccess(invalidJson, MediaType.APPLICATION_JSON));
+
+
+            CompletableFuture<String> query = CompletableFuture.completedFuture("Just say hi");
+            CompletableFuture<String> userName = CompletableFuture.completedFuture(user.getSlackUserId());
+
+            assertThatThrownBy( () -> service.getAnswerWithSlack(query, userName).join()).isInstanceOf(CompletionException.class);
+            server.verify();
+        }
+
         @Test
         void shouldCallTaskSystemAssignIssueFunctionTest() throws JsonProcessingException {
             // given
@@ -112,8 +152,7 @@
             var expectedDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678" ,"U12345678"));
             SlackUser slackRequestAuthor = new SlackUser(slackUserId, "Slack Name");
             CompletableFuture<String> query = CompletableFuture.completedFuture("Assign ticket Dummy-1 to U12345678");
-            CompletableFuture<String> userName = CompletableFuture.completedFuture(slackUserId);
-
+            CompletableFuture<String> userName = CompletableFuture.completedFuture("U12345678");
             // when
             when(jpaSlackRepo.findBySlackUserId(slackUserId)).thenReturn(slackRequestAuthor);
             when(jpaGptRequestRepo.getLastRequestsBySlackId(slackUserId, service.getQtyContextMessagesInRequestOrResponse())).thenReturn(List.of("Test request 1", "Test request 2"));
@@ -141,16 +180,17 @@
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(captureAndAssertGptRequest(objectMapper))
                     .andRespond(withSuccess(objectMapper.writeValueAsString(gptResponseNoFunctionCall), MediaType.APPLICATION_JSON));
-
-            String finalAnswer = service.getAnswerWithSlack(query, userName).join();
+            String response = service.getAnswerWithSlack(query, userName).join();
             server.verify();
 
             // 1st response - check if GPT sent Function Call
+            Assertions.assertNotNull(gptResponseFunctionCall);
             assertThat(gptResponseFunctionCall.getChoices().getFirst().getMessage().getToolCalls()).isNotNull();
             assertThat(gptResponseFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().name()).isEqualTo("assignTaskSystemIssueFunction");
             assertThat(gptResponseFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().arguments()).isEqualTo("{\\\"key\\\":\\\"Dummy-1\\\",\\\"slackUserId\\\":\\\"U12345678\\\"}");
 
             // 2nd response - check if GPT did not send Function Call
+            Assertions.assertNotNull(gptResponseNoFunctionCall);
             assertThat(gptResponseNoFunctionCall.getChoices().getFirst().getMessage().getToolCalls()).isNull();
             assertThat(gptResponseNoFunctionCall.getChoices().getFirst().getMessage().getContent()).isEqualTo(expectedDtoJson);
 
@@ -207,17 +247,20 @@
             server.verify();
 
             // 1st response - check if GPT sent createTaskSystemIssueFunction
+            Assertions.assertNotNull(gptResponseCreateIssueFunctionCall);
             assertThat(gptResponseCreateIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls()).isNotNull();
             assertThat(gptResponseCreateIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().name()).isEqualTo("createTaskSystemIssueFunction");
             assertThat(gptResponseCreateIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().arguments()).isEqualTo("{\\\"title\\\":\\\"Test title\\\",\\\"description\\\":\\\"Test desc\\\",\\\"priority\\\":\\\"HIGH\\\",\\\"authorSlackId\\\":\\\"U08SHTW059C\\\",\\\"assigneeSlackId\\\":\\\"U08SHTW059C\\\",\\\"dueDate\\\":\\\"2025-11-20\\\"}");
 
 
             // 2nd response - check if GPT sent assignTaskSystemIssueFunction
+            Assertions.assertNotNull(gptResponseAssignIssueFunctionCall);
             assertThat(gptResponseAssignIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls()).isNotNull();
             assertThat(gptResponseAssignIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().name()).isEqualTo("assignTaskSystemIssueFunction");
             assertThat(gptResponseAssignIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().arguments()).isEqualTo("{\\\"key\\\":\\\"Dummy-1\\\",\\\"slackUserId\\\":\\\"U12345678\\\"}");
 
             // 3rd response - check if GPT did not send Function Call
+            Assertions.assertNotNull(gptResponseFinal);
             assertThat(gptResponseFinal.getChoices().getFirst().getMessage().getToolCalls()).isNull();
             assertThat(gptResponseFinal.getChoices().getFirst().getMessage().getContent()).isEqualTo(finalResponseContent);
 
@@ -225,7 +268,6 @@
         }
 
         private RequestMatcher captureAndAssertGptRequest(ObjectMapper objectMapper) {
-            int contextSize = service.getQtyContextMessagesInRequestOrResponse();
             return request -> {
                 System.out.println("Intercepting GptRequest...");
                 String json = request.getBody().toString();
@@ -233,10 +275,7 @@
                 assertThat(gptRequest.getMessages()).isNotNull();
                 //  check number of messages sent in context
                 System.out.println("Size of message list: " + gptRequest.getMessages().size());
-                gptRequest.getMessages().forEach( m -> {
-                    System.out.println("Found GptMessage: " + m.toString());
-
-                });
+                gptRequest.getMessages().forEach( m -> System.out.println("Found GptMessage: " + m.toString()));
                 assertThat(gptRequest.getMessages().size()).isGreaterThanOrEqualTo(totalQtyMessagesInContext);
             };
         }

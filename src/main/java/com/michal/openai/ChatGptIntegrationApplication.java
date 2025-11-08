@@ -1,21 +1,15 @@
 package com.michal.openai;
-import java.util.HashMap;
-import java.util.Map;
 
-import com.michal.openai.config.LogConfig;
-import jakarta.annotation.PostConstruct;
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.PropertySources;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.Map;
 @Data
 @Slf4j
 //@EntityScan("com.michal.openai.entity")

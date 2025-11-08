@@ -1,8 +1,8 @@
 package com.michal.openai.gpt;
 
-import java.util.concurrent.CompletableFuture;
-
 import com.michal.openai.entity.GptFunction;
+
+import java.util.concurrent.CompletableFuture;
 
 public interface GptService {
 	

@@ -2,7 +2,6 @@ package com.michal.openai.tasksystem.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.functions.impl.AssignTaskSystemIssueFunction;
 import com.michal.openai.tasksystem.entity.request.CreateTaskSystemIssueRequest;
 import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
 import com.michal.openai.tasksystem.service.impl.TaskSystemServiceImpl;
@@ -17,18 +16,17 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
+import java.util.List;
 import java.util.concurrent.CompletionException;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 @RestClientTest(TaskSystemServiceImpl.class)
 @Import(TaskSystemServiceImplTest.TestConfig.class)
@@ -115,19 +113,22 @@ class TaskSystemServiceImplTest {
 
     @Test
     public void shouldAssignIssue() throws JsonProcessingException {
-        var requestFromGpt = "{\\\"key\\\":\\\"Dummy-1\\\",\\\"slackUserId\\\":\\\"U12345678\\\"}";
-        var originalIssueDto = new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U98765432");
-        var reassignedIssueDto = new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U12345678");
-        server.expect(requestTo(baseUrl + assignIssueEndpoint))
-                .andExpect(method(HttpMethod.PUT))
-                .andRespond(withSuccess(objectMapper.writeValueAsString(reassignedIssueDto), MediaType.APPLICATION_JSON));
-        var serviceResponse = service.assignIssue(requestFromGpt);
+        var issueDto1 = new TaskSystemIssueDto("Dummy-1", "Test title #1", "Test desc", "NEW", "LOW", "U08SHTW059C", "U98765432");
+        var issueDto2 = new TaskSystemIssueDto("Dummy-2", "Test title #2", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U98765432");
+        List<TaskSystemIssueDto> issueDtoLIst = List.of(issueDto1, issueDto2);
+        server.expect(requestTo(baseUrl + getAllIssuesEndpoint))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(issueDtoLIst), MediaType.APPLICATION_JSON));
+        var serviceResponse = service.getAllIssues();
         server.verify();
-        assertThat(serviceResponse).isNotEqualTo(originalIssueDto);
-        assertThat(serviceResponse).isEqualTo(reassignedIssueDto);
-        assertThat(reassignedIssueDto.assigneeSlackId()).isEqualTo("U12345678");
+        assertThat(serviceResponse).isEqualTo(issueDtoLIst);
     }
 
+    @Test
+    public void shouldReturnGetIssues() {
+        //given
+
+    }
     @TestConfiguration
     static class TestConfig {
         @Bean

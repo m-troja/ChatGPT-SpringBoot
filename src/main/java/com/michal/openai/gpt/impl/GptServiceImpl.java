@@ -1,31 +1,29 @@
 package com.michal.openai.gpt.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.michal.openai.entity.*;
+import com.michal.openai.exception.GptCommunicationException;
 import com.michal.openai.functions.Function;
+import com.michal.openai.functions.FunctionFacory;
+import com.michal.openai.gpt.GptService;
 import com.michal.openai.log.JsonSaver;
-import com.michal.openai.persistence.*;
+import com.michal.openai.persistence.JpaGptMessageRepo;
+import com.michal.openai.persistence.JpaGptRequestRepo;
+import com.michal.openai.persistence.JpaGptResponseRepo;
+import com.michal.openai.persistence.JpaSlackRepo;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import com.michal.openai.entity.GptFunction;
-import com.michal.openai.entity.GptMessage;
-import com.michal.openai.functions.FunctionFacory;
-import com.michal.openai.entity.GptRequest;
-import com.michal.openai.entity.GptResponse;
-import com.michal.openai.entity.GptTool;
-import com.michal.openai.entity.SlackUser;
-import com.michal.openai.gpt.GptService;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
 @Data
 @Slf4j
@@ -90,7 +88,7 @@ public class GptServiceImpl implements GptService {
         return queryFuture.thenCombine(userNameFuture, (query, slackUserId) -> handleQuery(query, slackUserId, gptFunctions))
                 .exceptionally(e -> {
                             log.error("Async error:", e);
-                            return "Error calling GPT";
+                            throw new CompletionException(e);
                 });
 	}
 
@@ -176,9 +174,9 @@ public class GptServiceImpl implements GptService {
                         .retrieve()
                         .body(GptResponse.class);
 
-                if (gptResponse == null) {
+                if (gptResponse == null || gptResponse.getChoices() == null ||  gptResponse.getChoices().isEmpty()) {
                     log.error("GPT returned null response!");
-                    return null;
+                    throw new GptCommunicationException("GPT returned null response");
                 }
                 saveRequestAndResponseIntoDb(gptRequest, gptResponse);
                 return gptResponse;
@@ -189,7 +187,7 @@ public class GptServiceImpl implements GptService {
 
                 if (attempt == retryAttempts) {
                     log.error("Max retry attempts reached.");
-                    break;
+                    throw new GptCommunicationException("Max retry attempts reached");
                 }
 
                 sleep(waitSeconds);

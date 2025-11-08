@@ -1,14 +1,12 @@
 package com.michal.openai.persistence;
 
-import java.sql.ResultSet;
-import java.util.List;
-
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import lombok.extern.slf4j.Slf4j;
+import java.sql.ResultSet;
+import java.util.List;
 
 /*
  * Repository used to  extract content of last response messages to user.

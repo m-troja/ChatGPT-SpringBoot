@@ -1,19 +1,17 @@
 package com.michal.openai.functions.impl;
 
-import java.util.List;
-import java.util.concurrent.CompletionException;
-
-import com.michal.openai.entity.JiraIssue;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.michal.openai.entity.JiraIssue;
 import com.michal.openai.functions.Function;
 import com.michal.openai.jira.JiraService;
-
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+import java.util.concurrent.CompletionException;
 
 @Slf4j
 @Data

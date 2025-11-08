@@ -1,10 +1,15 @@
 package com.michal.openai.github.impl;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.michal.openai.dto.GithubRepoDto;
+import com.michal.openai.dto.cnv.RepoCnv;
+import com.michal.openai.entity.GithubBranch;
+import com.michal.openai.entity.GithubRepo;
+import com.michal.openai.exception.UserNotFoundException;
+import com.michal.openai.github.GithubService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
@@ -12,17 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.exception.UserNotFoundException;
-import com.michal.openai.dto.GithubRepoDto;
-import com.michal.openai.dto.cnv.RepoCnv;
-import com.michal.openai.entity.GithubBranch;
-import com.michal.openai.entity.GithubRepo;
-import com.michal.openai.github.GithubService;
-
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
