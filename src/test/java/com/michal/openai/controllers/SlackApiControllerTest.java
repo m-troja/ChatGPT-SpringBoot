@@ -37,7 +37,7 @@ class SlackApiControllerTest {
 
     @Test
     void shouldReturnOkAndCallSlackService() throws Exception {
-        mockMvc.perform(post("/v1/slack")
+        mockMvc.perform(post("/api/v1/slack")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(slackRequest))
                 .andExpect(status().isOk())

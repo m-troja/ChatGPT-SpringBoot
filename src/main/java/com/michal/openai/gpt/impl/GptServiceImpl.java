@@ -93,6 +93,21 @@ public class GptServiceImpl implements GptService {
                 });
 	}
 
+    @Override
+    public void clearDatabase() {
+        try {
+            log.debug("Trying to clear database...");
+            jpaGptResponseRepo.deleteAll();
+            jpaGptRequestRepo.deleteAll();
+            jpaSlackrepo.deleteAll();
+            log.debug("Database cleared successfully");
+        } catch (Exception e) {
+            log.error("Error clearing database: ", e);
+            throw new RuntimeException(e);
+        }
+
+    }
+
     private String handleQuery(String query, String slackUserId, GptFunction... gptFunctions) {
         SlackUser slackUserRequestAuthor = getSlackUserBySlackId(slackUserId);
         log.debug("Handle query: slackUserId={}, slackUserRequestAuthor={}", slackUserId, slackUserRequestAuthor);

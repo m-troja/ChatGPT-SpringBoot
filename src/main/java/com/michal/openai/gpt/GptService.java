@@ -6,5 +6,6 @@ import java.util.concurrent.CompletableFuture;
 
 public interface GptService {
 	
-	 CompletableFuture<String> getAnswerWithSlack(CompletableFuture<String> query, CompletableFuture<String> userName, GptFunction... functions  );
+	CompletableFuture<String> getAnswerWithSlack(CompletableFuture<String> query, CompletableFuture<String> userName, GptFunction... functions  );
+    void clearDatabase();
 }

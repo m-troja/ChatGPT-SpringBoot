@@ -23,8 +23,6 @@ public class GithubRestController {
     @GetMapping("/user/{login}")
     public List<GithubRepoDto> getUserRepos(@PathVariable String login) throws IOException {
         log.debug("Triggered /api/v1/github/user/{}", login);
-        List<GithubRepoDto> repos = githubService.getUserReposWithBranches(login);
-        log.debug("Returning repos: {}", repos);
-        return repos;
+        return githubService.getUserReposWithBranches(login);
     }
 }

@@ -9,14 +9,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
-@RequestMapping
+@RequestMapping("/api/v1/slack")
 @RequiredArgsConstructor
 @RestController
 public class SlackApiController {
 
 	private final SlackService slackService;
 	
-	@PostMapping(value = "/api/v1/slack")
+	@PostMapping
 	public String doPost(@RequestBody String requestBody)
 	{
         log.info("Received POST /api/v1/slack");

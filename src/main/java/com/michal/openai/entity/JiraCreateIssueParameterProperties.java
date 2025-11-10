@@ -11,24 +11,24 @@ public class JiraCreateIssueParameterProperties implements ParameterProperties {
 	private DueDate duedate;
 	private IssueType issueType;
 
-	public class Description extends ParameterPropertyAttribute 
+	public static class Description extends ParameterPropertyAttribute
 	{
 	}
     @EqualsAndHashCode(callSuper = true)
     @Data
-	public class IssueType extends ParameterPropertyAttribute
+	public static class IssueType extends ParameterPropertyAttribute
 	{
 		private String[] issueTypes;
 
 	}
     @EqualsAndHashCode(callSuper = true)
     @Data
-    public class Summary extends ParameterPropertyAttribute
+    public static class Summary extends ParameterPropertyAttribute
 	{
 	}
     @EqualsAndHashCode(callSuper = true)
     @Data
-    public class DueDate extends ParameterPropertyAttribute
+    public static class DueDate extends ParameterPropertyAttribute
 	{
         private String format;
 
