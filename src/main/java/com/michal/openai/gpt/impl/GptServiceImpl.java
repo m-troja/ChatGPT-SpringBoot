@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -145,7 +146,13 @@ public class GptServiceImpl implements GptService {
         for (GptMessage.Tool tool : toolsToCall) {
             log.debug("Found tool call, GPT will be called: {}", tool);
             Function fn = functionFactory.getFunctionByFunctionName(tool.getFunctionCall().name());
-            String functionResult = fn.execute(tool.getFunctionCall().arguments());
+            String functionResult;
+            try {
+                functionResult = fn.execute(tool.getFunctionCall().arguments());
+            } catch (IOException e) {
+                log.debug("Error calling function: ", e);
+                throw new RuntimeException(e);
+            }
             log.debug("Result of function call: {}", functionResult);
             GptMessage toolMessage = new GptMessage();
             toolMessage.setRole("function");

@@ -2,8 +2,6 @@ package com.michal.openai.config;
 
 import com.michal.openai.entity.GetReposParameterProperties;
 import com.michal.openai.entity.GptFunction;
-import com.michal.openai.functions.Function;
-import com.michal.openai.functions.impl.GetReposFunction;
 import com.michal.openai.tasksystem.entity.TaskSystemAssignIssueParameterProperties;
 import com.michal.openai.tasksystem.entity.TaskSystemCreateIssueParameterProperties;
 import com.slack.api.Slack;
@@ -20,11 +18,6 @@ public class BeansConfiguration {
 
 //	@Bean("getAllJiraIssuesFunction")
 //	public Function allJiraIssuesFunctionCall() { return new GetAllJiraIssues(); }
-
-	@Bean("getReposFunctionCall")
-	public Function getReposFunctionCall() {
-		return new GetReposFunction();
-	}
 
 	/* Disabled mailing feature due to security
 	

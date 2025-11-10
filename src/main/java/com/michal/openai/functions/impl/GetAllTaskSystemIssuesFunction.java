@@ -21,7 +21,6 @@ public class GetAllTaskSystemIssuesFunction implements Function {
 
 	@Override
 	public String execute(String arguments) {
-        log.info("Executing GetAllTaskSystemIssuesFunction arguments: {}", arguments);
         try {
                 List<TaskSystemIssueDto> issues = taskSystemService.getAllIssues();
                 log.debug("Fetched {} issues from Task System", issues.size());

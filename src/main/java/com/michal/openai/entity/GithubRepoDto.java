@@ -6,4 +6,4 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true) // deserialize only known fields
-public record GithubRepo(String name , GithubOwner owner, List<GithubBranch> branches, @JsonIgnore boolean isFork) {}
+public record GithubRepoDto(String name , String owner, List<GithubBranch> branches, @JsonIgnore boolean isFork) {}

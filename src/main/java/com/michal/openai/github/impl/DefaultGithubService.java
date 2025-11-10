@@ -1,12 +1,8 @@
 package com.michal.openai.github.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.dto.GithubRepoDto;
-import com.michal.openai.dto.cnv.RepoCnv;
 import com.michal.openai.entity.GithubBranch;
-import com.michal.openai.entity.GithubRepo;
+import com.michal.openai.entity.GithubRepoDto;
+import com.michal.openai.entity.GithubRepoResponse;
 import com.michal.openai.exception.UserNotFoundException;
 import com.michal.openai.github.GithubService;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,36 +21,29 @@ import java.util.stream.Collectors;
 @Service
 public class DefaultGithubService implements GithubService {
 
-    private final RepoCnv repoCnv;
     private final RestClient githubRestClient;
-    private final ObjectMapper objectMapper;
-    private record ReposResult(HttpStatus status, String responseBody) {}
 
     @Override
-    public String getUserReposWithBranches(String username) throws IOException {
-       
-    	ReposResult result = fetchUserRepos(username);
-        
-        List<GithubRepo> notForked = extractNotForkedRepos(result.responseBody());
-        List<GithubRepo> reposWithBranchesAssigned = assignBranchesToRepos(notForked);
-        List<GithubRepoDto> repoDtos = repoCnv.convertReposToRepoDtos(reposWithBranchesAssigned);
+    public List<GithubRepoDto> getUserReposWithBranches(String username) {
 
-        return objectMapper.writeValueAsString(repoDtos);
+        List<GithubRepoResponse> results = fetchUserRepos(username);
+        List<GithubRepoResponse> notForked = extractNotForkedRepos(results);
+        return assignBranchesToRepos(notForked);
     }
 
-    private ReposResult fetchUserRepos(String username) throws IOException {
+    private List<GithubRepoResponse> fetchUserRepos(String username) {
         String uri = "/users/" + username + "/repos";
 
-        log.debug("fetching repos from url : {}", uri);
+        log.debug("Fetching repos from: {}, user: {}", uri, username);
 
         try {
-            String body = githubRestClient.get()
+            List<GithubRepoResponse> githubRepoResponse = githubRestClient.get()
         			.uri(uri)
 	        		.retrieve()
-	        		.body(String.class);
-            log.debug("github response: {}", body);
+	        		.body(new ParameterizedTypeReference<>() {});
+            log.debug("Github response: {}", githubRepoResponse);
 
-            return new ReposResult(HttpStatus.OK, body);
+            return githubRepoResponse;
 
         }
         catch(HttpClientErrorException e)
@@ -71,40 +59,37 @@ public class DefaultGithubService implements GithubService {
         }
     }
 
-    private List<GithubRepo> extractNotForkedRepos(String responseBody) throws JsonProcessingException {
-        List<GithubRepo> repos = objectMapper.readValue(responseBody, new TypeReference<>() {});
+    private List<GithubRepoResponse> extractNotForkedRepos(List<GithubRepoResponse> githubRepoResponses) {
+        List<GithubRepoResponse> repos = githubRepoResponses.stream().filter( r -> !r.fork()).toList();
         return repos.stream()
-                .filter(repo -> !repo.isFork())
+                .filter(repo -> !repo.fork())
                 .collect(Collectors.toList());
     }
 
-    private List<GithubRepo> assignBranchesToRepos(List<GithubRepo> repos) throws IOException {
-        List<GithubRepo> updatedRepos = new ArrayList<>();
-        for (GithubRepo repo : repos) {
+    private List<GithubRepoDto> assignBranchesToRepos(List<GithubRepoResponse> notForkedRepos) {
+        List<GithubRepoDto> updatedRepos = new ArrayList<>();
+        for (GithubRepoResponse repo : notForkedRepos) {
             var branches = fetchBranches(repo);
-            updatedRepos.add(new GithubRepo(repo.name(), repo.owner(), branches, repo.isFork()));
+            updatedRepos.add(new GithubRepoDto(repo.name(), repo.owner().login(), branches, repo.fork()));
         }
-        return repos;
+        return updatedRepos;
     }
 
-    private List<GithubBranch> fetchBranches(GithubRepo repo) throws IOException {
+    private List<GithubBranch> fetchBranches(GithubRepoResponse repo) {
         String uri = "/repos/" + repo.owner().login() + "/" + repo.name() + "/branches";
-        log.debug("fetchBranches from uri : {}", uri);
+        log.debug("Calling fetchBranches from uri : {}", uri);
 
         List<GithubBranch> branches = githubRestClient.get()
     			.uri(uri)
         		.retrieve()
-        		.body(new ParameterizedTypeReference<List<GithubBranch>>() {});
+        		.body(new ParameterizedTypeReference<>() {});
 
-        log.debug("fetchBranches: {}", branches.toString());
+        log.debug("fetchBranches results: {}", branches);
 
         return branches;
     }
 
-	public DefaultGithubService(RepoCnv repoCnv, @Qualifier("githubRestClient") RestClient githubRestClient, ObjectMapper objectMapper) {
-		this.repoCnv = repoCnv;
-		this.githubRestClient = githubRestClient;
-		this.objectMapper = objectMapper;
+	public DefaultGithubService(@Qualifier("githubRestClient") RestClient githubRestClient) {
+        this.githubRestClient = githubRestClient;
 	}
-
 }

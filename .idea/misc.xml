@@ -17,6 +17,7 @@
       <writeAnnotation name="jakarta.persistence.PersistenceContext" />
       <writeAnnotation name="org.springframework.beans.factory.annotation.Autowired" />
       <writeAnnotation name="org.springframework.beans.factory.annotation.Value" />
+      <writeAnnotation name="org.springframework.test.context.bean.override.mockito.MockitoBean" />
     </writeAnnotations>
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />

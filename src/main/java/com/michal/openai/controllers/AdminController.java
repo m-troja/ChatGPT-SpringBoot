@@ -1,4 +1,4 @@
-package com.michal.openai.Controllers;
+package com.michal.openai.controllers;
 
 
 import jakarta.persistence.EntityManager;
@@ -8,11 +8,10 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
-@RequestMapping( value = {"/admin" })
+@RequestMapping("/api/v1/admin")
 @RestController
 @NoArgsConstructor
 public class AdminController {
@@ -20,23 +19,16 @@ public class AdminController {
 	@PersistenceContext
 	private EntityManager entityManager;
 	
-	
 	/* Endpoint to trigger truncating all tables in DB */
 	
-	@GetMapping(value = "/delete-all")
+	@GetMapping(value = "/clear-database")
 	@Transactional
-	public String clearDatabase(@RequestParam String cmd) 
+	public String clearDatabase()
 	{
-        log.info("GET /admin -> delete all data, cmd == {}", cmd);
+        log.info("GET /admin/clear-database");
+        deleteAllData();
 
-		if ( cmd.equals("ok"))
-		{
-			deleteAllData();
-			return "All data deleted";
-		}
-		
-		return "Error deleting data";
-		
+		return "Cleared database";
 	}
 	
 	@Transactional

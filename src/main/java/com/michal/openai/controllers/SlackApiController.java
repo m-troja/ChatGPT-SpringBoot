@@ -1,4 +1,4 @@
-package com.michal.openai.Controllers;
+package com.michal.openai.controllers;
 
 import com.michal.openai.slack.SlackService;
 import lombok.RequiredArgsConstructor;
@@ -16,11 +16,11 @@ public class SlackApiController {
 
 	private final SlackService slackService;
 	
-	@PostMapping(value = "/v1/slack")
+	@PostMapping(value = "/api/v1/slack")
 	public String doPost(@RequestBody String requestBody)
 	{
-        log.info("Received POST /v1/slack");
-        log.debug("Received POST /v1/slack with body: {} \n", requestBody);
+        log.info("Received POST /api/v1/slack");
+        log.debug("Received POST /api/v1/slack with body: {} \n", requestBody);
 
 		slackService.processOnMentionEvent(requestBody);
 
@@ -30,7 +30,7 @@ public class SlackApiController {
 
 //	Authentication
 //
-//	@PostMapping(value = "/v1/slack")
+//	@PostMapping(value = "/api/v1/slack")
 //	public String returnChallengeValue(@RequestBody String requestBody)
 //	{
 //		System.out.println(requestBody);
@@ -38,7 +38,7 @@ public class SlackApiController {
 //		{
 //			JsonNode mainNode = objectMapper.readTree(requestBody);
 //			JsonNode challengeNode = mainNode.path("challenge");
-//			System.out.println("/v1/slack: challenge = " + challengeNode.asText());
+//			System.out.println("/api/v1/slack: challenge = " + challengeNode.asText());
 //
 //			return challengeNode.asText();
 //		}

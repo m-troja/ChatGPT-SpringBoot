@@ -1,4 +1,4 @@
-package com.michal.openai.Controllers;
+package com.michal.openai.controllers;
 
 import com.michal.openai.slack.SlackService;
 import org.junit.jupiter.api.BeforeEach;

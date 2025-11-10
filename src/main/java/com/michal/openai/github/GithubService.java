@@ -1,9 +1,12 @@
 package com.michal.openai.github;
 
+import com.michal.openai.entity.GithubRepoDto;
+
 import java.io.IOException;
+import java.util.List;
 
 public interface GithubService {
-	String getUserReposWithBranches(String username) throws IOException;
+    List<GithubRepoDto> getUserReposWithBranches(String username) throws IOException;
 
 
 }

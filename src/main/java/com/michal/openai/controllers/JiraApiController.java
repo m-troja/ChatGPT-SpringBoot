@@ -1,4 +1,4 @@
-package com.michal.openai.Controllers;
+package com.michal.openai.controllers;
 
 import com.michal.openai.entity.JiraIssue;
 import com.michal.openai.jira.JiraService;
@@ -9,29 +9,29 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 @Slf4j
 @RestController
+@RequestMapping("/api/v1/jira")
 @RequiredArgsConstructor
 public class JiraApiController {
 
 	private final JiraService jiraService;
 
-	@GetMapping(value = "/v1/jira/issue", params = "id")
+	@GetMapping(value = "issue", params = "id")
 	public JiraIssue getIssue(@RequestParam("id") String issueId)
 	{
-        log.debug("GET /v1/jira/issue, id: {}", issueId);
-        var jiraIssue = jiraService.getIssue(issueId);
-		return jiraIssue;
+        log.debug("GET /api/v1/jira/issue, id: {}", issueId);
+        return jiraService.getIssue(issueId);
     }
 
-	@GetMapping("/v1/jira/issues-java")
+	@GetMapping("issues-java")
 	public List<JiraIssue> getIssues() {
-		log.debug("GET /v1/jira/issues-java");
+		log.debug("GET /api/v1/jira/issues-java");
 		 return jiraService.getIssues();
 	   
 	}
 	
-	@PostMapping("/v1/jira/create-issue")
+	@PostMapping("create-issue")
 	public JiraIssue createIssue(@RequestBody String requestBody) {
-        log.debug("POST /v1/jira/create-issue: {}", requestBody);
+        log.debug("POST /api/v1/jira/create-issue: {}", requestBody);
 		 return jiraService.createJavaIssue(requestBody);
 	   
 	}
