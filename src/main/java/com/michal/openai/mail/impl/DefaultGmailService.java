@@ -30,10 +30,10 @@ public class DefaultGmailService implements GmailService {
 	public boolean sendEmail(String addresseeEmail, String subject, String content) {
 		// SMTP server configuration
 		String smtpHost = "smtp.gmail.com";
-		log.info("smtpHost " + smtpHost);
+        log.info("smtpHost {}", smtpHost);
 
-		int smtpPort = 465;	
-		log.info("smtpPort " + smtpPort);
+		int smtpPort = 465;
+        log.info("smtpPort {}", smtpPort);
 
 		try {
 			Properties props = new Properties();
@@ -55,7 +55,7 @@ public class DefaultGmailService implements GmailService {
 			message.setFrom(new InternetAddress(senderEmail));
 			message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(addresseeEmail));
 			message.setSubject(subject);
-			log.info("message " + message.toString());
+            log.info("message {}", message.toString());
 			
 			// Create multipart content for the email
 			Multipart multipart = new MimeMultipart();
@@ -64,7 +64,7 @@ public class DefaultGmailService implements GmailService {
 			MimeBodyPart textPart = new MimeBodyPart();
 			textPart.setText(content);
 			multipart.addBodyPart(textPart);
-			log.info("multipart " + multipart.toString());
+            log.info("multipart {}", multipart.toString());
 
 			// Set the multipart content as the email's content
 			message.setContent(multipart);
@@ -75,7 +75,7 @@ public class DefaultGmailService implements GmailService {
 			log.info("Email was sent successfully.");
 			return true;
 		} catch (MessagingException e) {
-			e.printStackTrace();
+			log.error("Error sending email: ", e);
 			return false;
 		}
 
@@ -89,14 +89,10 @@ public class DefaultGmailService implements GmailService {
 	}
 
 	/* TODO: implement integration with email addresses data source. 
-	 * It can be either Active Directory, or GSuite service, or excel spreadsheet, or anything else. 
-	 * The main thing is to configure any emails data source you wish. 
-	 * For the sake of this implementation I hardcoded map with email addresses. 
 	 */
 	@Override
 	public String extractEmailByFullName(String addresseeName) {
 		Map<String, String> fullNameToEmailMap = new HashMap<>();
-		fullNameToEmailMap.put("Andrey Pyatakha", "andrey.pyatakha@example.com");
 		fullNameToEmailMap.put("John Doe", receiverTestEmail);
         log.debug("extractEmailByFullName fullNameToEmailMap : {}", fullNameToEmailMap);
         log.debug("extractEmailByFullName emailAddress : {}", addresseeName);

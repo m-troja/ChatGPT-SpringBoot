@@ -19,8 +19,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(SlackApiController.class)
-class SlackApiControllerTest {
+@WebMvcTest(SlackRestController.class)
+class SlackRestControllerTest {
 
     @Autowired
     private MockMvc mockMvc;

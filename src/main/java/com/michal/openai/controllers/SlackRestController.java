@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/slack")
 @RequiredArgsConstructor
 @RestController
-public class SlackApiController {
+public class SlackRestController {
 
 	private final SlackService slackService;
 	

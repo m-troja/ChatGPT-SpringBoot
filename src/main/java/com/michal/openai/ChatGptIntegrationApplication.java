@@ -1,7 +1,5 @@
 package com.michal.openai;
 
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.PropertySource;
@@ -10,13 +8,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 import java.util.HashMap;
 import java.util.Map;
-@Data
-@Slf4j
-//@EntityScan("com.michal.openai.entity")
-//@EnableJpaRepositories("com.michal.openai.persistence")
 @EnableAsync(proxyTargetClass = true)
 @SpringBootApplication
-//@Configuration
 @PropertySources({
 	@PropertySource("classpath:application.properties") ,
 	@PropertySource("classpath:secrets.properties")
@@ -35,7 +28,6 @@ public class ChatGptIntegrationApplication {
         props.put("spring.datasource.username", System.getenv().getOrDefault("CHAT_DB_USERNAME", "chatgpt"));
         props.put("spring.datasource.password", System.getenv().getOrDefault("CHAT_DB_PASSWORD", "chatgptPW"));
         app.setDefaultProperties(props);
-        props.forEach((k, v) -> log.debug("Env var check: {} = {}", k, v));
         app.run(args);
     }
 }

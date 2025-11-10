@@ -11,7 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/jira")
 @RequiredArgsConstructor
-public class JiraApiController {
+public class JiraRestController {
 
 	private final JiraService jiraService;
 
