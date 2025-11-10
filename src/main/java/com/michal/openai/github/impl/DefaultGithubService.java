@@ -1,8 +1,8 @@
 package com.michal.openai.github.impl;
 
-import com.michal.openai.entity.GithubBranch;
-import com.michal.openai.entity.GithubRepoDto;
-import com.michal.openai.entity.GithubRepoResponse;
+import com.michal.openai.github.entity.GithubBranch;
+import com.michal.openai.github.entity.GithubRepoDto;
+import com.michal.openai.github.entity.GithubRepoResponse;
 import com.michal.openai.exception.UserNotFoundException;
 import com.michal.openai.github.GithubService;
 import lombok.extern.slf4j.Slf4j;

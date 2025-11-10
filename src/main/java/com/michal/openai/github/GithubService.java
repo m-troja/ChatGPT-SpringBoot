@@ -1,6 +1,6 @@
 package com.michal.openai.github;
 
-import com.michal.openai.entity.GithubRepoDto;
+import com.michal.openai.github.entity.GithubRepoDto;
 
 import java.io.IOException;
 import java.util.List;

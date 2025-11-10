@@ -40,7 +40,7 @@ public class JiraServiceImpl implements JiraService {
     @Qualifier("jiraRestClient")
     private final RestClient restClient;
 
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     public JiraIssue getIssue(String id) {
         String getIssueEndpoint = issue + "/" + id;
@@ -107,17 +107,17 @@ public class JiraServiceImpl implements JiraService {
             String key = gptAnswerJson.path("key").asText("JAVA");
 
             JiraCreateIssueRequest requestObject = new JiraCreateIssueRequest();
-            JiraCreateIssueRequest.Fields fieldsObject = requestObject.new Fields(summary);
+            JiraCreateIssueRequest.Fields fieldsObject = new JiraCreateIssueRequest.Fields(summary);
             fieldsObject.setSummary(summary);
 
-            var desc = fieldsObject.new Description();
+            var desc = new JiraCreateIssueRequest.Fields.Description();
             desc.setType("doc");
             desc.setVersion(1);
 
-            var content = desc.new Content();
+            var content = new JiraCreateIssueRequest.Fields.Description.Content();
             content.setType("paragraph");
 
-            var contentOfContent = content.new ContentOfContent();
+            var contentOfContent = new JiraCreateIssueRequest.Fields.Description.Content.ContentOfContent();
             contentOfContent.setText(description);
             contentOfContent.setType("text");
 
@@ -125,10 +125,10 @@ public class JiraServiceImpl implements JiraService {
             desc.setContent(List.of(content));
             fieldsObject.setDescription(desc);
 
-            var issueTypeObject = fieldsObject.new Issuetype(issueType);
+            var issueTypeObject = new JiraCreateIssueRequest.Fields.Issuetype(issueType);
             fieldsObject.setIssueType(issueTypeObject);
 
-            var project = fieldsObject.new Project();
+            var project = new JiraCreateIssueRequest.Fields.Project();
             project.setKey(key);
             fieldsObject.setProject(project);
 

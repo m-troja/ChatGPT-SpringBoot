@@ -1,4 +1,4 @@
-package com.michal.openai.entity;
+package com.michal.openai.github.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

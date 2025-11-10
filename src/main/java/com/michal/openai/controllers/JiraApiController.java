@@ -33,6 +33,5 @@ public class JiraApiController {
 	public JiraIssue createIssue(@RequestBody String requestBody) {
         log.debug("POST /api/v1/jira/create-issue: {}", requestBody);
 		 return jiraService.createJavaIssue(requestBody);
-	   
 	}
 }

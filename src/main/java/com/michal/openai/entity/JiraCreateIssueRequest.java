@@ -17,9 +17,9 @@ public class JiraCreateIssueRequest {
 	}
 
     @Data
-	public class Fields
+	public static class Fields
 	{
-        @JsonProperty("issuetype")  // Tutaj wymuszamy "issuetype" w JSON
+        @JsonProperty("issuetype")
 		private Issuetype issueType;
 		private Description description;
 		private Project project;
@@ -35,110 +35,50 @@ public class JiraCreateIssueRequest {
 		}
 
         @Data
-		public class Project
+		public static class Project
 		{
             private String key;
-
-			@Override
-			public String toString() {
-				return "Project [key=" + key + "]";
-			}
 
 			public Project() {
 			}
 
-			public Project(String key) {
-				super();
-				this.key = key;
-			}
 		}	//END project
 
-        @Data
-		public class Issuetype
-		{
-			String name;
-			public Issuetype(String name) {
-				this.name = name;
-			}
-
-			@Override
-			public String toString() {
-				return "Issuetype [name=" + name + "]";
-			}
-			
-		}
+        public record Issuetype(String name) {}
 
         @Data
-		public class Description
+		public static class Description
 		{
             private String type;
             private Integer version;
 			private List<Content> content;
-
-			public Description(String type, Integer version) {
-				this.type = type;
-				this.version = version;
-			}
-
-			@Override
-			public String toString() {
-				return "Description [type=" + type + ", version=" + version + "]";
-			}
 
 			public Description() {
 				super();
 			}
 
             @Data
-			public class Content
+			public static class Content
 			{
                 private String type;
 
 				@JsonProperty("content")
 				private List<ContentOfContent> contentOfContent;
-				
-				public List<ContentOfContent> getContentOfContent() {
-					return contentOfContent;
-				}
-
-				public Content(String type, String text) {
-					this.type = type;
-				}
-
-				public String getType() {
-					return type;
-				}
 
 				public Content() {
 					super();
 				}
-				
-				public class ContentOfContent
+
+                @Data
+				public static class ContentOfContent
 				{
 					String type;
 					String text;
 					public ContentOfContent() {
 						super();
 					}
-					public String getType() {
-						return type;
-					}
-					public void setType(String type) {
-						this.type = type;
-					}
-					public String getText() {
-						return text;
-					}
-					public void setText(String text) {
-						this.text = text;
-					}
-					
-					
 				}
-				
 			} //END CONTENT 1
-
 		} // END description
-
 	}
 }

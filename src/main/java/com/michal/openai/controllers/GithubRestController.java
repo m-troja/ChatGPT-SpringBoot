@@ -1,6 +1,6 @@
 package com.michal.openai.controllers;
 
-import com.michal.openai.entity.GithubRepoDto;
+import com.michal.openai.github.entity.GithubRepoDto;
 import com.michal.openai.github.GithubService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

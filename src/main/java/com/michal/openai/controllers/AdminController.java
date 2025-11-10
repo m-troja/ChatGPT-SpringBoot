@@ -38,7 +38,6 @@ public class AdminController {
 
 	    entityManager.createNativeQuery("TRUNCATE TABLE gpt_response").executeUpdate();
 	    entityManager.createNativeQuery("TRUNCATE TABLE slack_user").executeUpdate();
-	    // ... do this for each table
 	    entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1").executeUpdate();
 	}
 	

@@ -1,4 +1,4 @@
-package com.michal.openai.entity;
+package com.michal.openai.github.entity;
 
 public record GithubRepoResponse(
         long id,
