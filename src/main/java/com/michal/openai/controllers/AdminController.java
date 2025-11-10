@@ -2,7 +2,6 @@ package com.michal.openai.controllers;
 
 
 import com.michal.openai.gpt.GptService;
-import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
