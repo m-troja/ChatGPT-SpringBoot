@@ -123,7 +123,7 @@ public class BeansConfiguration {
         GptFunction.Parameters parameters = gptFunction.new Parameters();
         parameters.setType("object");
         parameters.setProperties(properties);
-        parameters.setRequired(new String[] {"title", "description", "priority", "authorSlackId","assigneeSlackId", "duedate", "projectid"});
+        parameters.setRequired(new String[] {"title", "description", "authorSlackId"});
 
         gptFunction.setParameters(parameters);
 
@@ -169,7 +169,7 @@ public class BeansConfiguration {
 
         GptFunction.Parameters gptFunctionParameters = getReposFunction.new Parameters();
         gptFunctionParameters.setType("object");
-        gptFunctionParameters.setRequired(new String[] {attrKey, attrSlackUserId});
+        gptFunctionParameters.setRequired(new String[] {"key", "userSlackId"});
 
         var properties = new TaskSystemAssignIssueParameterProperties();
         var key = properties.new Key("string", attrKey);
