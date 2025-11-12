@@ -16,7 +16,8 @@ public class CreateTaskSystemIssueFunction implements Function
 {
 	private final TaskSystemService taskSystemService;
     private final ObjectMapper objectMapper;
-	@Override
+
+    @Override
 	public String execute(String requestBody) {
         log.debug("Execute CreateTaskSystemIssueFunction with requestBody: {}", requestBody);
         TaskSystemIssueDto dto;

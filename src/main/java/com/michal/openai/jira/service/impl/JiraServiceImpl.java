@@ -1,14 +1,13 @@
-package com.michal.openai.jira.impl;
+package com.michal.openai.jira.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.jira.JiraService;
+import com.michal.openai.jira.service.JiraService;
 import com.michal.openai.jira.entity.JiraIssue;
 import com.michal.openai.jira.entity.JiraIssueDto;
 import com.michal.openai.jira.entity.JiraListOfIssues;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;

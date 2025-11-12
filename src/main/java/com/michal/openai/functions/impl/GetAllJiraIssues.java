@@ -3,24 +3,22 @@ package com.michal.openai.functions.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.functions.Function;
-import com.michal.openai.jira.JiraService;
+import com.michal.openai.jira.service.JiraService;
 import com.michal.openai.jira.entity.JiraIssue;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.concurrent.CompletionException;
 
 @Slf4j
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Component
+@RequiredArgsConstructor
 public class GetAllJiraIssues implements Function {
 
-    private JiraService jiraService;
-    private ObjectMapper objectMapper;
+    private final JiraService jiraService;
+    private final ObjectMapper objectMapper;
 
     @Override
     public String execute(String arguments) {

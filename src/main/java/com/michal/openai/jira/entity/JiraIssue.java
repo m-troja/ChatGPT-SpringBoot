@@ -8,12 +8,14 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record JiraIssue(
         String key,
+        String dueDate,
+        String assignee,
         Fields fields
         )
 {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record  Fields(
-            Issuetype issueType,
+            @JsonProperty("issuetype") Issuetype issueType,
             Description description,
             Project project,
             String summary,

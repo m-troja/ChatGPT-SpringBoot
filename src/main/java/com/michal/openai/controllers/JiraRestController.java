@@ -1,8 +1,8 @@
 package com.michal.openai.controllers;
 
-import com.michal.openai.jira.entity.JiraIssue;
+import com.michal.openai.jira.entity.JiraCnv;
 import com.michal.openai.jira.entity.JiraIssueDto;
-import com.michal.openai.jira.JiraService;
+import com.michal.openai.jira.service.JiraService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -15,18 +15,19 @@ import java.util.List;
 public class JiraRestController {
 
 	private final JiraService jiraService;
+	private final JiraCnv jiraCnv;
 
 	@GetMapping(value = "issue", params = "id")
-	public JiraIssue getIssue(@RequestParam("id") String issueId)
+	public JiraIssueDto getIssue(@RequestParam("id") String issueId)
 	{
         log.debug("GET /api/v1/jira/issue, id: {}", issueId);
-        return jiraService.getIssue(issueId);
+        return jiraCnv.convertIssueToIssueDto(jiraService.getIssue(issueId));
     }
 
 	@GetMapping("issues-java")
-	public List<JiraIssue> getIssues() {
+	public List<JiraIssueDto> getIssues() {
 		log.debug("GET /api/v1/jira/issues-java");
-		 return jiraService.getIssues();
+		return jiraCnv.convertListOfIssuesToListOfIssueDto(jiraService.getIssues());
 	   
 	}
 	

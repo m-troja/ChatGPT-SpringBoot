@@ -1,4 +1,4 @@
-package com.michal.openai.jira;
+package com.michal.openai.jira.service;
 
 import com.michal.openai.jira.entity.JiraIssue;
 import com.michal.openai.jira.entity.JiraIssueDto;
