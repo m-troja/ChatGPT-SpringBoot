@@ -1,6 +1,6 @@
 package com.michal.openai.gpt;
 
-import com.michal.openai.entity.GptFunction;
+import com.michal.openai.functions.entity.GptFunction;
 
 import java.util.concurrent.CompletableFuture;
 

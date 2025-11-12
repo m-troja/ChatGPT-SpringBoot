@@ -2,9 +2,9 @@ package com.michal.openai.functions.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.entity.JiraIssue;
 import com.michal.openai.functions.Function;
 import com.michal.openai.jira.JiraService;
+import com.michal.openai.jira.entity.JiraIssue;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

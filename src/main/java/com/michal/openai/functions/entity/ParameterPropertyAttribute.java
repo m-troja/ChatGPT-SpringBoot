@@ -1,4 +1,4 @@
-package com.michal.openai.entity;
+package com.michal.openai.functions.entity;
 
 import lombok.Data;
 

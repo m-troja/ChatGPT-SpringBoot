@@ -1,5 +1,7 @@
-package com.michal.openai.entity;
+package com.michal.openai.jira.entity;
 
+import com.michal.openai.functions.entity.ParameterProperties;
+import com.michal.openai.functions.entity.ParameterPropertyAttribute;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

@@ -1,5 +1,7 @@
-package com.michal.openai.entity;
+package com.michal.openai.mail.entity;
 
+import com.michal.openai.functions.entity.ParameterProperties;
+import com.michal.openai.functions.entity.ParameterPropertyAttribute;
 import lombok.Data;
 
 @Data

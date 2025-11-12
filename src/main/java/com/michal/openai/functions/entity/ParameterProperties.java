@@ -1,4 +1,4 @@
-package com.michal.openai.entity;
+package com.michal.openai.functions.entity;
 
 
 // Marker interface for possible GptFunction parameter properties

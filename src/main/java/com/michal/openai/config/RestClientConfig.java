@@ -42,7 +42,7 @@ public class RestClientConfig {
     	 RestClient.Builder builder = RestClient.builder()
     			.baseUrl(jiraUrl)
     			.defaultHeader("Content-Type", "application/json")
-    	        .defaultHeader("Authorization",  "Bearer " + jiraKey);
+    	        .defaultHeader("Authorization",  "Basic " + jiraKey);
     	        
 			return builder.build();
 	}

@@ -1,16 +1,21 @@
 package com.michal.openai.gpt.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.entity.*;
 import com.michal.openai.exception.GptCommunicationException;
 import com.michal.openai.functions.Function;
 import com.michal.openai.functions.FunctionFacory;
+import com.michal.openai.functions.entity.GptFunction;
+import com.michal.openai.functions.entity.GptTool;
 import com.michal.openai.gpt.GptService;
+import com.michal.openai.gpt.entity.GptMessage;
+import com.michal.openai.gpt.entity.GptRequest;
+import com.michal.openai.gpt.entity.GptResponse;
 import com.michal.openai.log.JsonSaver;
 import com.michal.openai.persistence.JpaGptMessageRepo;
 import com.michal.openai.persistence.JpaGptRequestRepo;
 import com.michal.openai.persistence.JpaGptResponseRepo;
 import com.michal.openai.persistence.JpaSlackRepo;
+import com.michal.openai.slack.entity.SlackUser;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;

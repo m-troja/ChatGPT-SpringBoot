@@ -1,6 +1,7 @@
 package com.michal.openai.controllers;
 
-import com.michal.openai.entity.JiraIssue;
+import com.michal.openai.jira.entity.JiraIssue;
+import com.michal.openai.jira.entity.JiraIssueDto;
 import com.michal.openai.jira.JiraService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,7 @@ public class JiraRestController {
 	}
 	
 	@PostMapping("create-issue")
-	public JiraIssue createIssue(@RequestBody String requestBody) {
+	public JiraIssueDto createIssue(@RequestBody String requestBody) {
         log.debug("POST /api/v1/jira/create-issue: {}", requestBody);
 		 return jiraService.createJavaIssue(requestBody);
 	}

@@ -21,7 +21,7 @@ public class CreateJiraIssueFunction implements Function
 
         log.debug(" execute CreateIssueFunction with arguments: {}", requestBody);
 	    var jiraIssue = jiraService.createJavaIssue(requestBody);
-	    log.debug("Created JiraIssue: {}", jiraIssue);
+	    log.debug("Created JiraIssueDto: {}", jiraIssue);
         String json;
         try {
             json = objectMapper.writeValueAsString(jiraIssue);

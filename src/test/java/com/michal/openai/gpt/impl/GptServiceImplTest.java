@@ -2,14 +2,18 @@
 
     import com.fasterxml.jackson.core.JsonProcessingException;
     import com.fasterxml.jackson.databind.ObjectMapper;
-    import com.michal.openai.entity.*;
     import com.michal.openai.functions.FunctionFacory;
+    import com.michal.openai.functions.entity.GptFunction;
     import com.michal.openai.functions.impl.AssignTaskSystemIssueFunction;
     import com.michal.openai.functions.impl.CreateTaskSystemIssueFunction;
+    import com.michal.openai.gpt.entity.GptMessage;
+    import com.michal.openai.gpt.entity.GptRequest;
+    import com.michal.openai.gpt.entity.GptResponse;
     import com.michal.openai.persistence.JpaGptMessageRepo;
     import com.michal.openai.persistence.JpaGptRequestRepo;
     import com.michal.openai.persistence.JpaGptResponseRepo;
     import com.michal.openai.persistence.JpaSlackRepo;
+    import com.michal.openai.slack.entity.SlackUser;
     import com.michal.openai.tasksystem.entity.TaskSystemAssignIssueParameterProperties;
     import com.michal.openai.tasksystem.entity.TaskSystemCreateIssueParameterProperties;
     import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;

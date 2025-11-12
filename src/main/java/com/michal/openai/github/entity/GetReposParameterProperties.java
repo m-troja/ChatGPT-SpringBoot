@@ -1,5 +1,7 @@
-package com.michal.openai.entity;
+package com.michal.openai.github.entity;
 
+import com.michal.openai.functions.entity.ParameterProperties;
+import com.michal.openai.functions.entity.ParameterPropertyAttribute;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

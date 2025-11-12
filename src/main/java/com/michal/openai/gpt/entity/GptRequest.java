@@ -1,8 +1,10 @@
-package com.michal.openai.entity;
+package com.michal.openai.gpt.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.michal.openai.functions.entity.GptFunction;
+import com.michal.openai.functions.entity.GptTool;
 import jakarta.persistence.*;
 import lombok.Data;
 

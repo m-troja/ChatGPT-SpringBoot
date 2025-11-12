@@ -1,6 +1,6 @@
 package com.michal.openai.slack;
 
-import com.michal.openai.entity.SlackUser;
+import com.michal.openai.slack.entity.SlackUser;
 
 import java.util.List;
 

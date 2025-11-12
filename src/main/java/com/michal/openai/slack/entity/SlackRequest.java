@@ -1,4 +1,4 @@
-package com.michal.openai.entity;
+package com.michal.openai.slack.entity;
 
 import java.util.List;
 

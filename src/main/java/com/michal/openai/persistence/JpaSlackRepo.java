@@ -1,6 +1,6 @@
 package com.michal.openai.persistence;
 
-import com.michal.openai.entity.SlackUser;
+import com.michal.openai.slack.entity.SlackUser;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

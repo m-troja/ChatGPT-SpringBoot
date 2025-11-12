@@ -1,6 +1,6 @@
 package com.michal.openai.mail;
 
-import com.michal.openai.entity.EmailData;
+import com.michal.openai.mail.entity.EmailData;
 
 public interface GmailService {
 

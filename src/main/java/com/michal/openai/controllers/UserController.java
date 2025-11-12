@@ -1,6 +1,6 @@
 package com.michal.openai.controllers;
 
-import com.michal.openai.entity.SlackUser;
+import com.michal.openai.slack.entity.SlackUser;
 import com.michal.openai.slack.SlackService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

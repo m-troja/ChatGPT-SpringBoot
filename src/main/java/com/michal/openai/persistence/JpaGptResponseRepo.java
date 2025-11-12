@@ -1,6 +1,6 @@
 package com.michal.openai.persistence;
 
-import com.michal.openai.entity.GptResponse;
+import com.michal.openai.gpt.entity.GptResponse;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;

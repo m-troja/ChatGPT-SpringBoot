@@ -2,9 +2,9 @@ package com.michal.openai.slack.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.entity.GptFunction;
-import com.michal.openai.entity.SlackRequest;
-import com.michal.openai.entity.SlackUser;
+import com.michal.openai.functions.entity.GptFunction;
+import com.michal.openai.slack.entity.SlackRequest;
+import com.michal.openai.slack.entity.SlackUser;
 import com.michal.openai.gpt.GptService;
 import com.michal.openai.persistence.JpaSlackRepo;
 import com.michal.openai.slack.SlackService;

@@ -1,4 +1,6 @@
-package com.michal.openai.dto;
+package com.michal.openai.github;
+
+import com.michal.openai.github.entity.BranchDto;
 
 import java.util.List;
 

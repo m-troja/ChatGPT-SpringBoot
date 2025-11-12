@@ -1,6 +1,6 @@
 package com.michal.openai.mail.impl;
 
-import com.michal.openai.entity.EmailData;
+import com.michal.openai.mail.entity.EmailData;
 import com.michal.openai.mail.GmailService;
 import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;

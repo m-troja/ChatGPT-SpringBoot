@@ -1,8 +1,8 @@
-package com.michal.openai.entity;
+package com.michal.openai.jira.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record JiraIssue(
+public record JiraIssueDto(
         String key,
         String summary ,
         String description,

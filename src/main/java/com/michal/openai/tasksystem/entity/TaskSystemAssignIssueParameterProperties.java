@@ -1,7 +1,7 @@
 package com.michal.openai.tasksystem.entity;
 
-import com.michal.openai.entity.ParameterProperties;
-import com.michal.openai.entity.ParameterPropertyAttribute;
+import com.michal.openai.functions.entity.ParameterProperties;
+import com.michal.openai.functions.entity.ParameterPropertyAttribute;
 import lombok.Data;
 
 @Data

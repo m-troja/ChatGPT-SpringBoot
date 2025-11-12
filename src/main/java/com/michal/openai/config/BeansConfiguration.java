@@ -1,7 +1,7 @@
 package com.michal.openai.config;
 
-import com.michal.openai.entity.GetReposParameterProperties;
-import com.michal.openai.entity.GptFunction;
+import com.michal.openai.github.entity.GetReposParameterProperties;
+import com.michal.openai.functions.entity.GptFunction;
 import com.michal.openai.tasksystem.entity.TaskSystemAssignIssueParameterProperties;
 import com.michal.openai.tasksystem.entity.TaskSystemCreateIssueParameterProperties;
 import com.slack.api.Slack;
