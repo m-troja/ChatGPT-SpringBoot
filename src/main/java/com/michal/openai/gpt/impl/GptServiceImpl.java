@@ -82,6 +82,7 @@ public class GptServiceImpl implements GptService {
     }
     @PostConstruct
     public void init() {
+        // Context of 2 last messages + 2 last responses + system message + last query
         totalQtyMessagesInContext = qtyContextMessagesInRequestOrResponse * 2 + 2;
     }
 	/*
@@ -110,7 +111,6 @@ public class GptServiceImpl implements GptService {
             log.error("Error clearing database: ", e);
             throw new RuntimeException(e);
         }
-
     }
 
     private String handleQuery(String query, String slackUserId, GptFunction... gptFunctions) {
@@ -136,8 +136,8 @@ public class GptServiceImpl implements GptService {
         gptRequest.setPresencePenalty(presencePenalty);
         gptRequest.setMaxOutputTokens(maxTokens);
         gptRequest.setMessages(messages);
-        List<GptTool> requestTools = new ArrayList<>();
         log.debug("Found {} GPT Functions to add into requestTools", gptFunctions.size());
+        List<GptTool> requestTools = new ArrayList<>();
         gptFunctions.forEach(fn -> {
             requestTools.add(new GptTool("function", fn));
             log.debug("Added function into requestTools: {}", fn.getName());
@@ -192,9 +192,8 @@ public class GptServiceImpl implements GptService {
         saveGptRequest(gptRequest);
 
         for (int attempt = 1; attempt <= retryAttempts; attempt++) {
-
             try {
-                log.debug("Calling GPT attempt {}/{}", attempt, retryAttempts);
+                log.debug("Calling GPT: attempt {}/{}", attempt, retryAttempts);
 
                 var gptResponse = restClient.post()
                         .body(gptRequest)
@@ -216,7 +215,6 @@ public class GptServiceImpl implements GptService {
                     log.error("Max retry attempts reached.");
                     throw new GptCommunicationException("Max retry attempts reached");
                 }
-
                 sleep(waitSeconds);
             }
         }
@@ -377,5 +375,4 @@ public class GptServiceImpl implements GptService {
     public SlackUser getSlackUserBySlackId(String slackId) {
         return jpaSlackrepo.findBySlackUserId(slackId);
     }
-	
 }
