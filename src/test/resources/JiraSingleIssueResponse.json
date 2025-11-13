@@ -1,0 +1,145 @@
+{
+  "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+  "id": "10231",
+  "self": "https://mtroja98.atlassian.net/rest/api/3/issue/10231",
+  "key": "JAVA-62",
+  "fields": {
+    "statuscategorychangedate": "2025-09-11T22:30:21.310+0200",
+    "issuetype": {
+      "self": "https://mtroja98.atlassian.net/rest/api/3/issuetype/10001",
+      "id": "10001",
+      "description": "Tasks track small, distinct pieces of work.",
+      "iconUrl": "https://mtroja98.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium",
+      "name": "Task",
+      "subtask": false,
+      "avatarId": 10318,
+      "entityId": "2f9dddd5-938a-45f6-8584-807bfdd9fbcf",
+      "hierarchyLevel": 0
+    },
+    "components": [],
+    "timespent": null,
+    "timeoriginalestimate": null,
+    "project": {
+      "self": "https://mtroja98.atlassian.net/rest/api/3/project/10000",
+      "id": "10000",
+      "key": "JAVA",
+      "name": "Java",
+      "projectTypeKey": "software",
+      "simplified": true,
+      "avatarUrls": {
+        "48x48": "https://mtroja98.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10401",
+        "24x24": "https://mtroja98.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10401?size=small",
+        "16x16": "https://mtroja98.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10401?size=xsmall",
+        "32x32": "https://mtroja98.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10401?size=medium"
+      }
+    },
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Test ticket"
+            }
+          ]
+        }
+      ]
+    },
+    "fixVersions": [],
+    "customfield_10033": null,
+    "aggregatetimespent": null,
+    "statusCategory": {
+      "self": "https://mtroja98.atlassian.net/rest/api/3/statuscategory/2",
+      "id": 2,
+      "key": "new",
+      "colorName": "blue-gray",
+      "name": "To Do"
+    },
+    "resolution": null,
+    "security": null,
+    "attachment": [],
+    "aggregatetimeestimate": null,
+    "resolutiondate": null,
+    "workratio": -1,
+    "summary": "Create ticket with Slack and GPT",
+    "issuerestriction": {
+      "issuerestrictions": {},
+      "shouldDisplay": true
+    },
+    "watches": {
+      "self": "https://mtroja98.atlassian.net/rest/api/3/issue/JAVA-62/watchers",
+      "watchCount": 1,
+      "isWatching": true
+    },
+    "lastViewed": null,
+    "creator": {
+      "self": "https://mtroja98.atlassian.net/rest/api/3/user?accountId=712020%3A16abfc80-5861-43e3-8ba3-d7ff7caee17a",
+      "accountId": "712020:16abfc80-5861-43e3-8ba3-d7ff7caee17a",
+      "emailAddress": "mtroja98@gmail.com",
+      "avatarUrls": {
+        "48x48": "https://secure.gravatar.com/avatar/4db0e9483568e68e3bb89a19311c2918?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMT-6.png",
+        "24x24": "https://secure.gravatar.com/avatar/4db0e9483568e68e3bb89a19311c2918?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMT-6.png",
+        "16x16": "https://secure.gravatar.com/avatar/4db0e9483568e68e3bb89a19311c2918?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMT-6.png",
+        "32x32": "https://secure.gravatar.com/avatar/4db0e9483568e68e3bb89a19311c2918?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FMT-6.png"
+      },
+      "displayName": "Michal Trojanowski",
+      "active": true,
+      "timeZone": "Europe/Warsaw",
+      "accountType": "atlassian"
+    },
+    "subtasks": [],
+    "created": "2025-09-11T22:30:20.814+0200",
+    "customfield_10021": null,
+    "aggregateprogress": {
+      "progress": 0,
+      "total": 0
+    },
+    "customfield_10019": "0|i00087:",
+    "timeestimate": null,
+    "aggregatetimeoriginalestimate": null,
+    "versions": [],
+    "duedate": null,
+    "progress": {
+      "progress": 0,
+      "total": 0
+    },
+    "votes": {
+      "self": "https://mtroja98.atlassian.net/rest/api/3/issue/JAVA-62/votes",
+      "votes": 0,
+      "hasVoted": false
+    },
+    "issuelinks": [],
+    "comment": {
+      "comments": [],
+      "self": "https://mtroja98.atlassian.net/rest/api/3/issue/10231/comment",
+      "maxResults": 0,
+      "total": 0,
+      "startAt": 0
+    },
+    "worklog": {
+      "startAt": 0,
+      "maxResults": 20,
+      "total": 0,
+      "worklogs": []
+    },
+    "assignee": null,
+    "updated": "2025-09-11T22:30:21.136+0200",
+    "status": {
+      "self": "https://mtroja98.atlassian.net/rest/api/3/status/10000",
+      "description": "",
+      "iconUrl": "https://mtroja98.atlassian.net/",
+      "name": "To Do",
+      "id": "10000",
+      "statusCategory": {
+        "self": "https://mtroja98.atlassian.net/rest/api/3/statuscategory/2",
+        "id": 2,
+        "key": "new",
+        "colorName": "blue-gray",
+        "name": "To Do"
+      }
+    }
+  }
+}

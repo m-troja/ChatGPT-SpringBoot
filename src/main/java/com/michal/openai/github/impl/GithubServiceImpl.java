@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class DefaultGithubService implements GithubService {
+public class GithubServiceImpl implements GithubService {
 
     private final RestClient githubRestClient;
 
@@ -89,7 +89,7 @@ public class DefaultGithubService implements GithubService {
         return branches;
     }
 
-	public DefaultGithubService(@Qualifier("githubRestClient") RestClient githubRestClient) {
+	public GithubServiceImpl(@Qualifier("githubRestClient") RestClient githubRestClient) {
         this.githubRestClient = githubRestClient;
 	}
 }
