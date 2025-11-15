@@ -45,32 +45,41 @@ public class GithubServiceImplTest {
 
         var owner = new GithubRepoResponse.Owner(1L, "login1", "htmlUrl1", "avatarUrl1");
         String uri = "/users/" + owner.login() + "/repos";
-
         var githubResponseNotForked = new GithubRepoResponse(1L, "Repo1", "FullName1", "Desc1", "Html1", "CloneUrl1", "SshUrl1", "Language1", 1, 1, 1, 1, false, owner);
         var githubResponseForked = new GithubRepoResponse(1L, "Repo1", "FullName1", "Desc1", "Html1", "CloneUrl1", "SshUrl1", "Language1", 1, 1, 1, 1, true,  owner);
+        var userRepos = List.of(githubResponseNotForked, githubResponseForked);
+        var notForkedRepos = List.of(githubResponseNotForked);
 
         var githubBranch1 = new GithubBranch("main1", new GithubCommit("commit1", "url1"));
         var githubBranch2 = new GithubBranch("main2", new GithubCommit("commit2", "url2"));
-        var githubBranch3 = new GithubBranch("main3", new GithubCommit("commit3", "url3"));
-        var branchesNotForked = List.of(githubBranch1, githubBranch2);
-        var branchesRForked = List.of(githubBranch3);
+        var notForkedBranches = List.of(githubBranch1, githubBranch2);
 
         List<GithubRepoDto> notForkedDtos = List.of(
-                new GithubRepoDto(githubResponseNotForked.name(), githubResponseNotForked.description(), branchesNotForked, githubResponseNotForked.fork())
+                new GithubRepoDto(githubResponseNotForked.name(), githubResponseNotForked.owner().login(), notForkedBranches, githubResponseNotForked.fork())
         );
 
-        List<GithubRepoDto> forkedDtos = List.of(
-                new GithubRepoDto(githubResponseForked.name(), githubResponseForked.description(), branchesRForked, githubResponseForked.fork())
-        );
-
-        server.expect(requestTo(baseUrl + uri))
+        //  fetchUserRepos
+        String urlFetchRepos = baseUrl + uri;
+        server.expect(requestTo(urlFetchRepos))
                 .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(objectMapper.writeValueAsString(notForkedDtos), MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess(objectMapper.writeValueAsString(userRepos), MediaType.APPLICATION_JSON));
 
+        // fetchBranches
+        notForkedRepos.forEach( repo -> {
+            String uriFetchBranches = baseUrl + "/repos/" + repo.owner().login() + "/" + repo.name() + "/branches";
+            try {
+                server.expect(requestTo(uriFetchBranches))
+                        .andExpect(method(HttpMethod.GET))
+                        .andRespond(withSuccess( objectMapper.writeValueAsString(notForkedBranches), MediaType.APPLICATION_JSON));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         List<GithubRepoDto> dtosFromService = service.getUserReposWithBranches(owner.login());
         server.verify();
         assertThat(dtosFromService).hasSize(1);
+        assertThat(dtosFromService).isEqualTo(notForkedDtos);
     }
 
     @TestConfiguration

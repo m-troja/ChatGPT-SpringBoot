@@ -16,11 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(AdminController.class)
 class AdminControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
 
-    @MockitoBean
-    private GptService gptService;
+    @MockitoBean private GptService gptService;
 
     @Test
     void shouldReturnOkOnClearDatabase() throws Exception {
