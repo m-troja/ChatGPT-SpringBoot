@@ -3,10 +3,7 @@
     import com.fasterxml.jackson.core.JsonProcessingException;
     import com.fasterxml.jackson.databind.ObjectMapper;
     import com.michal.openai.exception.JiraCommunicationException;
-    import com.michal.openai.functions.FunctionFacory;
     import com.michal.openai.functions.entity.GptFunction;
-    import com.michal.openai.functions.impl.CreateJiraIssueFunction;
-    import com.michal.openai.functions.impl.GetAllJiraIssuesFunction;
     import com.michal.openai.jira.entity.*;
     import com.michal.openai.jira.service.impl.JiraServiceImpl;
     import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +18,6 @@
     import org.springframework.http.HttpMethod;
     import org.springframework.http.MediaType;
     import org.springframework.test.context.TestPropertySource;
-    import org.springframework.test.context.bean.override.mockito.MockitoBean;
     import org.springframework.test.web.client.MockRestServiceServer;
     import org.springframework.web.client.RestClient;
 
