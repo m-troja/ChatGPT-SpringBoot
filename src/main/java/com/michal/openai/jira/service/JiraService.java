@@ -2,7 +2,6 @@ package com.michal.openai.jira.service;
 
 import com.michal.openai.jira.entity.JiraCreateIssueResponse;
 import com.michal.openai.jira.entity.JiraIssue;
-import com.michal.openai.jira.entity.JiraIssueDto;
 
 import java.util.List;
 

@@ -54,11 +54,6 @@
         @Autowired ObjectMapper objectMapper;
         @Autowired JiraServiceImpl service;
 
-        @MockitoBean FunctionFacory functionFactory;
-        @MockitoBean CreateJiraIssueFunction createJiraIssueFunction;
-        @MockitoBean
-        GetAllJiraIssuesFunction getAllJiraIssuesFunction;
-
         @BeforeEach
         void setup() {
             service.setIssueEndpoint("/issue");
@@ -233,15 +228,6 @@
                       }
                     }
                     """;
-        }
-        private JiraIssueDto buildJiraIssueDto() {
-            return new JiraIssueDto(
-                    "JAVA-1",
-                    "Test summary",
-                    "test ContentOfContent",
-                    "2025-11-15",
-                    "assignee",
-                    "Task");
         }
 
         @TestConfiguration
