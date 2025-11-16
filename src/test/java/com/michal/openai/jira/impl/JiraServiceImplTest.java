@@ -2,15 +2,17 @@
 
     import com.fasterxml.jackson.core.JsonProcessingException;
     import com.fasterxml.jackson.databind.ObjectMapper;
+    import com.michal.openai.config.BeansConfiguration;
     import com.michal.openai.exception.JiraCommunicationException;
-    import com.michal.openai.functions.entity.GptFunction;
-    import com.michal.openai.jira.entity.*;
+    import com.michal.openai.jira.entity.JiraCreateIssueRequest;
+    import com.michal.openai.jira.entity.JiraCreateIssueResponse;
+    import com.michal.openai.jira.entity.JiraIssue;
+    import com.michal.openai.jira.entity.JiraListOfIssues;
     import com.michal.openai.jira.service.impl.JiraServiceImpl;
     import org.junit.jupiter.api.BeforeEach;
     import org.junit.jupiter.api.Test;
     import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.beans.factory.annotation.Qualifier;
-    import org.springframework.beans.factory.annotation.Value;
     import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
     import org.springframework.boot.test.context.TestConfiguration;
     import org.springframework.context.annotation.Bean;
@@ -27,11 +29,10 @@
     import static org.assertj.core.api.Assertions.assertThatThrownBy;
     import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
     import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-    import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
     import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
     @RestClientTest(JiraServiceImplTest.class)
-    @Import({JiraServiceImplTest.TestConfig.class, JiraServiceImpl.class})
+    @Import({JiraServiceImplTest.TestConfig.class, JiraServiceImpl.class, BeansConfiguration.class})
     @TestPropertySource(properties = {
             "${gpt.function.jira.create.issue.name}" ,
             "${gpt.function.jira.create.issue.description}" ,
@@ -176,10 +177,10 @@
         }
 
         private JiraCreateIssueRequest buildCreateIssueRequest() {
-            var issueType = new JiraCreateIssueRequest.Issuetype( "JAVA");
-            var contentOfContents = List.of( new JiraCreateIssueRequest.ContentOfContent("text", "test ContentOfContent req"));
-            var contents = List.of(new JiraCreateIssueRequest.Content(("text"), contentOfContents));
-            var description = new JiraCreateIssueRequest.Description("text", 123, contents);
+            var issueType = new JiraCreateIssueRequest.Issuetype( "Task");
+            var contentOfContents = List.of( new JiraCreateIssueRequest.ContentOfContent("text", "Test desc"));
+            var contents = List.of(new JiraCreateIssueRequest.Content(("paragraph"), contentOfContents));
+            var description = new JiraCreateIssueRequest.Description("doc", 1, contents);
             var project = new JiraCreateIssueRequest.Project("JAVA");
             return new JiraCreateIssueRequest(
                     new JiraCreateIssueRequest.Fields(
@@ -194,39 +195,6 @@
             return new JiraCreateIssueResponse("10001", "JAVA-1", "https://mtroja98.atlassian.net/rest/api/3/issue/10000");
         }
 
-        private String getIncorrectJson() {
-            return """
-                    {
-                      "fields": 
-                      {
-                        "project": {
-                          "key": "JAVA"
-                        },
-                        "summary": "REST ye merry gentlemen.",
-                        "description": 
-                        {
-                          "type": "doc",
-                          "version": 1,
-                          "content": [
-                            {
-                              "type": "paragraph",
-                              "content": [
-                                {
-                                  "type": "text",
-                                  "text": "Creating of an issue using project keys and issue type names using the REST API."
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        "issuetype": {
-                          "name": "Task"
-                        }
-                      }
-                    }
-                    """;
-        }
-
         @TestConfiguration
         static class TestConfig {
             @Bean
@@ -234,53 +202,5 @@
             RestClient jiraRestClient(RestClient.Builder builder) {
                 return builder.baseUrl("https://mtroja98.atlassian.net/rest/api/3").build();
             }
-
-            @Bean("defineCreateJiraIssueFunction")
-            public GptFunction defineCreateJiraIssueFunction(
-                    @Value("${gpt.function.jira.create.issue.name}") String functionName,
-                    @Value("${gpt.function.jira.create.issue.description}") String description,
-                    @Value("${gpt.function.jira.create.issue.attr.description.desc}") String descrAttrDescription,
-                    @Value("${gpt.function.jira.create.issue.attr.issuetype.desc}") String issueTypeAttrDescription,
-                    @Value("${gpt.function.jira.create.issue.attr.issuetype.epic}") String epicIssueType,
-                    @Value("${gpt.function.jira.create.issue.attr.issuetype.story}") String storyIssueType,
-                    @Value("${gpt.function.jira.create.issue.attr.issuetype.task}") String taskIssueType,
-                    @Value("${gpt.function.jira.create.issue.attr.issuetype.bug}") String bugIssueType,
-                    @Value("${gpt.function.jira.create.issue.attr.duedate.desc}") String dueDateAttrDescription,
-                    @Value("${gpt.function.jira.create.issue.attr.summary.format}") String dueDateFormat,
-                    @Value("${gpt.function.jira.create.issue.attr.summary.desc}") String summaryAttrDescription
-            )
-            {
-                var gptFunction = new GptFunction();
-                gptFunction.setName(functionName);
-                gptFunction.setDescription(description);
-
-                // Predefine function parameters
-                JiraCreateIssueParameterProperties properties = new JiraCreateIssueParameterProperties();
-                properties.setDescription(new JiraCreateIssueParameterProperties.Description("string",descrAttrDescription));
-                properties.setSummary(new JiraCreateIssueParameterProperties.Summary("string",summaryAttrDescription));
-                properties.setDuedate(new JiraCreateIssueParameterProperties.DueDate("string",dueDateAttrDescription, dueDateFormat));
-                properties.setIssueType(new JiraCreateIssueParameterProperties.IssueType("string",issueTypeAttrDescription, new String[] {epicIssueType, storyIssueType, taskIssueType, bugIssueType} ));
-
-                // Define function's parameters
-                GptFunction.Parameters parameters = gptFunction.new Parameters();
-                parameters.setType("object");
-                parameters.setProperties(properties);
-                parameters.setRequired(new String[] {"summary", "description", "issuetype"});
-
-                gptFunction.setParameters(parameters);
-
-                return gptFunction;
-            }
-
-            @Bean("defineAllJiraIssuesFunction")
-            public GptFunction defineGetAllJiraIssuesFunction() {
-                var gptFunction = new GptFunction();
-                gptFunction.setName("getAllJiraIssuesFunction");
-                gptFunction.setDescription("Get basic data about all issues in my Jira: key, assignee, description, summary, due date.");
-
-                return gptFunction;
-            }
-
-
         }
     }
