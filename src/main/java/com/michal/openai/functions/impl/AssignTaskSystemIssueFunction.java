@@ -18,21 +18,27 @@ public class AssignTaskSystemIssueFunction implements Function
     private final ObjectMapper objectMapper;
 	@Override
 	public String execute(String requestBody) {
+
         log.debug("Execute AssignTaskSystemIssueFunction with requestBody: {}", requestBody);
+
         TaskSystemIssueDto dto;
-            try {
-                dto = taskSystemService.assignIssue(requestBody);
-            } catch (Exception e) {
-                log.error("Error assigning task-system issue ", e);
-                throw new RuntimeException(e);
-            }
+       
+        try {
+            dto = taskSystemService.assignIssue(requestBody);
+        } catch (Exception e) {
+            log.error("Error assigning task-system issue ", e);
+            throw new RuntimeException(e);
+        }
+
         String json;
+
         try {
             json = objectMapper.writeValueAsString(dto);
         } catch (JsonProcessingException e) {
             log.error("Error creating task-system assign-issue result json ", e);
             throw new RuntimeException(e);
         }
+
         return json ;
     }
 }

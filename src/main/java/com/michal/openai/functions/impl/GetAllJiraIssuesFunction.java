@@ -15,14 +15,14 @@ import java.util.concurrent.CompletionException;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class GetAllJiraIssues implements Function {
+public class GetAllJiraIssuesFunction implements Function {
 
     private final JiraService jiraService;
     private final ObjectMapper objectMapper;
 
     @Override
     public String execute(String arguments) {
-        log.info("GetAllJiraIssues arguments: {}", arguments);
+        log.info("GetAllJiraIssuesFunction arguments: {}", arguments);
         List<JiraIssue> issues = jiraService.getIssues();
                     try {
                         String json = objectMapper.writeValueAsString(issues);

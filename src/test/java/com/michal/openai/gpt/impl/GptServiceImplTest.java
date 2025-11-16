@@ -2,19 +2,18 @@
 
     import com.fasterxml.jackson.core.JsonProcessingException;
     import com.fasterxml.jackson.databind.ObjectMapper;
+    import com.michal.openai.config.BeansConfiguration;
     import com.michal.openai.functions.FunctionFacory;
-    import com.michal.openai.functions.entity.GptFunction;
     import com.michal.openai.functions.impl.AssignTaskSystemIssueFunction;
     import com.michal.openai.functions.impl.CreateTaskSystemIssueFunction;
     import com.michal.openai.gpt.entity.GptMessage;
     import com.michal.openai.gpt.entity.GptRequest;
     import com.michal.openai.gpt.entity.GptResponse;
+    import com.michal.openai.persistence.JpaGptMessageRepo;
     import com.michal.openai.persistence.JpaGptRequestRepo;
     import com.michal.openai.persistence.JpaGptResponseRepo;
     import com.michal.openai.persistence.JpaSlackRepo;
     import com.michal.openai.slack.entity.SlackUser;
-    import com.michal.openai.tasksystem.entity.TaskSystemAssignIssueParameterProperties;
-    import com.michal.openai.tasksystem.entity.TaskSystemCreateIssueParameterProperties;
     import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
     import org.hamcrest.Matchers;
     import org.junit.jupiter.api.Assertions;
@@ -22,7 +21,6 @@
     import org.junit.jupiter.api.Test;
     import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.beans.factory.annotation.Qualifier;
-    import org.springframework.beans.factory.annotation.Value;
     import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
     import org.springframework.boot.test.context.TestConfiguration;
     import org.springframework.context.annotation.Bean;
@@ -46,7 +44,7 @@
     import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
     @RestClientTest(GptServiceImpl.class)
-    @Import(GptServiceImplTest.TestConfig.class)
+    @Import(BeansConfiguration.class)
     @TestPropertySource(properties = {
             "CHAT_MAX_TOKENS=100",
             "gpt.function.tasksystem.assign.issue.desc",
@@ -66,6 +64,7 @@
         @MockitoBean JpaGptRequestRepo jpaGptRequestRepo;
         @MockitoBean JpaGptResponseRepo jpaGptResponseRepo;
         @MockitoBean JpaSlackRepo jpaSlackRepo;
+        @MockitoBean JpaGptMessageRepo messageRepo; // needed for service constructor
         @MockitoBean FunctionFacory functionFactory;
         @MockitoBean AssignTaskSystemIssueFunction assignTaskSystemIssueFunction;
         @MockitoBean CreateTaskSystemIssueFunction createTaskSystemIssueFunction;
@@ -143,7 +142,7 @@
             CompletableFuture<String> query = CompletableFuture.completedFuture("Just say hi");
             CompletableFuture<String> userName = CompletableFuture.completedFuture(user.getSlackUserId());
 
-            assertThatThrownBy( () -> service.getAnswerWithSlack(query, userName).join()).isInstanceOf(CompletionException.class);
+            assertThatThrownBy(() -> service.getAnswerWithSlack(query, userName).join()).isInstanceOf(CompletionException.class);
             server.verify();
         }
 
@@ -151,7 +150,7 @@
         void shouldCallTaskSystemAssignIssueFunctionTest() throws JsonProcessingException {
             // given
             var slackUserId = "U12345678";
-            var expectedDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678" ,"U12345678"));
+            var expectedDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345678"));
             SlackUser slackRequestAuthor = new SlackUser(slackUserId, "Slack Name");
             CompletableFuture<String> query = CompletableFuture.completedFuture("Assign ticket Dummy-1 to U12345678");
             CompletableFuture<String> userName = CompletableFuture.completedFuture("U12345678");
@@ -182,7 +181,7 @@
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                     .andExpect(captureAndAssertGptRequest(objectMapper))
                     .andRespond(withSuccess(objectMapper.writeValueAsString(gptResponseNoFunctionCall), MediaType.APPLICATION_JSON));
-            String response = service.getAnswerWithSlack(query, userName).join();
+            String response = service.getAnswerWithSlack(query, userName).join(); // needed to call service
             server.verify();
 
             // 1st response - check if GPT sent Function Call
@@ -204,8 +203,8 @@
             // given
             var slackUserId = "U08SHTW059C";
             var queryFuture = "Create Task-system issue: title= Test title, description= Test desc, Due date: 14 days, priority: HIGH, author=U08SHTW059C,  assignee: U08SHTW059C. Then after that, assign returned issue to this issue to U08RQ4PPVNW.";
-            var newIssueDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C" ,"U08SHTW059C"));
-            var reassignedIssueDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C" ,"U12345678"));
+            var newIssueDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U08SHTW059C"));
+            var reassignedIssueDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U12345678"));
             var finalResponseContent = "Your issue key is Dummy-1, it was assigned to U12345678";
 
             System.out.println("newIssueDtoJson: " + newIssueDtoJson);
@@ -222,7 +221,8 @@
             when(jpaGptRequestRepo.save(any())).thenAnswer(inv -> {
                 GptRequest req = inv.getArgument(0);
                 req.setId(1L);
-                return req;  });
+                return req;
+            });
             when(functionFactory.getFunctionByFunctionName("createTaskSystemIssueFunction")).thenReturn(createTaskSystemIssueFunction);
             when(assignTaskSystemIssueFunction.execute(anyString())).thenReturn(newIssueDtoJson);
             when(functionFactory.getFunctionByFunctionName("assignTaskSystemIssueFunction")).thenReturn(assignTaskSystemIssueFunction);
@@ -277,7 +277,7 @@
                 assertThat(gptRequest.getMessages()).isNotNull();
                 //  check number of messages sent in context
                 System.out.println("Size of message list: " + gptRequest.getMessages().size());
-                gptRequest.getMessages().forEach( m -> System.out.println("Found GptMessage: " + m.toString()));
+                gptRequest.getMessages().forEach(m -> System.out.println("Found GptMessage: " + m.toString()));
                 assertThat(gptRequest.getMessages().size()).isGreaterThanOrEqualTo(totalQtyMessagesInContext);
             };
         }
@@ -288,13 +288,12 @@
             var response = new GptResponse();
             var choice = new GptResponse.Choice();
             var message = new GptMessage("assistant", content);
-            if (functionName== null) {
+            if (functionName == null) {
                 assertThat(content).isNotNull();
                 choice.setMessage(message);
                 response.setChoices(List.of(choice));
                 return response;
-            }
-            else if (functionName.equals("assignTaskSystemIssueFunction")){
+            } else if (functionName.equals("assignTaskSystemIssueFunction")) {
                 assertThat(content).isNull();
                 var tool = new GptMessage.Tool("id", "function");
                 var functionCall = new GptMessage.Tool.FunctionCall("assignTaskSystemIssueFunction", "{\\\"key\\\":\\\"Dummy-1\\\",\\\"slackUserId\\\":\\\"U12345678\\\"}");
@@ -303,8 +302,7 @@
                 choice.setMessage(message);
                 response.setChoices(List.of(choice));
                 return response;
-            }
-            else if(functionName.equals("createTaskSystemIssueFunction")) {
+            } else if (functionName.equals("createTaskSystemIssueFunction")) {
                 assertThat(content).isNull();
                 var tool = new GptMessage.Tool("id", "function");
                 var functionCall = new GptMessage.Tool.FunctionCall("createTaskSystemIssueFunction", "{\\\"title\\\":\\\"Test title\\\",\\\"description\\\":\\\"Test desc\\\",\\\"priority\\\":\\\"HIGH\\\",\\\"authorSlackId\\\":\\\"U08SHTW059C\\\",\\\"assigneeSlackId\\\":\\\"U08SHTW059C\\\",\\\"dueDate\\\":\\\"2025-11-20\\\"}");
@@ -318,79 +316,12 @@
         }
 
 
-
         @TestConfiguration
         static class TestConfig {
             @Bean
             @Qualifier("gptRestClient")
             RestClient gptRestClient(RestClient.Builder builder) {
                 return builder.baseUrl(chatGptApiUrl).build();
-            }
-
-            @Bean("defineAssignTaskSystemIssueFunction")
-            public GptFunction assignTaskSystemIssue(
-                    @Value("${gpt.function.tasksystem.assign.issue.desc}") String functionDescription,
-                    @Value("${gpt.function.tasksystem.assign.issue.name}") String functionName,
-                    @Value("${gpt.function.tasksystem.assign.issue.attr.key.desc}") String attrKey,
-                    @Value("${gpt.function.tasksystem.assign.issue.attr.slackUserId.desc}") String attrSlackUserId
-
-            ) {
-                var getReposFunction = new GptFunction();
-                getReposFunction.setName(functionName);
-                getReposFunction.setDescription(functionDescription);
-
-                GptFunction.Parameters gptFunctionParameters = getReposFunction.new Parameters();
-                gptFunctionParameters.setType("object");
-                gptFunctionParameters.setRequired(new String[] {attrKey, attrSlackUserId});
-
-                var properties = new TaskSystemAssignIssueParameterProperties();
-                var key = properties.new Key("string", attrKey);
-                var slackUserId = properties.new SlackUserId("string", attrSlackUserId);
-
-                properties.setKey(key);
-                properties.setSlackUserId(slackUserId);
-                gptFunctionParameters.setProperties(properties);
-                getReposFunction.setParameters(gptFunctionParameters);
-
-                return getReposFunction;
-            }
-            @Bean("defineCreateTaskSystemIssueFunction")
-            public GptFunction defineCreateTaskSystemIssueFunction(
-                    @Value("${gpt.function.tasksystem.create.issue.name}") String functionName,
-                    @Value("${gpt.function.tasksystem.create.issue.description}") String description,
-                    @Value("${gpt.function.tasksystem.create.issue.attr.title.desc}") String titleAttrDescription,
-                    @Value("${gpt.function.tasksystem.create.issue.attr.description.desc}") String descrAttrDescription,
-                    @Value("${gpt.function.tasksystem.create.issue.attr.priority.desc}") String priorityAttrDescription,
-                    @Value("${gpt.function.tasksystem.create.issue.attr.authorslackid.desc}") String authorSlackIdAttrDescription,
-                    @Value("${gpt.function.tasksystem.create.issue.attr.assigneeslackid.desc}") String assigneeSlackIdAttrDescription,
-                    @Value("${gpt.function.tasksystem.create.issue.attr.duedate.desc}") String dueDateAttrDescription,
-                    @Value("${gpt.function.tasksystem.create.issue.attr.projectid.desc}") String projectIdAttrDescription,
-                    @Value("${gpt.function.tasksystem.create.issue.attr.duedate.format}") String dueDateFormat
-            )  {
-                var gptFunction = new GptFunction();
-                gptFunction.setName(functionName);
-                gptFunction.setDescription(description);
-
-                // Predefine function parameters
-                var properties = new TaskSystemCreateIssueParameterProperties();
-                properties.setTitle(properties.new Title("string",titleAttrDescription));
-                properties.setDescription(properties.new Description("string",descrAttrDescription));
-                properties.setDescription(properties.new Description("string",descrAttrDescription));
-                properties.setPriority(properties.new Priority("string",priorityAttrDescription, new String[]{"LOW", "NORMAL", "HIGH", "CRITICAL"}));
-                properties.setAuthorSlackId(properties.new AuthorSlackId("string",authorSlackIdAttrDescription));
-                properties.setAssigneeSlackId(properties.new AssigneeSlackId("string",assigneeSlackIdAttrDescription));
-                properties.setDueDate(properties.new DueDate("string",dueDateAttrDescription, dueDateFormat));
-                properties.setProjectId(properties.new ProjectId("string",projectIdAttrDescription));
-
-                // Define function's parameters
-                GptFunction.Parameters parameters = gptFunction.new Parameters();
-                parameters.setType("object");
-                parameters.setProperties(properties);
-                parameters.setRequired(new String[] {"title", "description", "priority", "authorSlackId","assigneeSlackId", "duedate", "projectid"});
-
-                gptFunction.setParameters(parameters);
-
-                return gptFunction;
             }
         }
     }

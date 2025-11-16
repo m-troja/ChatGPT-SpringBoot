@@ -6,7 +6,7 @@
     import com.michal.openai.functions.FunctionFacory;
     import com.michal.openai.functions.entity.GptFunction;
     import com.michal.openai.functions.impl.CreateJiraIssueFunction;
-    import com.michal.openai.functions.impl.GetAllJiraIssues;
+    import com.michal.openai.functions.impl.GetAllJiraIssuesFunction;
     import com.michal.openai.jira.entity.*;
     import com.michal.openai.jira.service.impl.JiraServiceImpl;
     import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +56,8 @@
 
         @MockitoBean FunctionFacory functionFactory;
         @MockitoBean CreateJiraIssueFunction createJiraIssueFunction;
-        @MockitoBean GetAllJiraIssues getAllJiraIssues;
+        @MockitoBean
+        GetAllJiraIssuesFunction getAllJiraIssuesFunction;
 
         @BeforeEach
         void setup() {
