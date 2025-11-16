@@ -1,10 +1,14 @@
 package com.michal.openai.jira.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.jira.service.JiraService;
+import com.michal.openai.exception.JiraCommunicationException;
+import com.michal.openai.jira.entity.JiraCreateIssueRequest;
+import com.michal.openai.jira.entity.JiraCreateIssueResponse;
 import com.michal.openai.jira.entity.JiraIssue;
-import com.michal.openai.jira.entity.JiraIssueDto;
 import com.michal.openai.jira.entity.JiraListOfIssues;
+import com.michal.openai.jira.service.JiraService;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +19,7 @@ import org.springframework.web.client.RestClient;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+@Data
 @Slf4j
 @Service
 public class JiraServiceImpl implements JiraService {
@@ -67,9 +72,6 @@ public class JiraServiceImpl implements JiraService {
         return null;
     }
 
-    /*
-     * Send all-issues request to Jira API, then return list of issue-objects
-     */
     public List<JiraIssue> getIssues()
     {
         String urlToGet = searchEndpoint + "?jql=project=" + javaProjectName + "&fields=" + fields +"&maxResults=" + maxResults;
@@ -98,86 +100,45 @@ public class JiraServiceImpl implements JiraService {
         return List.of();
     }
 
-    /*
-     * Parse requestBody of issue-data delivered by GPT, then build and send JSON-issue to Jira API
-     */
-    public JiraIssueDto createJavaIssue(String requestBody) {
+    public JiraCreateIssueResponse createJavaIssue(String requestBody) {
     	
-        String urlToCall = "/issue";
-        log.info("CreateJavaIssue() urlToCall: {}", urlToCall);
+        log.debug("CreateJavaIssue() urlToCall: {}", createIssueEndpoint);
         log.debug("requestBody : {}", requestBody);
 
-        // Parse GPT response JSON using Jackson
         try {
-//            JsonNode gptAnswerJson = objectMapper.readTree(requestBody);
-//
-//            String summary = gptAnswerJson.path("summary").asText("null");
-//            String description = gptAnswerJson.path("description").asText("null");
-//            String assignee = gptAnswerJson.path("assignee").asText("null");
-//            String dueDate = gptAnswerJson.path("dueDate").asText("null");
-//            String issueType = gptAnswerJson.path("issuetype").asText("Task");
-//            String key = gptAnswerJson.path("key").asText("JAVA");
-//
-//            JiraIssue requestObject = new JiraIssue();
-//            JiraIssue.Fields fieldsObject = new JiraIssue.Fields(summary);
-//            fieldsObject.setSummary(summary);
-//
-//            var desc = new JiraIssue.Fields.Description();
-//            desc.setType("doc");
-//            desc.setVersion(1);
-//
-//            var content = new JiraIssue.Fields.Description.Content();
-//            content.setType("paragraph");
-//
-//            var contentOfContent = new JiraIssue.Fields.Description.Content.ContentOfContent();
-//            contentOfContent.setText(description);
-//            contentOfContent.setType("text");
-//
-//            content.setContentOfContent(List.of(contentOfContent));
-//            desc.setContent(List.of(content));
-//            fieldsObject.setDescription(desc);
-//
-//            var issueTypeObject = new JiraIssue.Fields.Issuetype(issueType);
-//            fieldsObject.setIssueType(issueTypeObject);
-//
-//            var project = new JiraIssue.Fields.Project();
-//            project.setKey(key);
-//            fieldsObject.setProject(project);
-//
-//            requestObject.setFields(fieldsObject);
-//
-//            log.debug(requestObject.toString());
-//            log.debug(fieldsObject.toString());
-//            log.debug(project.toString());
-
-            JiraIssue issue = objectMapper.readValue(requestBody, JiraIssue.class);
+            var issue = objectMapper.readValue(requestBody, JiraCreateIssueRequest.class);
             var jiraIssueResponse = callCreateIssue(issue);
             log.debug("Result of callCreateIssue(): {}", jiraIssueResponse);
             return jiraIssueResponse;
-            
+        } catch (JsonProcessingException jsonEx) {
+            log.error("Invalid JSON", jsonEx);
+            throw new JiraCommunicationException("Invalid JSON request", jsonEx);
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("Error creating Jira Issue ", e);
+            throw new JiraCommunicationException("Failed to create Jira issue", e);
         }
-
-        return null;
     }
 
-    private JiraIssueDto callCreateIssue(JiraIssue request) {
+    private JiraCreateIssueResponse callCreateIssue(JiraCreateIssueRequest request) {
+        Exception lastException = null;
+
         for (int i = 0; i < retryAttempts; i++) {
             log.debug("Calling GPT with RestClient");
             try {
-                return restClient.post()
+                var dto =  restClient.post()
                         .uri(createIssueEndpoint)
                         .body(request)
                         .retrieve()
-                        .body(JiraIssueDto.class);
-
-            } catch (RuntimeException e) {
+                        .body(JiraCreateIssueResponse.class);
+               log.debug("RestClient response DTO: {}" , dto);
+               return dto;
+            } catch (Exception e) {
+                lastException = e;
                 log.error("Error in callCreateIssue: ", e);
                 sleep(waitSeconds);
             }
         }
-        return null;
+        throw new JiraCommunicationException("Failed to create issue after " + retryAttempts + " attempts", lastException);
     }
 
     private void sleep(int seconds) {

@@ -2,6 +2,7 @@ package com.michal.openai.config;
 
 import com.michal.openai.github.entity.GetReposParameterProperties;
 import com.michal.openai.functions.entity.GptFunction;
+import com.michal.openai.jira.entity.JiraCreateIssueParameterProperties;
 import com.michal.openai.tasksystem.entity.TaskSystemAssignIssueParameterProperties;
 import com.michal.openai.tasksystem.entity.TaskSystemCreateIssueParameterProperties;
 import com.slack.api.Slack;
@@ -16,79 +17,129 @@ public class BeansConfiguration {
 	@Value("${slack.bot.oauth.token}")
 	private String slackSecurityTokenBot ;
 
-//	@Bean("getAllJiraIssuesFunction")
-//	public Function allJiraIssuesFunctionCall() { return new GetAllJiraIssues(); }
+    @Bean("slackBotClient")
+    public MethodsClient slackMethodClientBot() {
+        return Slack.getInstance().methods(slackSecurityTokenBot);
+    }
 
-	/* Disabled mailing feature due to security
-	
-	@Bean("sendEmailFunction")
-	public Function sendEmailCall() {
-		return new SendEmailFunction();
+    /* ==============================
+     *          Github
+     * ==============================
+     */
+	@Bean("defineGetReposFunction")
+	public GptFunction getRepos(
+			@Value("${github.function.desc}") String functionDescription,
+			@Value("${github.function.name}") String functionName,
+			@Value("${github.function.attr.login}") String attrLogin,
+			@Value("${github.function.attr.login.desc}") String attrLoginDesc
+    ) {
+		var getReposFunction = new GptFunction();
+		getReposFunction.setName(functionName);
+		getReposFunction.setDescription(functionDescription);
+
+		GptFunction.Parameters gptFunctionParameters = getReposFunction.new Parameters();
+		gptFunctionParameters.setType("object");
+		gptFunctionParameters.setRequired(new String[] {attrLogin});
+
+		var properties = new GetReposParameterProperties();
+		var login = new GetReposParameterProperties.LoginAttr("string", attrLoginDesc);
+
+		properties.setLogin(login);
+		gptFunctionParameters.setProperties(properties);
+		getReposFunction.setParameters(gptFunctionParameters);
+
+		return getReposFunction;
+	}
+    /* ==============================
+     *          Jira
+     * ==============================
+     */
+    @Bean("defineCreateJiraIssueFunction")
+    public GptFunction defineCreateJiraIssueFunction(
+            @Value("${gpt.function.jira.create.issue.name}") String functionName,
+            @Value("${gpt.function.jira.create.issue.description}") String description,
+            @Value("${gpt.function.jira.create.issue.attr.description.desc}") String descrAttrDescription,
+            @Value("${gpt.function.jira.create.issue.attr.issuetype.desc}") String issueTypeAttrDescription,
+            @Value("${gpt.function.jira.create.issue.attr.issuetype.epic}") String epicIssueType,
+            @Value("${gpt.function.jira.create.issue.attr.issuetype.story}") String storyIssueType,
+            @Value("${gpt.function.jira.create.issue.attr.issuetype.task}") String taskIssueType,
+            @Value("${gpt.function.jira.create.issue.attr.issuetype.bug}") String bugIssueType,
+            @Value("${gpt.function.jira.create.issue.attr.duedate.desc}") String dueDateAttrDescription,
+            @Value("${gpt.function.jira.create.issue.attr.summary.format}") String dueDateFormat,
+            @Value("${gpt.function.jira.create.issue.attr.summary.desc}") String summaryAttrDescription
+    )
+    {
+        var gptFunction = new GptFunction();
+        gptFunction.setName(functionName);
+        gptFunction.setDescription(description);
+
+        // Predefine function parameters
+        JiraCreateIssueParameterProperties properties = new JiraCreateIssueParameterProperties();
+        properties.setDescription(new JiraCreateIssueParameterProperties.Description("string",descrAttrDescription));
+        properties.setSummary(new JiraCreateIssueParameterProperties.Summary("string",summaryAttrDescription));
+        properties.setDuedate(new JiraCreateIssueParameterProperties.DueDate("string",dueDateAttrDescription, dueDateFormat));
+        properties.setIssueType(new JiraCreateIssueParameterProperties.IssueType("string",issueTypeAttrDescription, new String[] {epicIssueType, storyIssueType, taskIssueType, bugIssueType} ));
+
+        // Define function's parameters
+        GptFunction.Parameters parameters = gptFunction.new Parameters();
+        parameters.setType("object");
+        parameters.setProperties(properties);
+        parameters.setRequired(new String[] {"summary", "description", "issuetype"});
+
+        gptFunction.setParameters(parameters);
+
+        return gptFunction;
+    }
+
+	@Bean("defineAllJiraIssuesFunction")
+	public GptFunction defineGetAllJiraIssuesFunction() {
+		var gptFunction = new GptFunction();
+		gptFunction.setName("getAllJiraIssuesFunction");
+		gptFunction.setDescription("Get basic data about all issues in my Jira: key, assignee, description, summary, due date.");
+
+		return gptFunction;
 	}
 
-	@Bean("gptSendEmailFunction")
-	public GptFunction gptSendEmailFunction(@Value("${gpt.function.gmail.send.email.name}") String functionName,
-			@Value("${gpt.function.gmail.send.email.name}") String description, 
-			@Value("${gpt.function.gmail.send.email.attr.addressee.email.desc}") String addresseeEmailAttrDescription, 
-			@Value("${gpt.function.gmail.send.email.attr.addressee.name.desc}") String addresseeNameAttrDescription, 
-			@Value("${gpt.function.gmail.send.email.attr.content.desc}") String contentAttrDescription,
-			@Value("${gpt.function.gmail.send.email.attr.subject.desc}") String subjectAttrDescription) {
-		var function = new GptFunction();
-		function.setName(functionName);
-		function.setDescription(description);
-		GptFunction.Parameters parameters = function.new Parameters();
-		parameters.setType("object");b
+    /* ==============================
+     *        Task-System
+     * ==============================
+     */
 
-		SendEmailParameterProperties properties = new SendEmailParameterProperties();
-		properties.setAddresseeEmail(properties.new AddresseeEmail("string", addresseeEmailAttrDescription));
-		properties.setAddresseeName(properties.new AddresseeName("string", addresseeNameAttrDescription));
-		properties.setContent(properties.new Content("string", contentAttrDescription));
-		properties.setSubject(properties.new Subject("string", subjectAttrDescription));
+    @Bean("defineAllTaskSystemIssuesFunction")
+    public GptFunction defineGetAllTaskSystemIssuesFunction() {
+        var gptFunction = new GptFunction();
+        gptFunction.setName("getAllTaskSystemIssuesFunction");
+        gptFunction.setDescription("Get all issues in Task-System: key, assignee, description, summary, due date etc...");
+        return gptFunction;
+    }
 
-		parameters.setProperties(properties);
-		parameters.setRequired(new String[] {"content", "subject"});
-		function.setParameters(parameters);
-		return function;
-	}
+    @Bean("defineAssignTaskSystemIssueFunction")
+    public GptFunction assignTaskSystemIssue(
+            @Value("${gpt.function.tasksystem.assign.issue.desc}") String functionDescription,
+            @Value("${gpt.function.tasksystem.assign.issue.name}") String functionName,
+            @Value("${gpt.function.tasksystem.assign.issue.attr.key.desc}") String attrKey,
+            @Value("${gpt.function.tasksystem.assign.issue.attr.slackUserId.desc}") String attrSlackUserId
 
-	 */
+    ) {
+        var getReposFunction = new GptFunction();
+        getReposFunction.setName(functionName);
+        getReposFunction.setDescription(functionDescription);
 
-//	@Bean("defineCreateJiraIssueFunction")
-//	public GptFunction defineCreateJiraIssueFunction(
-//			@Value("${gpt.function.jira.create.issue.name}") String functionName,
-//			@Value("${gpt.function.jira.create.issue.description}") String description,
-//			@Value("${gpt.function.jira.create.issue.attr.description.desc}") String descrAttrDescription,
-//			@Value("${gpt.function.jira.create.issue.attr.issuetype.desc}") String issueTypeAttrDescription,
-//			@Value("${gpt.function.jira.create.issue.attr.issuetype.epic}") String epicIssueType,
-//			@Value("${gpt.function.jira.create.issue.attr.issuetype.story}") String storyIssueType,
-//			@Value("${gpt.function.jira.create.issue.attr.issuetype.task}") String taskIssueType,
-//			@Value("${gpt.function.jira.create.issue.attr.issuetype.bug}") String bugIssueType,
-//			@Value("${gpt.function.jira.create.issue.attr.duedate.desc}") String dueDateAttrDescription,
-//			@Value("${gpt.function.jira.create.issue.attr.summary.format}") String dueDateFormat,
-//			@Value("${gpt.function.jira.create.issue.attr.summary.desc}") String summaryAttrDescription
-//			)
-//	{
-//		var gptFunction = new GptFunction();
-//		gptFunction.setName(functionName);
-//		gptFunction.setDescription(description);
-//
-//		// Predefine function parameters
-//		JiraCreateIssueParameterProperties properties = new JiraCreateIssueParameterProperties();
-//		properties.setDescription(properties.new Description("string",descrAttrDescription));
-//		properties.setSummary(properties.new Summary("string",summaryAttrDescription));
-//		properties.setDuedate(properties.new DueDate("string",dueDateAttrDescription, dueDateFormat));
-//		properties.setIssueType(properties.new IssueType("string",issueTypeAttrDescription, new String[] {epicIssueType, storyIssueType, taskIssueType, bugIssueType} ));
-//
-//		// Define function's parameters
-//		GptFunction.Parameters parameters = gptFunction.new Parameters();
-//		parameters.setType("object");
-//		parameters.setProperties(properties);
-//		parameters.setRequired(new String[] {"summary", "description", "issuetype"});
-//
-//		gptFunction.setParameters(parameters);
-//
-//		return gptFunction;
-//	}
+        GptFunction.Parameters gptFunctionParameters = getReposFunction.new Parameters();
+        gptFunctionParameters.setType("object");
+        gptFunctionParameters.setRequired(new String[] {"key", "userSlackId"});
+
+        var properties = new TaskSystemAssignIssueParameterProperties();
+        var key = properties.new Key("string", attrKey);
+        var slackUserId = properties.new SlackUserId("string", attrSlackUserId);
+
+        properties.setKey(key);
+        properties.setSlackUserId(slackUserId);
+        gptFunctionParameters.setProperties(properties);
+        getReposFunction.setParameters(gptFunctionParameters);
+
+        return getReposFunction;
+    }
 
     @Bean("defineCreateTaskSystemIssueFunction")
     public GptFunction defineCreateTaskSystemIssueFunction(
@@ -130,81 +181,41 @@ public class BeansConfiguration {
         return gptFunction;
     }
 
-	@Bean("defineGetReposFunction")
-	public GptFunction getRepos(
-			@Value("${github.function.desc}") String functionDescription,
-			@Value("${github.function.name}") String functionName,
-			@Value("${github.function.attr.login}") String attrLogin,
-			@Value("${github.function.attr.login.desc}") String attrLoginDesc
-    ) {
-		var getReposFunction = new GptFunction();
-		getReposFunction.setName(functionName);
-		getReposFunction.setDescription(functionDescription);
 
-		GptFunction.Parameters gptFunctionParameters = getReposFunction.new Parameters();
-		gptFunctionParameters.setType("object");
-		gptFunctionParameters.setRequired(new String[] {attrLogin});
 
-		var properties = new GetReposParameterProperties();
-		var login = new GetReposParameterProperties.LoginAttr("string", attrLoginDesc);
+    /* ==============================
+     *          Mail - Disabled mailing feature due to security
+     * ==============================
 
-		properties.setLogin(login);
-		gptFunctionParameters.setProperties(properties);
-		getReposFunction.setParameters(gptFunctionParameters);
 
-		return getReposFunction;
+	@Bean("sendEmailFunction")
+	public Function sendEmailCall() {
+		return new SendEmailFunction();
 	}
 
-    @Bean("defineAssignTaskSystemIssueFunction")
-    public GptFunction assignTaskSystemIssue(
-            @Value("${gpt.function.tasksystem.assign.issue.desc}") String functionDescription,
-            @Value("${gpt.function.tasksystem.assign.issue.name}") String functionName,
-            @Value("${gpt.function.tasksystem.assign.issue.attr.key.desc}") String attrKey,
-            @Value("${gpt.function.tasksystem.assign.issue.attr.slackUserId.desc}") String attrSlackUserId
+	@Bean("gptSendEmailFunction")
+	public GptFunction gptSendEmailFunction(@Value("${gpt.function.gmail.send.email.name}") String functionName,
+			@Value("${gpt.function.gmail.send.email.name}") String description,
+			@Value("${gpt.function.gmail.send.email.attr.addressee.email.desc}") String addresseeEmailAttrDescription,
+			@Value("${gpt.function.gmail.send.email.attr.addressee.name.desc}") String addresseeNameAttrDescription,
+			@Value("${gpt.function.gmail.send.email.attr.content.desc}") String contentAttrDescription,
+			@Value("${gpt.function.gmail.send.email.attr.subject.desc}") String subjectAttrDescription) {
+		var function = new GptFunction();
+		function.setName(functionName);
+		function.setDescription(description);
+		GptFunction.Parameters parameters = function.new Parameters();
+		parameters.setType("object");b
 
-    ) {
-        var getReposFunction = new GptFunction();
-        getReposFunction.setName(functionName);
-        getReposFunction.setDescription(functionDescription);
+		SendEmailParameterProperties properties = new SendEmailParameterProperties();
+		properties.setAddresseeEmail(properties.new AddresseeEmail("string", addresseeEmailAttrDescription));
+		properties.setAddresseeName(properties.new AddresseeName("string", addresseeNameAttrDescription));
+		properties.setContent(properties.new Content("string", contentAttrDescription));
+		properties.setSubject(properties.new Subject("string", subjectAttrDescription));
 
-        GptFunction.Parameters gptFunctionParameters = getReposFunction.new Parameters();
-        gptFunctionParameters.setType("object");
-        gptFunctionParameters.setRequired(new String[] {"key", "userSlackId"});
-
-        var properties = new TaskSystemAssignIssueParameterProperties();
-        var key = properties.new Key("string", attrKey);
-        var slackUserId = properties.new SlackUserId("string", attrSlackUserId);
-
-        properties.setKey(key);
-        properties.setSlackUserId(slackUserId);
-        gptFunctionParameters.setProperties(properties);
-        getReposFunction.setParameters(gptFunctionParameters);
-
-        return getReposFunction;
-    }
-
-//	@Bean("defineAllJiraIssuesFunction")
-//	public GptFunction defineGetAllJiraIssuesFunction() {
-//		var gptFunction = new GptFunction();
-//		gptFunction.setName("getAllJiraIssuesFunction");
-//		gptFunction.setDescription("Get basic data about all issues in my Jira: key, assignee, description, summary, due date.");
-//
-//		return gptFunction;
-//	}
-
-	@Bean("slackBotClient")
-	public MethodsClient slackMethodClientBot() {
-		return Slack.getInstance().methods(slackSecurityTokenBot);
+		parameters.setProperties(properties);
+		parameters.setRequired(new String[] {"content", "subject"});
+		function.setParameters(parameters);
+		return function;
 	}
-
-    /*
-     *  Task-System Functions definition
-     */
-    @Bean("defineAllTaskSystemIssuesFunction")
-    public GptFunction defineGetAllTaskSystemIssuesFunction() {
-        var gptFunction = new GptFunction();
-        gptFunction.setName("getAllTaskSystemIssuesFunction");
-        gptFunction.setDescription("Get all issues in Task-System: key, assignee, description, summary, due date etc...");
-        return gptFunction;
-    }
+	 */
 }

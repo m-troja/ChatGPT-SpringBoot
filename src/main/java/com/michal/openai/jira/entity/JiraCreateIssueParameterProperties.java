@@ -13,26 +13,38 @@ public class JiraCreateIssueParameterProperties implements ParameterProperties {
 	private DueDate duedate;
 	private IssueType issueType;
 
-	public static class Description extends ParameterPropertyAttribute
-	{
-	}
+	@Data
     @EqualsAndHashCode(callSuper = true)
+    public static class Description extends ParameterPropertyAttribute
+	{
+        private final String type;
+        private final String description;
+    }
+
     @Data
+    @EqualsAndHashCode(callSuper = true)
 	public static class IssueType extends ParameterPropertyAttribute
 	{
-		private String[] issueTypes;
-
+        private final String type;
+        private final String description;
+		private final String[] issueTypes;
 	}
-    @EqualsAndHashCode(callSuper = true)
+
     @Data
+    @EqualsAndHashCode(callSuper = true)
     public static class Summary extends ParameterPropertyAttribute
 	{
-	}
-    @EqualsAndHashCode(callSuper = true)
+        private final String type;
+        private final String description;
+    }
+
     @Data
+    @EqualsAndHashCode(callSuper = true)
     public static class DueDate extends ParameterPropertyAttribute
 	{
-        private String format;
+        private final String type;
+        private final String description;
+        private final String format;
 
 	}
 	

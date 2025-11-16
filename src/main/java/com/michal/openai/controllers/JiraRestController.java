@@ -1,6 +1,7 @@
 package com.michal.openai.controllers;
 
 import com.michal.openai.jira.entity.JiraCnv;
+import com.michal.openai.jira.entity.JiraCreateIssueResponse;
 import com.michal.openai.jira.entity.JiraIssueDto;
 import com.michal.openai.jira.service.JiraService;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +18,11 @@ public class JiraRestController {
 	private final JiraService jiraService;
 	private final JiraCnv jiraCnv;
 
-	@GetMapping(value = "issue", params = "id")
-	public JiraIssueDto getIssue(@RequestParam("id") String issueId)
+	@GetMapping(value = "issue/{id}")
+	public JiraIssueDto getIssue(@PathVariable String id)
 	{
-        log.debug("GET /api/v1/jira/issue, id: {}", issueId);
-        return jiraCnv.convertIssueToIssueDto(jiraService.getIssue(issueId));
+        log.debug("GET /api/v1/jira/issue, id: {}", id);
+        return jiraCnv.convertIssueToIssueDto(jiraService.getIssue(id));
     }
 
 	@GetMapping("issues-java")
@@ -32,7 +33,7 @@ public class JiraRestController {
 	}
 	
 	@PostMapping("create-issue")
-	public JiraIssueDto createIssue(@RequestBody String requestBody) {
+	public JiraCreateIssueResponse createIssue(@RequestBody String requestBody) {
         log.debug("POST /api/v1/jira/create-issue: {}", requestBody);
 		 return jiraService.createJavaIssue(requestBody);
 	}

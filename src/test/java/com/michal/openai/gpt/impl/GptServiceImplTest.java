@@ -9,7 +9,6 @@
     import com.michal.openai.gpt.entity.GptMessage;
     import com.michal.openai.gpt.entity.GptRequest;
     import com.michal.openai.gpt.entity.GptResponse;
-    import com.michal.openai.persistence.JpaGptMessageRepo;
     import com.michal.openai.persistence.JpaGptRequestRepo;
     import com.michal.openai.persistence.JpaGptResponseRepo;
     import com.michal.openai.persistence.JpaSlackRepo;
@@ -63,7 +62,6 @@
         @Autowired MockRestServiceServer server;
         @Autowired ObjectMapper objectMapper;
         @Autowired GptServiceImpl service;
-        @MockitoBean JpaGptMessageRepo jpaGptMessageRepo;
 
         @MockitoBean JpaGptRequestRepo jpaGptRequestRepo;
         @MockitoBean JpaGptResponseRepo jpaGptResponseRepo;

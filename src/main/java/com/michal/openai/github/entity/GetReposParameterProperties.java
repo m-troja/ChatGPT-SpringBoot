@@ -2,7 +2,6 @@ package com.michal.openai.github.entity;
 
 import com.michal.openai.functions.entity.ParameterProperties;
 import com.michal.openai.functions.entity.ParameterPropertyAttribute;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,12 +10,11 @@ public class GetReposParameterProperties implements ParameterProperties {
 
 	private LoginAttr login;
 
-    @EqualsAndHashCode(callSuper = true)
     @Data
-    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
 	public static class LoginAttr extends ParameterPropertyAttribute
 	{
-		private String type;
-		private String description;
+		private final String type;
+		private final String description;
 	}
 }
