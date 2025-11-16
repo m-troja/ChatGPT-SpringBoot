@@ -100,19 +100,15 @@ public class JiraServiceImpl implements JiraService {
         return List.of();
     }
 
-    public JiraCreateIssueResponse createJavaIssue(String requestBody) {
+    public JiraCreateIssueResponse createJavaIssue(JiraCreateIssueRequest request) {
     	
         log.debug("CreateJavaIssue() urlToCall: {}", createIssueEndpoint);
-        log.debug("requestBody : {}", requestBody);
+        log.debug("requestBody : {}", request);
 
         try {
-            var issue = objectMapper.readValue(requestBody, JiraCreateIssueRequest.class);
-            var jiraIssueResponse = callCreateIssue(issue);
+            var jiraIssueResponse = callCreateIssue(request);
             log.debug("Result of callCreateIssue(): {}", jiraIssueResponse);
             return jiraIssueResponse;
-        } catch (JsonProcessingException jsonEx) {
-            log.error("Invalid JSON", jsonEx);
-            throw new JiraCommunicationException("Invalid JSON request", jsonEx);
         } catch (Exception e) {
             log.error("Error creating Jira Issue ", e);
             throw new JiraCommunicationException("Failed to create Jira issue", e);

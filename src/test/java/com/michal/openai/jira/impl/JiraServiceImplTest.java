@@ -94,23 +94,23 @@
             server.expect(requestTo(urlToCreate))
                     .andExpect(method(HttpMethod.POST))
                     .andRespond(withSuccess(objectMapper.writeValueAsString(buildCreateIssueResponse()), MediaType.APPLICATION_JSON));
-            var response = service.createJavaIssue(objectMapper.writeValueAsString(buildCreateIssueRequest()));
+            var response = service.createJavaIssue(buildCreateIssueRequest());
             server.verify();
             assertThat(response).isEqualTo(buildCreateIssueResponse());
         }
 
-        @Test
-        public void shouldThrowInvalidJsonException() {
-            var urlToCreate = service.getJiraUrl() + service.getCreateIssueEndpoint();
-
-            for (int i = 0; i < service.getRetryAttempts() - 1; i++) {
-                server.expect(requestTo(urlToCreate))
-                        .andExpect(method(HttpMethod.POST))
-                        .andRespond(withServerError());
-            }
-            assertThatThrownBy( () -> service.createJavaIssue(getIncorrectJson()))
-                            .isInstanceOf(JiraCommunicationException.class);
-        }
+//        @Test
+//        public void shouldThrowInvalidJsonException() {
+//            var urlToCreate = service.getJiraUrl() + service.getCreateIssueEndpoint();
+//
+//            for (int i = 0; i < service.getRetryAttempts() - 1; i++) {
+//                server.expect(requestTo(urlToCreate))
+//                        .andExpect(method(HttpMethod.POST))
+//                        .andRespond(withServerError());
+//            }
+//            assertThatThrownBy( () -> service.createJavaIssue(getIncorrectJson()))
+//                            .isInstanceOf(JiraCommunicationException.class);
+//        }
 
         @Test
         public void shouldFailWhenResponseCannotBeParsedToJiraCreateIssueResponse() {
@@ -127,7 +127,7 @@
                        """, MediaType.APPLICATION_JSON));
             }
             assertThatThrownBy(() ->
-                    service.createJavaIssue(objectMapper.writeValueAsString(buildCreateIssueRequest())))
+                    service.createJavaIssue(buildCreateIssueRequest()))
             .isInstanceOf(JiraCommunicationException.class)
             .hasCauseInstanceOf(JiraCommunicationException.class);
 
@@ -181,7 +181,7 @@
             var contents = List.of(new JiraCreateIssueRequest.Content(("text"), contentOfContents));
             var description = new JiraCreateIssueRequest.Description("text", 123, contents);
             var project = new JiraCreateIssueRequest.Project("JAVA");
-            return new JiraCreateIssueRequest("Key", "2025-11-17", "assignee",
+            return new JiraCreateIssueRequest(
                     new JiraCreateIssueRequest.Fields(
                             issueType,
                             description,
@@ -197,13 +197,14 @@
         private String getIncorrectJson() {
             return """
                     {
-                    "test":"test",,
-                      "fields": {
+                      "fields": 
+                      {
                         "project": {
                           "key": "JAVA"
                         },
                         "summary": "REST ye merry gentlemen.",
-                        "description": {
+                        "description": 
+                        {
                           "type": "doc",
                           "version": 1,
                           "content": [

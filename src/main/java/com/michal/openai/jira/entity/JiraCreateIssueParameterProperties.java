@@ -7,11 +7,12 @@ import lombok.EqualsAndHashCode;
 
 @Data
 public class JiraCreateIssueParameterProperties implements ParameterProperties {
-	
+
+    private IssueType issueType;
 	private Description description;
 	private Summary summary;
 	private DueDate duedate;
-	private IssueType issueType;
+    private Project project;
 
 	@Data
     @EqualsAndHashCode(callSuper = true)
@@ -45,7 +46,13 @@ public class JiraCreateIssueParameterProperties implements ParameterProperties {
         private final String type;
         private final String description;
         private final String format;
-
 	}
-	
+
+    @Data
+    @EqualsAndHashCode(callSuper = true)
+    public static class Project extends ParameterPropertyAttribute
+    {
+        private final String type;
+        private final String description;
+    }
 }

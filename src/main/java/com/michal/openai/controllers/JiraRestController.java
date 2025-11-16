@@ -1,6 +1,7 @@
 package com.michal.openai.controllers;
 
-import com.michal.openai.jira.entity.JiraCnv;
+import com.michal.openai.jira.entity.JiraCreateIssueRequest;
+import com.michal.openai.jira.JiraCnv;
 import com.michal.openai.jira.entity.JiraCreateIssueResponse;
 import com.michal.openai.jira.entity.JiraIssueDto;
 import com.michal.openai.jira.service.JiraService;
@@ -33,8 +34,8 @@ public class JiraRestController {
 	}
 	
 	@PostMapping("create-issue")
-	public JiraCreateIssueResponse createIssue(@RequestBody String requestBody) {
-        log.debug("POST /api/v1/jira/create-issue: {}", requestBody);
-		 return jiraService.createJavaIssue(requestBody);
+	public JiraCreateIssueResponse createIssue(@RequestBody JiraCreateIssueRequest request) {
+        log.debug("POST /api/v1/jira/create-issue: {}", request);
+		 return jiraService.createJavaIssue(request);
 	}
 }

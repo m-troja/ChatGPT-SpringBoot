@@ -1,6 +1,6 @@
 package com.michal.openai.controllers;
 
-import com.michal.openai.jira.entity.JiraCnv;
+import com.michal.openai.jira.JiraCnv;
 import com.michal.openai.jira.entity.JiraIssue;
 import com.michal.openai.jira.entity.JiraIssueDto;
 import com.michal.openai.jira.service.JiraService;

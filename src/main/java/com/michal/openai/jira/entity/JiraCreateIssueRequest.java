@@ -6,9 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public record JiraCreateIssueRequest(
-        String key,
-        String dueDate,
-        String assignee,
         Fields fields
         )
 {

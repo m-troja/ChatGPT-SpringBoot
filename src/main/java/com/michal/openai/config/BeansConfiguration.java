@@ -66,7 +66,8 @@ public class BeansConfiguration {
             @Value("${gpt.function.jira.create.issue.attr.issuetype.bug}") String bugIssueType,
             @Value("${gpt.function.jira.create.issue.attr.duedate.desc}") String dueDateAttrDescription,
             @Value("${gpt.function.jira.create.issue.attr.summary.format}") String dueDateFormat,
-            @Value("${gpt.function.jira.create.issue.attr.summary.desc}") String summaryAttrDescription
+            @Value("${gpt.function.jira.create.issue.attr.summary.desc}") String summaryAttrDescription,
+            @Value("${gpt.function.jira.create.issue.attr.project.desc}") String projectTypeAttrDescription
     )
     {
         var gptFunction = new GptFunction();
@@ -79,12 +80,13 @@ public class BeansConfiguration {
         properties.setSummary(new JiraCreateIssueParameterProperties.Summary("string",summaryAttrDescription));
         properties.setDuedate(new JiraCreateIssueParameterProperties.DueDate("string",dueDateAttrDescription, dueDateFormat));
         properties.setIssueType(new JiraCreateIssueParameterProperties.IssueType("string",issueTypeAttrDescription, new String[] {epicIssueType, storyIssueType, taskIssueType, bugIssueType} ));
+        properties.setProject(new JiraCreateIssueParameterProperties.Project("string", projectTypeAttrDescription));
 
         // Define function's parameters
         GptFunction.Parameters parameters = gptFunction.new Parameters();
         parameters.setType("object");
         parameters.setProperties(properties);
-        parameters.setRequired(new String[] {"summary", "description", "issuetype"});
+        parameters.setRequired(new String[] {"summary", "description", "issuetype", "project"});
 
         gptFunction.setParameters(parameters);
 
