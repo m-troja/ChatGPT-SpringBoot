@@ -1,6 +1,5 @@
 package com.michal.openai.jira.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.exception.JiraCommunicationException;
 import com.michal.openai.jira.entity.JiraCreateIssueRequest;

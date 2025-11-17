@@ -22,7 +22,7 @@ public class GetAllJiraIssuesFunction implements Function {
 
     @Override
     public String execute(String arguments) {
-        log.info("GetAllJiraIssuesFunction arguments: {}", arguments);
+        log.debug("GetAllJiraIssuesFunction arguments: {}", arguments);
         List<JiraIssue> issues = jiraService.getIssues();
                     try {
                         String json = objectMapper.writeValueAsString(issues);
