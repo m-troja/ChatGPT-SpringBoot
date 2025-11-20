@@ -52,13 +52,14 @@ public class GptRequest {
 	@Transient
 	private boolean Stream;
 
+// Not supported by GPT-5.1
 //    @JsonProperty("presence_penalty")
 //    @Transient
 //	private Double presencePenalty;
-
-    @JsonProperty("frequency_penalty")
-    @Transient
-	private Double frequencyPenalty;
+//
+//    @JsonProperty("frequency_penalty")
+//    @Transient
+//	private Double frequencyPenalty;
 
     @JsonProperty("top_p")
     @Transient
@@ -86,7 +87,7 @@ public class GptRequest {
 	public String toString() {
 		return "GptRequest [id=" + id + ", content=" + content + ", model=" + model + ", messages=" + messages + ", n="
 				+ n + ", temperature=" + temperature + ", maxOutputToken=" + maxOutputTokens + ", Stream=" + Stream
-				+ ", frequencyPenalty=" + frequencyPenalty + ", topP=" + topP
+				+ ", topP=" + topP
 				+ ", stop=" + stop + ", logitBias=" + logitBias + ", author=" + author + ", authorRealname="
 				+ authorRealname + ", functions=" + functions + ", tools=" + tools + ", toolChoice=" + toolChoice + "]";
 	}

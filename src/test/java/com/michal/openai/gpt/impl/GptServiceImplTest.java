@@ -72,7 +72,7 @@
         @BeforeEach
         void setup() {
             service.setQtyContextMessagesInRequestOrResponse(qtyContextMessagesInRequestOrResponse);
-            service.setModel("gpt-4.1");
+            service.setModel("gpt-5.1");
             service.setTemperature(0.8);
             service.setRetryAttempts(3);
             service.setWaitSeconds(0);

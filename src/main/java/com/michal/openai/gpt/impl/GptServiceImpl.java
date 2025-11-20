@@ -43,8 +43,8 @@ public class GptServiceImpl implements GptService {
     private String model;
     @Value("${gpt.chat.temperature}")
     private Double temperature;
-    @Value("${gpt.chat.presence.penalty}")
-    private Double presencePenalty;
+//    @Value("${gpt.chat.presence.penalty}")
+//    private Double presencePenalty;
     @Value("${CHAT_MAX_TOKENS}")
     private Integer maxTokens;
     @Value("${gpt.chat.sendrequest.retryattempts}")
