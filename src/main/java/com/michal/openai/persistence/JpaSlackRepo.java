@@ -1,11 +1,10 @@
 package com.michal.openai.persistence;
 
-import java.util.List;
-
+import com.michal.openai.slack.entity.SlackUser;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import com.michal.openai.entity.SlackUser;
+import java.util.List;
 
 @Repository
 public interface JpaSlackRepo extends CrudRepository<SlackUser, Integer> {

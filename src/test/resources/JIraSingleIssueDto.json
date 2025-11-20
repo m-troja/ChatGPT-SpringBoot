@@ -1,0 +1,8 @@
+{
+  "key": "JAVA-62",
+  "summary": "Create ticket with Slack and GPT",
+  "description": "Test ticket",
+  "duedate": null,
+  "assignee": null,
+  "issuetype": "Task"
+}

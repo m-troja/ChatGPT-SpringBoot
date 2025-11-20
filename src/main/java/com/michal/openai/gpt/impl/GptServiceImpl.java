@@ -1,30 +1,35 @@
 package com.michal.openai.gpt.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.michal.openai.exception.GptCommunicationException;
 import com.michal.openai.functions.Function;
+import com.michal.openai.functions.FunctionFacory;
+import com.michal.openai.functions.entity.GptFunction;
+import com.michal.openai.functions.entity.GptTool;
+import com.michal.openai.gpt.GptService;
+import com.michal.openai.gpt.entity.GptMessage;
+import com.michal.openai.gpt.entity.GptRequest;
+import com.michal.openai.gpt.entity.GptResponse;
 import com.michal.openai.log.JsonSaver;
-import com.michal.openai.persistence.*;
+import com.michal.openai.persistence.JpaGptMessageRepo;
+import com.michal.openai.persistence.JpaGptRequestRepo;
+import com.michal.openai.persistence.JpaGptResponseRepo;
+import com.michal.openai.persistence.JpaSlackRepo;
+import com.michal.openai.slack.entity.SlackUser;
+import jakarta.annotation.PostConstruct;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import com.michal.openai.entity.GptFunction;
-import com.michal.openai.entity.GptMessage;
-import com.michal.openai.functions.FunctionFacory;
-import com.michal.openai.entity.GptRequest;
-import com.michal.openai.entity.GptResponse;
-import com.michal.openai.entity.GptTool;
-import com.michal.openai.entity.SlackUser;
-import com.michal.openai.gpt.GptService;
-
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
 @Data
 @Slf4j
@@ -47,7 +52,8 @@ public class GptServiceImpl implements GptService {
     @Value("${gpt.chat.sendrequest.waitforretry.seconds}")
     private Integer waitSeconds;
     @Value("${gpt.chat.qty.context.messages}")
-    private Integer qtyOfContextMessages;
+    private Integer qtyContextMessagesInRequestOrResponse;
+    private Integer totalQtyMessagesInContext; // Context + System/Initial Msg + query
     @Value("${gpt.chat.system.initial.message}")
     private String systemInitialMessage;
     @Value("${CHAT_JSON_DIR}")
@@ -74,6 +80,11 @@ public class GptServiceImpl implements GptService {
         this.objectMapper = objectMapper;
         this.jpaMessageRepo = jpaMessageRepo;
     }
+    @PostConstruct
+    public void init() {
+        // Context of 2 last messages + 2 last responses + system message + last query
+        totalQtyMessagesInContext = qtyContextMessagesInRequestOrResponse * 2 + 2;
+    }
 	/*
 	 * Called by SlackAPI controller.
 	 * Builds object of GPTRequest and forwards it to send to GPT.
@@ -84,9 +95,23 @@ public class GptServiceImpl implements GptService {
         return queryFuture.thenCombine(userNameFuture, (query, slackUserId) -> handleQuery(query, slackUserId, gptFunctions))
                 .exceptionally(e -> {
                             log.error("Async error:", e);
-                            return "Error calling GPT";
+                            throw new CompletionException(e);
                 });
 	}
+
+    @Override
+    public void clearDatabase() {
+        try {
+            log.debug("Trying to clear database...");
+            jpaGptResponseRepo.deleteAll();
+            jpaGptRequestRepo.deleteAll();
+            jpaSlackrepo.deleteAll();
+            log.debug("Database cleared successfully");
+        } catch (Exception e) {
+            log.error("Error clearing database: ", e);
+            throw new RuntimeException(e);
+        }
+    }
 
     private String handleQuery(String query, String slackUserId, GptFunction... gptFunctions) {
         SlackUser slackUserRequestAuthor = getSlackUserBySlackId(slackUserId);
@@ -101,19 +126,18 @@ public class GptServiceImpl implements GptService {
     {
         log.debug("Building GPT request with params: \nQuery:{}, \nSlackUser:{}, \nFunctions:{}", query, slackUserRequestAuthor, gptFunctions );
         GptRequest gptRequest = new GptRequest();
-        List<GptMessage> messages = getLastMessagesOfUserSlackId(slackUserRequestAuthor.getSlackUserId(), gptRequest, query);
+        List<GptMessage> messages = buildLastMessagesContextOfUserSlackId(slackUserRequestAuthor.getSlackUserId(), query);
 
-        /* Define request parameters */
         gptRequest.setAuthor(slackUserRequestAuthor.getSlackUserId());
         gptRequest.setContent(query);
         gptRequest.setAuthorRealname(slackUserRequestAuthor.getSlackName());
         gptRequest.setModel(model);
         gptRequest.setTemperature(temperature);
-        gptRequest.setPresencePenalty(presencePenalty);
+//        gptRequest.setPresencePenalty(presencePenalty);
         gptRequest.setMaxOutputTokens(maxTokens);
         gptRequest.setMessages(messages);
-        List<GptTool> requestTools = new ArrayList<>();
         log.debug("Found {} GPT Functions to add into requestTools", gptFunctions.size());
+        List<GptTool> requestTools = new ArrayList<>();
         gptFunctions.forEach(fn -> {
             requestTools.add(new GptTool("function", fn));
             log.debug("Added function into requestTools: {}", fn.getName());
@@ -124,9 +148,12 @@ public class GptServiceImpl implements GptService {
         return gptRequest;
     }
 
-	private String callGptNoFunction(GptRequest gptRequest)
-	{
+	private String callGptNoFunction(GptRequest gptRequest) {
         GptResponse gptResponse = sendRequestToGpt(gptRequest);
+        if (gptResponse == null || gptResponse.getChoices() == null || gptResponse.getChoices().isEmpty()) {
+            log.error("GPT response is null or empty");
+            return "GPT response error";
+        }
         GptMessage lastMessage = gptResponse.getChoices().getFirst().getMessage();
 
         List<GptMessage.Tool> toolsToCall = lastMessage.getToolCalls();
@@ -138,14 +165,25 @@ public class GptServiceImpl implements GptService {
         }
         for (GptMessage.Tool tool : toolsToCall) {
             log.debug("Found tool call, GPT will be called: {}", tool);
-            Function fn = functionFactory.getFunctionByFunctionName(tool.getFunctionCall().getName());
-            String functionResult = fn.execute(tool.getFunctionCall().getArguments());
+            Function fn = functionFactory.getFunctionByFunctionName(tool.getFunctionCall().name());
+            String functionResult;
+            try {
+                functionResult = fn.execute(tool.getFunctionCall().arguments());
+            } catch (IOException e) {
+                log.debug("Error calling function: ", e);
+                throw new RuntimeException(e);
+            }
             log.debug("Result of function call: {}", functionResult);
             GptMessage toolMessage = new GptMessage();
             toolMessage.setRole("function");
             toolMessage.setContent(functionResult);
-            toolMessage.setName(tool.getFunctionCall().getName());
+            toolMessage.setName(tool.getFunctionCall().name());
             gptRequest.getMessages().add(toolMessage);
+            if (gptRequest.getMessages().size() > totalQtyMessagesInContext) {
+                List<GptMessage> messages = gptRequest.getMessages();
+                messages.removeFirst();
+                gptRequest.setMessages(messages);
+            }
         }
         return callGptNoFunction(gptRequest);
 	}
@@ -154,18 +192,17 @@ public class GptServiceImpl implements GptService {
         saveGptRequest(gptRequest);
 
         for (int attempt = 1; attempt <= retryAttempts; attempt++) {
-
             try {
-                log.debug("Calling GPT attempt {}/{}", attempt, retryAttempts);
+                log.debug("Calling GPT: attempt {}/{}", attempt, retryAttempts);
 
                 var gptResponse = restClient.post()
                         .body(gptRequest)
                         .retrieve()
                         .body(GptResponse.class);
 
-                if (gptResponse == null) {
+                if (gptResponse == null || gptResponse.getChoices() == null ||  gptResponse.getChoices().isEmpty()) {
                     log.error("GPT returned null response!");
-                    return null;
+                    throw new GptCommunicationException("GPT returned null response");
                 }
                 saveRequestAndResponseIntoDb(gptRequest, gptResponse);
                 return gptResponse;
@@ -176,9 +213,8 @@ public class GptServiceImpl implements GptService {
 
                 if (attempt == retryAttempts) {
                     log.error("Max retry attempts reached.");
-                    break;
+                    throw new GptCommunicationException("Max retry attempts reached");
                 }
-
                 sleep(waitSeconds);
             }
         }
@@ -203,7 +239,7 @@ public class GptServiceImpl implements GptService {
         {
             isFunctionCall = true;
             functionCall = resp.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall();
-            content = String.format("fn: %s, args: %s", functionCall.getName(), functionCall.getArguments());
+            content = String.format("fn: %s, args: %s", functionCall.name(), functionCall.arguments());
 
         }
         else {
@@ -249,18 +285,12 @@ public class GptServiceImpl implements GptService {
 		jpaGptResponseRepo.save(gptResponse);
 	}
 
-    private void saveGptMessage(GptMessage gptMessage) {
-        log.debug("Saving GPT Message: {} ", gptMessage);
-        jpaMessageRepo.save(gptMessage);
-    }
-
 	/* Get last messages of user to build context for GPT */
 
-    private List<GptMessage> getLastRequestsOfUser(SlackUser user)
-	{
-		log.debug("Calling getLastRequestsOfUser with user={}, max allowed context= {}", user.getSlackUserId(), qtyOfContextMessages);
+    private List<GptMessage> getLastRequestsOfUser(SlackUser user) {
+		log.debug("Calling getLastRequestsOfUser with user={}, max allowed context= {}", user.getSlackUserId(), qtyContextMessagesInRequestOrResponse);
 		
-		List<String> messages = jpaGptRequestRepo.getLastRequestsBySlackId(user.getSlackUserId(), qtyOfContextMessages);
+		List<String> messages = jpaGptRequestRepo.getLastRequestsBySlackId(user.getSlackUserId(), qtyContextMessagesInRequestOrResponse);
 		if (messages.isEmpty()) {
             log.debug("Not found any request");
         }
@@ -277,11 +307,10 @@ public class GptServiceImpl implements GptService {
 	
 	/* Get last responses to user to build context for GPT */
 
-    private List<GptMessage> getLastResponsesToUser(SlackUser user)
-	{
-        log.debug("Calling getLastResponsesToUser with user={}, max allowed context={}", user.getSlackUserId(), qtyOfContextMessages);
+    private List<GptMessage> getLastResponsesToUser(SlackUser user) {
+        log.debug("Calling getLastResponsesToUser with user={}, max allowed context={}", user.getSlackUserId(), qtyContextMessagesInRequestOrResponse);
 		
-		List<String> messages = jpaGptResponseRepo.getLastResponsesToUser(user.getSlackUserId(), qtyOfContextMessages);
+		List<String> messages = jpaGptResponseRepo.getLastResponsesToUser(user.getSlackUserId(), qtyContextMessagesInRequestOrResponse);
         if (messages.isEmpty()) {
             log.debug("Not found any responses");
         }
@@ -296,7 +325,7 @@ public class GptServiceImpl implements GptService {
 		return gptMessages;
 	}
 
-    private List<GptMessage> getLastMessagesOfUserSlackId(String userSlackId, GptRequest gptRequest, String query)
+    private List<GptMessage> buildLastMessagesContextOfUserSlackId(String userSlackId, String query)
     {
         /* Define list of messages to sent to GPT */
 
@@ -309,12 +338,15 @@ public class GptServiceImpl implements GptService {
         int contextSize = Math.min(requests.size(), responses.size());
 
         for (int i = contextSize - 1 ;  i >= 0; i--) {
-            messages.add(requests.get(i));
             messages.add(responses.get(i));
+            messages.add(requests.get(i));
         }
         messages.add(getInitialSystemMessage(userSlackId));
         messages.add(message);
-
+        if (messages.size() > totalQtyMessagesInContext) {
+            messages.remove(messages.getFirst());
+            System.out.println("Removed first message from context: "  + messages.getFirst());
+        }
         log.debug("Added total {} messages into context", messages.size() );
         return messages;
     }
@@ -343,5 +375,4 @@ public class GptServiceImpl implements GptService {
     public SlackUser getSlackUserBySlackId(String slackId) {
         return jpaSlackrepo.findBySlackUserId(slackId);
     }
-	
 }

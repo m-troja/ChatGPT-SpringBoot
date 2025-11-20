@@ -1,9 +1,9 @@
 package com.michal.openai.functions;
 
-import java.util.concurrent.CompletableFuture;
+import java.io.IOException;
 
 public interface Function {
 	
-	String execute(String arguments);
+	String execute(String arguments) throws IOException;
 
 }

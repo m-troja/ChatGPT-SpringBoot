@@ -3,9 +3,9 @@ package com.michal.openai.tasksystem.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.tasksystem.service.TaskSystemService;
 import com.michal.openai.tasksystem.entity.request.CreateTaskSystemIssueRequest;
 import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
+import com.michal.openai.tasksystem.service.TaskSystemService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 @Data
@@ -70,7 +69,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
     }
 
     @Override
-    public TaskSystemIssueDto assignIssue(String requestBody) throws Exception {
+    public TaskSystemIssueDto assignIssue(String requestBody) {
         log.debug("Assign issue RequestBody to Task-System: {}", requestBody);
         var issueDto = restClient.put()
                 .uri(assignIssueEndpoint)

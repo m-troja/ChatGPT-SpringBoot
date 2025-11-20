@@ -1,10 +1,9 @@
 package com.michal.openai.persistence;
 
+import com.michal.openai.gpt.entity.GptRequest;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
-
-import com.michal.openai.entity.GptRequest;
 
 import java.util.List;
 

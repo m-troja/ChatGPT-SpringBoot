@@ -1,0 +1,112 @@
+{
+  "model" : "gpt-4.1",
+  "messages" : [ {
+    "id" : 0,
+    "content" : "Always mention user when responding. If i ask you to mention all, type <!channel> You received message from U08RU3LAKDH. Type <@U08RU3LAKDH> to mention them.",
+    "name" : null,
+    "role" : "system",
+    "tool_calls" : null
+  }, {
+    "id" : 0,
+    "content" : "@U08SHTW059C just say hi to me",
+    "name" : null,
+    "role" : "user",
+    "tool_calls" : null
+  } ],
+  "n" : null,
+  "temperature" : 1.0,
+  "stop" : null,
+  "tools" : [ {
+    "type" : "function",
+    "function" : {
+      "name" : "createTaskSystemIssueFunction",
+      "description" : "The function creates Task-System issue, with the specific Title, description, Priority, AuthorId, AssigneeId, DueDate, ProjectId. Remember that \"returned key\" is the ticket/issue ID created by Task-System! Always return ticket key when answering. Always use slack mention to say who is author and who is assignee of ticket",
+      "parameters" : {
+        "type" : "object",
+        "properties" : {
+          "title" : {
+            "type" : "string",
+            "description" : "Title of the issue."
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "Contains the detailed description of the task. It can be written in different formats. In case this is a story, we need to create description in user story format \"as a user I want...\". In case this is a bug, the description MUST have steps to reproduce, actual and expected behavior. This is a mandatory attribute. "
+          },
+          "priority" : {
+            "type" : "string",
+            "description" : "Priority String: LOW, NORMAL, HIGH, CRITICAL",
+            "priorities" : [ "LOW", "NORMAL", "HIGH", "CRITICAL" ]
+          },
+          "authorSlackId" : {
+            "type" : "string",
+            "description" : "Creator of the issue = slackID of user who sent the message to you. Always contains 11 chars and starts with 'U' char"
+          },
+          "assigneeSlackId" : {
+            "type" : "string",
+            "description" : "SlackId of user who should be assigned to a ticket. if not deined, then author."
+          },
+          "dueDate" : {
+            "type" : "string",
+            "description" : "Contains the due date of the work item telling what is the latest possible date when task should be done. In other words, sets the latest date when work item should be completed, implemented and moved to the done state. For example, user can use such due dates: \"by end of the week\", \"by end of the month\", \"by end of the year\", \"by September 14th, 2023\", \"by September 14th\", \"should be implemented till March 12th\", etc. And it is required that ChatGPT would recognize the referene to the due date and convert it to the following the format \"yyyy-MM-dd\".",
+            "format" : "Example \"2025-10-22\". always is UTC"
+          },
+          "projectId" : {
+            "type" : "string",
+            "description" : "Every issue must have integer project ID assigned. If not defined, send project= 1."
+          }
+        },
+        "required" : [ "title", "description", "priority", "authorSlackId", "assigneeSlackId", "duedate", "projectid" ]
+      }
+    }
+  }, {
+    "type" : "function",
+    "function" : {
+      "name" : "getReposFunctionCall",
+      "description" : "Function to get data about user's public github repositories, branches, commits",
+      "parameters" : {
+        "type" : "object",
+        "properties" : {
+          "login" : {
+            "type" : "string",
+            "description" : "User's github account login (username). Return string only, no JSON syntax"
+          }
+        },
+        "required" : [ "login" ]
+      }
+    }
+  }, {
+    "type" : "function",
+    "function" : {
+      "name" : "assignTaskSystemIssueFunction",
+      "description" : "assign issue to slackUserId by issue-key",
+      "parameters" : {
+        "type" : "object",
+        "properties" : {
+          "key" : {
+            "type" : "string",
+            "description" : "id/key of the issue, format i.e. \"Dummy-1\""
+          },
+          "slackUserId" : {
+            "type" : "string",
+            "description" : "slackUserId to which ticket should be assigned, i.e. \"U1234AB\""
+          }
+        },
+        "required" : [ "id/key of the issue, format i.e. \"Dummy-1\"", "slackUserId to which ticket should be assigned, i.e. \"U1234AB\"" ]
+      }
+    }
+  }, {
+    "type" : "function",
+    "function" : {
+      "name" : "getAllTaskSystemIssuesFunction",
+      "description" : "Get all issues in Task-System: key, assignee, description, summary, due date etc...",
+      "parameters" : null
+    }
+  } ],
+  "stream" : false,
+  "max_tokens" : 1240,
+  "presence_penalty" : 1.0,
+  "frequency_penalty" : null,
+  "top_p" : null,
+  "logit_bias" : null,
+  "tool_choice" : null
+}

@@ -36,23 +36,23 @@ public class RestClientConfig {
 			return builder.build();
 	}
     
-    @Bean("gptRestClient")
+    @Bean("jiraRestClient")
     public RestClient jiraRestClient()
     {
     	 RestClient.Builder builder = RestClient.builder()
-    			.baseUrl(chatGptApiUrl)
+    			.baseUrl(jiraUrl)
     			.defaultHeader("Content-Type", "application/json")
-    	        .defaultHeader("Authorization",  "Bearer " + chatGptApiKey);
+    	        .defaultHeader("Authorization",  "Basic " + jiraKey);
     	        
 			return builder.build();
 	}
-    @Bean("jiraRestClient")
+    @Bean("gptRestClient")
     public RestClient gptRestClient()
     {
         RestClient.Builder builder = RestClient.builder()
-                .baseUrl(jiraUrl)
+                .baseUrl(chatGptApiUrl)
                 .defaultHeader("Content-Type", "application/json")
-                .defaultHeader("Authorization",  "Bearer " + jiraKey);
+                .defaultHeader("Authorization",  "Bearer " + chatGptApiKey);
 
         return builder.build();
     }

@@ -1,15 +1,12 @@
 package com.michal.openai.functions.impl;
 
-import java.util.concurrent.CompletableFuture;
-
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.entity.EmailData;
+import com.michal.openai.mail.entity.EmailData;
 import com.michal.openai.functions.Function;
 import com.michal.openai.mail.GmailService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 public class SendEmailFunction implements Function {
