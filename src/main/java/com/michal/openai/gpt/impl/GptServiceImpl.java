@@ -54,7 +54,7 @@ public class GptServiceImpl implements GptService {
     @Value("${gpt.chat.qty.context.messages}")
     private Integer qtyContextMessagesInRequestOrResponse;
     private Integer totalQtyMessagesInContext; // Context + System/Initial Msg + query
-    @Value("${gpt.chat.system.initial.message}")
+    @Value("${GPT_CHAT_SYSTEM_INITIAL_MESSAGE}")
     private String systemInitialMessage;
     @Value("${CHAT_JSON_DIR}")
     private String jsonDir;
