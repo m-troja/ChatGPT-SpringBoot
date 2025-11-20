@@ -82,8 +82,8 @@ public class SlackServiceImpl implements SlackService {
 				response -> {
 					String stringToSend = response != null ? response : "[No response]";
 					ChatPostMessageRequest request = ChatPostMessageRequest.builder()
-//	                .channel(channelId)
-                    .channel("asdasd")
+	                .channel(channelId)
+//                    .channel("asdasd")
 	                .text(stringToSend)
 	                .build();
 
