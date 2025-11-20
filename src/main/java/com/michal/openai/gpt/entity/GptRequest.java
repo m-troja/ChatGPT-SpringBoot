@@ -45,16 +45,16 @@ public class GptRequest {
 	@Transient
 	private Double temperature;
 
-    @JsonProperty("max_tokens")
+    @JsonProperty("max_completion_tokens")
     @Transient
 	private Integer maxOutputTokens;
 
 	@Transient
 	private boolean Stream;
 
-    @JsonProperty("presence_penalty")
-    @Transient
-	private Double presencePenalty;
+//    @JsonProperty("presence_penalty")
+//    @Transient
+//	private Double presencePenalty;
 
     @JsonProperty("frequency_penalty")
     @Transient
@@ -86,7 +86,7 @@ public class GptRequest {
 	public String toString() {
 		return "GptRequest [id=" + id + ", content=" + content + ", model=" + model + ", messages=" + messages + ", n="
 				+ n + ", temperature=" + temperature + ", maxOutputToken=" + maxOutputTokens + ", Stream=" + Stream
-				+ ", presencePenalty=" + presencePenalty + ", frequencyPenalty=" + frequencyPenalty + ", topP=" + topP
+				+ ", frequencyPenalty=" + frequencyPenalty + ", topP=" + topP
 				+ ", stop=" + stop + ", logitBias=" + logitBias + ", author=" + author + ", authorRealname="
 				+ authorRealname + ", functions=" + functions + ", tools=" + tools + ", toolChoice=" + toolChoice + "]";
 	}

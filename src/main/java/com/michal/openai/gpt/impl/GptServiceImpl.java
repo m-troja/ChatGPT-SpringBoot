@@ -133,7 +133,7 @@ public class GptServiceImpl implements GptService {
         gptRequest.setAuthorRealname(slackUserRequestAuthor.getSlackName());
         gptRequest.setModel(model);
         gptRequest.setTemperature(temperature);
-        gptRequest.setPresencePenalty(presencePenalty);
+//        gptRequest.setPresencePenalty(presencePenalty);
         gptRequest.setMaxOutputTokens(maxTokens);
         gptRequest.setMessages(messages);
         log.debug("Found {} GPT Functions to add into requestTools", gptFunctions.size());

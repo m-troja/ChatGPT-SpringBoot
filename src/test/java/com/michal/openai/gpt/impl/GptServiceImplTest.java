@@ -75,7 +75,6 @@
             service.setModel("gpt-4.1");
             service.setTemperature(0.8);
             service.setRetryAttempts(3);
-            service.setPresencePenalty(1.0);
             service.setWaitSeconds(0);
             service.setMaxTokens(100);
             service.setSystemInitialMessage("Hi");
