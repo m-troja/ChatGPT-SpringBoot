@@ -1,7 +1,7 @@
 package com.michal.openai.tasksystem.service;
 
-import com.michal.openai.tasksystem.entity.TaskSystemUserDto;
-import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
+import com.michal.openai.tasksystem.entity.dto.TaskSystemUserDto;
+import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
 
 import java.util.List;
 

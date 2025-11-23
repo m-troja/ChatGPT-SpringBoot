@@ -3,7 +3,7 @@ package com.michal.openai.functions.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
+import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
 import com.michal.openai.tasksystem.service.TaskSystemService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

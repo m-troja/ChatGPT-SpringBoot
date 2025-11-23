@@ -1,8 +1,8 @@
 package com.michal.openai.tasksystem.entity.response;
 
-import com.michal.openai.tasksystem.entity.TaskSystemRefreshToken;
+import com.michal.openai.tasksystem.entity.token.TaskSystemRefreshToken;
 
 public record TaskSystemTokenResponse(
-        String accessToken,
+        TaskSystemAccessToken accessToken,
         TaskSystemRefreshToken refreshToken
 ) {}

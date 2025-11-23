@@ -1,9 +1,6 @@
-package com.michal.openai.tasksystem.entity;
-
-import com.google.api.client.util.DateTime;
+package com.michal.openai.tasksystem.entity.token;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public record TaskSystemRefreshToken(
         String refreshToken,

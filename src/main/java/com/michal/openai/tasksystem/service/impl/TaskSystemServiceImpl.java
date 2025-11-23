@@ -4,14 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.exception.TaskSystemException;
-import com.michal.openai.tasksystem.entity.TaskSystemUserDto;
+import com.michal.openai.exception.TaskSystemLoginException;
+import com.michal.openai.tasksystem.entity.dto.TaskSystemUserDto;
 import com.michal.openai.tasksystem.entity.request.CreateTaskSystemIssueRequest;
 import com.michal.openai.tasksystem.entity.request.TaskSystemLoginRequest;
 import com.michal.openai.tasksystem.entity.request.TaskSystemRegisterRequest;
-import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
+import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
 import com.michal.openai.tasksystem.entity.response.TaskSystemTokenResponse;
+import com.michal.openai.tasksystem.entity.token.TokenStore;
 import com.michal.openai.tasksystem.service.TaskSystemService;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
@@ -19,193 +20,182 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.concurrent.CompletionException;
 
-@Data
 @Slf4j
 @Service
 public class TaskSystemServiceImpl implements TaskSystemService {
 
-    private String getAllIssuesEndpoint = "/api/v1/issue/all";
-    private String createIssueEndpoint = "/api/v1/chatgpt/issue/create";
-    private String assignIssueEndpoint = "/api/v1/chatgpt/issue/assign";
-    private String getUserBySlackUserIdEndpoint = "/api/v1/chatgpt/user/slack-user-id";
-    private String loginEndpoint = "/api/v1/login";
-    private String registerEndpoint = "/api/v1/register";
-    private String botSlackUserId = "USLACKBOT";
-    private String botEmail = "test@test.com";
-    private String botPassword = "StrongBotPassword";
-    private int attempts = 3;
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private final TokenStore tokenStore;
 
-    @Qualifier("taskSystemRestClient")
-    private final RestClient restClient;
+    private static final String GET_ALL_ISSUES_ENDPOINT = "/api/v1/issue/all";
+    private static final String CREATE_ISSUE_ENDPOINT = "/api/v1/chatgpt/issue/create";
+    private static final String ASSIGN_ISSUE_ENDPOINT = "/api/v1/chatgpt/issue/assign";
+    private static final String GET_USER_BY_SLACK_ENDPOINT = "/api/v1/chatgpt/user/slack-user-id";
+    private static final String LOGIN_ENDPOINT = "/api/v1/login";
+    private static final String REGISTER_ENDPOINT = "/api/v1/register";
 
-    public TaskSystemServiceImpl( @Qualifier("taskSystemRestClient") RestClient restClient) {
+    private static final String BOT_SLACK_USER_ID = "USLACKBOT";
+    private static final String BOT_EMAIL = "test@test.com";
+    private static final String BOT_PASSWORD = "StrongBotPassword";
+
+    private static final int ATTEMPTS = 3;
+
+    @Qualifier("taskSystemRestClient") private final RestClient restClient;
+
+    public TaskSystemServiceImpl(TokenStore tokenStore, @Qualifier("taskSystemRestClient") RestClient restClient)
+    {
+        this.tokenStore = tokenStore;
         this.restClient = restClient;
     }
-    //   Send "CreateIssue" request to Task-System
+
     @Override
     public TaskSystemIssueDto createIssue(String requestBody) {
-        TaskSystemIssueDto issueDtoResponse;
-        log.debug("Inside createIssue with requestBody: {}", requestBody);
-            try
-            {
-                log.debug("Serialize GPT-request to Task-System-Request-JSON");
-                //Serialize GPT-request to Task-System-Request-JSON
-                CreateTaskSystemIssueRequest createIssueRequest = new ObjectMapper()
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                    .readValue(requestBody, CreateTaskSystemIssueRequest.class);
-
-                // Push Task-System-Request-JSON to Task-System-API
-                log.debug("Rest Client: Push Task-System-Request-JSON to Task-System-API");
-                issueDtoResponse =
-                        restClient.post()
-                        .uri(createIssueEndpoint)
-                        .body(createIssueRequest)
-                        .retrieve()
-                        .body(TaskSystemIssueDto.class);
-                log.debug("Rest client \"createIssue\" response from Task-System: {}", issueDtoResponse);
-            }
-            catch (JsonProcessingException e)
-            {
-                log.error("Failed to serialize create issue request to JSON, {}", e.getMessage());
-                throw new CompletionException(e);
-            }
-            catch (Exception e)
-            {
-                log.error("Error creating issue: {}", e.getMessage());
-                throw new CompletionException(e);
-            }
-            return issueDtoResponse;
+        try {
+            CreateTaskSystemIssueRequest createIssueRequest = objectMapper.readValue(
+                    requestBody, CreateTaskSystemIssueRequest.class
+            );
+            TaskSystemIssueDto response = restClient.post()
+                    .uri(CREATE_ISSUE_ENDPOINT)
+                    .body(createIssueRequest)
+                    .retrieve()
+                    .body(TaskSystemIssueDto.class);
+            log.debug("Created issue response: {}", response);
+            return response;
+        } catch (JsonProcessingException e) {
+            log.error("Failed to deserialize create issue request: {}", e.getMessage());
+            throw new CompletionException(e);
+        } catch (Exception e) {
+            log.error("Error creating issue: {}", e.getMessage(), e);
+            throw new CompletionException(e);
+        }
     }
 
     @Override
     public TaskSystemIssueDto assignIssue(String requestBody) {
-        log.debug("Assign issue RequestBody to Task-System: {}", requestBody);
-        var issueDto = restClient.put()
-                .uri(assignIssueEndpoint)
-                .body(requestBody)
-                .retrieve()
-                .body(TaskSystemIssueDto.class);
-        log.debug("Rest client \"assignIssue\" response from Task-System: {}", issueDto);
-        return issueDto;
+        try {
+            TaskSystemIssueDto response = restClient.put()
+                    .uri(ASSIGN_ISSUE_ENDPOINT)
+                    .body(requestBody)
+                    .retrieve()
+                    .body(TaskSystemIssueDto.class);
+            log.debug("Assigned issue response: {}", response);
+            return response;
+        } catch (Exception e) {
+            log.error("Error assigning issue: {}", e.getMessage(), e);
+            throw new CompletionException(e);
+        }
     }
 
+    @Override
     public List<TaskSystemIssueDto> getAllIssues() {
-
         try {
             List<TaskSystemIssueDto> issues = restClient.get()
-                    .uri(getAllIssuesEndpoint)
+                    .uri(GET_ALL_ISSUES_ENDPOINT)
                     .retrieve()
-                    .body(new ParameterizedTypeReference<>(){});
-            if (issues != null) { log.info("Fetched {} issues from Task-System", issues.size());}
-            else { log.debug("Fetched 0 issues from Task-System");}
-
-            log.debug("Rest client \"getAllIssues\" response from Task-System: {}", issues);
+                    .body(new ParameterizedTypeReference<>() {});
+            log.debug("Fetched issues: {}", issues);
             return issues;
-        }
-        catch (Exception e) {
-            log.error("Error fetching issues from Task-System: {}", e.getMessage());
-            throw new RuntimeException("Error fetching issues from Task-System");
+        } catch (Exception e) {
+            log.error("Error fetching all issues: {}", e.getMessage(), e);
+            throw new TaskSystemException("Error fetching issues from Task-System");
         }
     }
 
     @Override
     public TaskSystemUserDto getTaskSystemUser(String username) {
-        log.debug("Getting task-system user: {}", username);
         try {
-            var userDto = restClient.get()
-                    .uri(getUserBySlackUserIdEndpoint + "/" + username)
+            TaskSystemUserDto user = restClient.get()
+                    .uri(GET_USER_BY_SLACK_ENDPOINT + "/" + username)
                     .retrieve()
                     .body(TaskSystemUserDto.class);
-            log.debug("User from Task-System: {}", userDto);
-            return userDto;
-        }
-        // WHEN API RETURNS SC_401
-        catch (HttpClientErrorException.Unauthorized exUnauthorized) {
-            log.error("Caught Unauthorized Exception, trying to login into Task-System");
-            throw new RuntimeException("Error connecting to Task-System");
-        }
-        catch (Exception e) {
-            log.error("Error connecting to Task-System", e);
-            throw new RuntimeException("Error connecting to Task-System");
+            log.debug("Fetched user: {}", user);
+            return user;
+        } catch (HttpClientErrorException.Unauthorized ex) {
+            log.error("Unauthorized fetching user {}", username);
+            throw new TaskSystemException("Unauthorized to Task-System");
+        } catch (Exception e) {
+            log.error("Error fetching user {}", username, e);
+            throw new TaskSystemException("Error connecting to Task-System");
         }
     }
 
     @Override
     public TaskSystemUserDto getTaskSystemUserAuthorized(String username) {
-        log.debug("Getting Authorized task-system user: {}", username);
-        int i;
-        for (i = 1; i <= attempts; i++)
-        {
-            var tokens = login();
+        int i = 1;
+        for (i = 1; i < ATTEMPTS + 1; i++) {
+            if (tokenStore.isExpired()) {
+                log.debug("Token store is expired! {}", tokenStore);
+                login();
+            }
+            log.debug("{}", tokenStore);
             try {
-            var userDto = restClient.get()
-                    .uri(getUserBySlackUserIdEndpoint + "/" + username)
-                    .header("Authorization", "Bearer " + tokens.accessToken())
-                    .retrieve()
-                    .body(TaskSystemUserDto.class);
-            log.debug("Authorized User from Task-System: {}", userDto);
-            return userDto;
-            }
-            // WHEN API RETURNS SC_401
-            catch (HttpClientErrorException.Unauthorized exUnauthorized) {
-                if (i < attempts) {
-                    log.error("Authorized Caught Unauthorized Exception, trying to login into Task-System, attempt {}/{}", i, attempts,
-                            exUnauthorized);
-                }
-                else {
-                    log.error("Error connecting to Task-System, attempt {}/{}", i, attempts, exUnauthorized);
-                    throw new TaskSystemException("Error connecting to Task-System");
-
-                }
-            }
-            catch (Exception e) {
-                log.error("Error connecting to Task-System, attempt {}/{}", i, attempts, e);
-                throw new TaskSystemException("Error connecting to Task-System");
+                TaskSystemUserDto user = restClient.get()
+                        .uri(GET_USER_BY_SLACK_ENDPOINT + "/" + username)
+                        .header("Authorization", "Bearer " + tokenStore.getAccessToken())
+                        .retrieve()
+                        .body(TaskSystemUserDto.class);
+                log.debug("Authorized user fetched: {}", user);
+                return user;
+            } catch (HttpClientErrorException.Unauthorized ex) {
+                log.warn("Unauthorized attempt {}/{}", i, ATTEMPTS);
+                if (i == ATTEMPTS) throw new TaskSystemException("Unauthorized after login attempts");
+            } catch (Exception e) {
+                log.error("Error fetching authorized user, attempt {}/{}", i, ATTEMPTS, e);
+                if (i == ATTEMPTS) throw new TaskSystemException("Error fetching authorized user");
             }
         }
         return null;
     }
 
-    private TaskSystemTokenResponse login() {
-        log.debug("Logging into Task-System with username: {}", botSlackUserId);
-        var req = new TaskSystemLoginRequest(botEmail, botPassword);
-        try {
-            var tokens = restClient.post()
-                    .uri(loginEndpoint)
-                    .body(req)
-                    .retrieve()
-                    .body(TaskSystemTokenResponse.class);
-            log.debug("Tokens: {}", tokens);
-            return tokens;
+    private void login() {
+        TaskSystemLoginRequest request = new TaskSystemLoginRequest(BOT_EMAIL, BOT_PASSWORD);
+        int i = 0;
+        for (i = 1; i < ATTEMPTS + 1 ; i++) {
+            log.debug("Login attempt {}", i);
+            try {
+                TaskSystemTokenResponse tokens = restClient.post()
+                        .uri(LOGIN_ENDPOINT)
+                        .body(request)
+                        .retrieve()
+                        .body(TaskSystemTokenResponse.class);
+                log.debug("Login tokens from Task-System: {}", tokens);
+                tokenStore.setAccessToken(tokens.accessToken().token());
+                tokenStore.setExpiresAt(tokens.accessToken().expires()
+                        .atZone(ZoneId.systemDefault())
+                        .toInstant());
+                log.debug("Updated Token Store: {}", tokenStore);
+                return ;
+            } catch (HttpClientErrorException.BadRequest | HttpClientErrorException.Unauthorized e) {
+                log.warn("Login failed, registering bot...");
+                register();
+            } catch (Exception e) {
+                log.error("Error during login", e);
+                throw new TaskSystemLoginException("Error logging into Task-System");
+            }
         }
-        // WHEN API RETURNS SC_400
-        catch (HttpClientErrorException.BadRequest exBadRequest) {
-                log.error("Failed to login into Task-System, trying to register...", exBadRequest);
-                var userDto = register();
-        }
-        catch (Exception e) {
-            log.error("Error logging into Task-System", e);
-            throw new TaskSystemException("Error logging into Task-System");
-        }
-        throw new TaskSystemException("Failed to login into Task-System");
+        throw new TaskSystemLoginException("Failed to login");
     }
 
-    private TaskSystemUserDto register() {
-        log.debug("Registering into Task-system with username: {}", botSlackUserId);
-        var req = new TaskSystemRegisterRequest("Slack", "Bot", botEmail, botPassword );
+    private void register() {
+        TaskSystemRegisterRequest request = new TaskSystemRegisterRequest(
+                "Slack", "Bot", BOT_EMAIL, BOT_PASSWORD, BOT_SLACK_USER_ID
+        );
         try {
-            var userDto = restClient.post()
-                    .uri(registerEndpoint)
-                    .body(req)
+            TaskSystemUserDto user = restClient.post()
+                    .uri(REGISTER_ENDPOINT)
+                    .body(request)
                     .retrieve()
                     .body(TaskSystemUserDto.class);
-            log.debug("Registered successfull. DTO from Task-System: {}", userDto);
-            return userDto;
+            log.debug("Bot registered successfully: {}", user);
         } catch (Exception e) {
-            log.error("Error during registration", e);
+            log.error("Error registering bot", e);
             throw new TaskSystemException("Error during registration");
         }
     }

@@ -1,4 +1,4 @@
-package com.michal.openai.tasksystem.entity;
+package com.michal.openai.tasksystem.entity.dto;
 
 import java.util.List;
 

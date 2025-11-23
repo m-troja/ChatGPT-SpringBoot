@@ -14,7 +14,7 @@
     import com.michal.openai.persistence.JpaGptResponseRepo;
     import com.michal.openai.persistence.JpaSlackRepo;
     import com.michal.openai.slack.entity.SlackUser;
-    import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
+    import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
     import org.hamcrest.Matchers;
     import org.junit.jupiter.api.Assertions;
     import org.junit.jupiter.api.BeforeEach;

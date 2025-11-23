@@ -4,6 +4,7 @@ public record TaskSystemRegisterRequest(
         String FirstName,
         String LastName,
         String Email,
-        String Password
+        String Password,
+        String SlackUserId
 ) {
 }

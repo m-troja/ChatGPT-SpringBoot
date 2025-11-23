@@ -3,7 +3,7 @@ package com.michal.openai.tasksystem.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.tasksystem.entity.request.CreateTaskSystemIssueRequest;
-import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
+import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
 import com.michal.openai.tasksystem.service.impl.TaskSystemServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

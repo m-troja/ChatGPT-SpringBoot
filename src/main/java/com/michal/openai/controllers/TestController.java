@@ -1,6 +1,6 @@
 package com.michal.openai.controllers;
 
-import com.michal.openai.tasksystem.entity.TaskSystemUserDto;
+import com.michal.openai.tasksystem.entity.dto.TaskSystemUserDto;
 import com.michal.openai.tasksystem.service.TaskSystemService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
