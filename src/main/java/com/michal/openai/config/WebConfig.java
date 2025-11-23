@@ -20,6 +20,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
         .csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/v1/slack").permitAll()
+            .requestMatchers("/api/v1/test/**").permitAll()
             .requestMatchers("/api/v1/jira/**").permitAll()
             .requestMatchers("/api/v1/users/**").permitAll()
             .requestMatchers("/api/v1/github/user/**").permitAll()
