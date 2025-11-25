@@ -20,8 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.concurrent.CompletionException;
@@ -104,7 +102,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
             return issues;
         } catch (Exception e) {
             log.error("Error fetching all issues: {}", e.getMessage(), e);
-            throw new TaskSystemException("Error fetching issues from Task-System");
+            throw new TaskSystemException("Error fetching issues from Task-System", e);
         }
     }
 
@@ -122,81 +120,85 @@ public class TaskSystemServiceImpl implements TaskSystemService {
             throw new TaskSystemException("Unauthorized to Task-System");
         } catch (Exception e) {
             log.error("Error fetching user {}", username, e);
-            throw new TaskSystemException("Error connecting to Task-System");
+            throw new TaskSystemException("Error connecting to Task-System", e);
         }
     }
 
     @Override
     public TaskSystemUserDto getTaskSystemUserAuthorized(String username) {
-        int i = 1;
-        for (i = 1; i < ATTEMPTS + 1; i++) {
-            if (tokenStore.isExpired()) {
-                log.debug("Token store is expired! {}", tokenStore);
-                login();
-            }
-            log.debug("{}", tokenStore);
-            try {
-                TaskSystemUserDto user = restClient.get()
-                        .uri(GET_USER_BY_SLACK_ENDPOINT + "/" + username)
-                        .header("Authorization", "Bearer " + tokenStore.getAccessToken())
-                        .retrieve()
-                        .body(TaskSystemUserDto.class);
-                log.debug("Authorized user fetched: {}", user);
-                return user;
-            } catch (HttpClientErrorException.Unauthorized ex) {
-                log.warn("Unauthorized attempt {}/{}", i, ATTEMPTS);
-                if (i == ATTEMPTS) throw new TaskSystemException("Unauthorized after login attempts");
-            } catch (Exception e) {
-                log.error("Error fetching authorized user, attempt {}/{}", i, ATTEMPTS, e);
-                if (i == ATTEMPTS) throw new TaskSystemException("Error fetching authorized user");
-            }
+
+        if (tokenStore.isExpired()) {
+            login();
         }
-        return null;
+        try {
+            return restClient.get()
+                    .uri(GET_USER_BY_SLACK_ENDPOINT + "/" + username)
+                    .header("Authorization", "Bearer " + tokenStore.getAccessToken())
+                    .retrieve()
+                    .body(TaskSystemUserDto.class);
+
+        } catch (HttpClientErrorException.Unauthorized e) {
+            log.warn("Unauthorized to get user");
+            throw new TaskSystemException("Unauthorized to get user");
+        } catch (Exception e) {
+            throw new TaskSystemException("Error fetching authorized user", e);
+        }
     }
+
 
     private void login() {
         TaskSystemLoginRequest request = new TaskSystemLoginRequest(BOT_EMAIL, BOT_PASSWORD);
-        int i = 0;
-        for (i = 1; i < ATTEMPTS + 1 ; i++) {
-            log.debug("Login attempt {}", i);
-            try {
-                TaskSystemTokenResponse tokens = restClient.post()
-                        .uri(LOGIN_ENDPOINT)
-                        .body(request)
-                        .retrieve()
-                        .body(TaskSystemTokenResponse.class);
-                log.debug("Login tokens from Task-System: {}", tokens);
-                tokenStore.setAccessToken(tokens.accessToken().token());
-                tokenStore.setExpiresAt(tokens.accessToken().expires()
-                        .atZone(ZoneId.systemDefault())
-                        .toInstant());
-                log.debug("Updated Token Store: {}", tokenStore);
-                return ;
-            } catch (HttpClientErrorException.BadRequest | HttpClientErrorException.Unauthorized e) {
-                log.warn("Login failed, registering bot...");
-                register();
-            } catch (Exception e) {
-                log.error("Error during login", e);
-                throw new TaskSystemLoginException("Error logging into Task-System");
+            for (int i = 1; i <= ATTEMPTS; i++) {
+                try {
+                    log.debug("Login attempt {}", i);
+                    TaskSystemTokenResponse tokens = restClient.post()
+                            .uri(LOGIN_ENDPOINT)
+                            .body(request)
+                            .retrieve()
+                            .body(TaskSystemTokenResponse.class);
+                    log.debug("RestClient response: {}", tokens);
+                    if (tokens == null || tokens.accessToken() == null || tokens.accessToken().token().isEmpty()) {
+                        throw new TaskSystemLoginException("Failed to retrieve access token");
+                    }
+                    tokenStore.setAccessToken(tokens.accessToken().token());
+                    tokenStore.setExpiresAt(tokens.accessToken().expires()
+                            .atZone(ZoneId.systemDefault()).toInstant());
+                    return;
+
+                } catch (HttpClientErrorException.BadRequest |
+                         HttpClientErrorException.Unauthorized e) {
+                    log.warn("Login failed, registering bot…");
+                    register();
+                } catch (Exception e) {
+                    if (i == ATTEMPTS)
+                        throw new TaskSystemLoginException("Login failed after retries");
+                }
             }
+
+            throw new TaskSystemLoginException("Login failed after retries");
         }
-        throw new TaskSystemLoginException("Failed to login");
-    }
 
     private void register() {
-        TaskSystemRegisterRequest request = new TaskSystemRegisterRequest(
+        TaskSystemRegisterRequest req = new TaskSystemRegisterRequest(
                 "Slack", "Bot", BOT_EMAIL, BOT_PASSWORD, BOT_SLACK_USER_ID
         );
-        try {
-            TaskSystemUserDto user = restClient.post()
-                    .uri(REGISTER_ENDPOINT)
-                    .body(request)
-                    .retrieve()
-                    .body(TaskSystemUserDto.class);
-            log.debug("Bot registered successfully: {}", user);
-        } catch (Exception e) {
-            log.error("Error registering bot", e);
-            throw new TaskSystemException("Error during registration");
+        int i;
+        for (i = 1; i <= ATTEMPTS; i++) {
+            try {
+                log.debug("Register attempt {}", i);
+
+                restClient.post()
+                        .uri(REGISTER_ENDPOINT)
+                        .body(req)
+                        .retrieve()
+                        .body(TaskSystemUserDto.class);
+
+                return;
+
+            } catch (Exception e) {
+                log.debug("Exception after {} attempt: {}", i, e.getMessage());
+                if (i == ATTEMPTS) throw new TaskSystemException("Registration failed after retries");
+            }
         }
     }
 }
