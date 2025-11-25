@@ -2,6 +2,7 @@ package com.michal.openai.log;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -20,6 +21,8 @@ public class JsonSaver {
         this.basePath = basePath;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT); // pretty print
+        this.objectMapper.registerModule(new JavaTimeModule());
+        this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     public void saveResponse(Object response) {
@@ -28,6 +31,10 @@ public class JsonSaver {
 
     public void saveRequest(Object request) {
         saveJson(request, "request");
+    }
+
+    public void saveMessage(Object request) {
+        saveJson(request, "message");
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")

@@ -47,14 +47,16 @@ public class TaskSystemServiceImpl implements TaskSystemService {
 
     @Qualifier("taskSystemRestClient") private final RestClient restClient;
 
-    public TaskSystemServiceImpl(TokenStore tokenStore, @Qualifier("taskSystemRestClient") RestClient restClient)
-    {
+    public TaskSystemServiceImpl(TokenStore tokenStore, @Qualifier("taskSystemRestClient") RestClient restClient) {
         this.tokenStore = tokenStore;
         this.restClient = restClient;
     }
 
     @Override
     public TaskSystemIssueDto createIssue(String requestBody) {
+        if (tokenStore.isExpired()) {
+            login();
+        }
         try {
             CreateTaskSystemIssueRequest createIssueRequest = objectMapper.readValue(
                     requestBody, CreateTaskSystemIssueRequest.class
@@ -77,6 +79,9 @@ public class TaskSystemServiceImpl implements TaskSystemService {
 
     @Override
     public TaskSystemIssueDto assignIssue(String requestBody) {
+        if (tokenStore.isExpired()) {
+            login();
+        }
         try {
             TaskSystemIssueDto response = restClient.put()
                     .uri(ASSIGN_ISSUE_ENDPOINT)
@@ -93,6 +98,9 @@ public class TaskSystemServiceImpl implements TaskSystemService {
 
     @Override
     public List<TaskSystemIssueDto> getAllIssues() {
+        if (tokenStore.isExpired()) {
+            login();
+        }
         try {
             List<TaskSystemIssueDto> issues = restClient.get()
                     .uri(GET_ALL_ISSUES_ENDPOINT)
@@ -108,6 +116,9 @@ public class TaskSystemServiceImpl implements TaskSystemService {
 
     @Override
     public TaskSystemUserDto getTaskSystemUser(String username) {
+        if (tokenStore.isExpired()) {
+            login();
+        }
         try {
             TaskSystemUserDto user = restClient.get()
                     .uri(GET_USER_BY_SLACK_ENDPOINT + "/" + username)
@@ -126,7 +137,6 @@ public class TaskSystemServiceImpl implements TaskSystemService {
 
     @Override
     public TaskSystemUserDto getTaskSystemUserAuthorized(String username) {
-
         if (tokenStore.isExpired()) {
             login();
         }

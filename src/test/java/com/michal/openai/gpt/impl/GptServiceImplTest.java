@@ -9,10 +9,7 @@
     import com.michal.openai.gpt.entity.GptMessage;
     import com.michal.openai.gpt.entity.GptRequest;
     import com.michal.openai.gpt.entity.GptResponse;
-    import com.michal.openai.persistence.JpaGptMessageRepo;
-    import com.michal.openai.persistence.JpaGptRequestRepo;
-    import com.michal.openai.persistence.JpaGptResponseRepo;
-    import com.michal.openai.persistence.JpaSlackRepo;
+    import com.michal.openai.persistence.ResponseDtoRepo;
     import com.michal.openai.slack.entity.SlackUser;
     import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
     import org.hamcrest.Matchers;
@@ -64,7 +61,8 @@
         @MockitoBean JpaGptRequestRepo jpaGptRequestRepo;
         @MockitoBean JpaGptResponseRepo jpaGptResponseRepo;
         @MockitoBean JpaSlackRepo jpaSlackRepo;
-        @MockitoBean JpaGptMessageRepo messageRepo; // needed for service constructor
+        @MockitoBean
+        ResponseDtoRepo messageRepo; // needed for service constructor
         @MockitoBean FunctionFacory functionFactory;
         @MockitoBean AssignTaskSystemIssueFunction assignTaskSystemIssueFunction;
         @MockitoBean CreateTaskSystemIssueFunction createTaskSystemIssueFunction;
@@ -294,8 +292,8 @@
                 return response;
             } else if (functionName.equals("assignTaskSystemIssueFunction")) {
                 assertThat(content).isNull();
-                var tool = new GptMessage.Tool("id", "function");
-                var functionCall = new GptMessage.Tool.FunctionCall("assignTaskSystemIssueFunction", "{\\\"key\\\":\\\"Dummy-1\\\",\\\"slackUserId\\\":\\\"U12345678\\\"}");
+                var tool = new GptMessage.ToolCall("id", "function");
+                var functionCall = new GptMessage.ToolCall.FunctionCall("assignTaskSystemIssueFunction", "{\\\"key\\\":\\\"Dummy-1\\\",\\\"slackUserId\\\":\\\"U12345678\\\"}");
                 tool.setFunctionCall(functionCall);
                 message.setToolCalls(List.of(tool));
                 choice.setMessage(message);
@@ -303,8 +301,8 @@
                 return response;
             } else if (functionName.equals("createTaskSystemIssueFunction")) {
                 assertThat(content).isNull();
-                var tool = new GptMessage.Tool("id", "function");
-                var functionCall = new GptMessage.Tool.FunctionCall("createTaskSystemIssueFunction", "{\\\"title\\\":\\\"Test title\\\",\\\"description\\\":\\\"Test desc\\\",\\\"priority\\\":\\\"HIGH\\\",\\\"authorSlackId\\\":\\\"U08SHTW059C\\\",\\\"assigneeSlackId\\\":\\\"U08SHTW059C\\\",\\\"dueDate\\\":\\\"2025-11-20\\\"}");
+                var tool = new GptMessage.ToolCall("id", "function");
+                var functionCall = new GptMessage.ToolCall.FunctionCall("createTaskSystemIssueFunction", "{\\\"title\\\":\\\"Test title\\\",\\\"description\\\":\\\"Test desc\\\",\\\"priority\\\":\\\"HIGH\\\",\\\"authorSlackId\\\":\\\"U08SHTW059C\\\",\\\"assigneeSlackId\\\":\\\"U08SHTW059C\\\",\\\"dueDate\\\":\\\"2025-11-20\\\"}");
                 tool.setFunctionCall(functionCall);
                 message.setToolCalls(List.of(tool));
                 choice.setMessage(message);
