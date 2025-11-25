@@ -63,10 +63,8 @@
         @MockitoBean
         RequestDtoRepo requestDtoRepo;
         @MockitoBean ResponseDtoRepo responseDtoRepo;
-        @MockitoBean
-        SlackRepo slackRepo;
-        @MockitoBean
-        ResponseDtoRepo messageRepo; // needed for service constructor
+        @MockitoBean SlackRepo slackRepo;
+        @MockitoBean RequestDtoRepo requestDtoRepo;
         @MockitoBean FunctionFacory functionFactory;
         @MockitoBean AssignTaskSystemIssueFunction assignTaskSystemIssueFunction;
         @MockitoBean CreateTaskSystemIssueFunction createTaskSystemIssueFunction;
@@ -86,8 +84,8 @@
         void shouldAnswerNoFunctionCall() throws JsonProcessingException {
             SlackUser user = new SlackUser("U12345678", "Slack Name");
             when(slackRepo.findBySlackUserId("U12345678")).thenReturn(user);
-            when(jpaGptRequestRepo.getLastRequestsBySlackId("U12345678", 5)).thenReturn(List.of());
-            when(jpaGptResponseRepo.getLastResponsesToUser("U12345678", 5)).thenReturn(List.of());
+            when(requestDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", 5)).thenReturn(List.of());
+            when(responseDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", 5)).thenReturn(List.of());
             when(jpaGptRequestRepo.save(any())).thenAnswer(inv -> {
                 GptRequest req = inv.getArgument(0);
                 req.setId(1L);
