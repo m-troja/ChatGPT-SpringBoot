@@ -9,7 +9,9 @@
     import com.michal.openai.gpt.entity.GptMessage;
     import com.michal.openai.gpt.entity.GptRequest;
     import com.michal.openai.gpt.entity.GptResponse;
+    import com.michal.openai.persistence.RequestDtoRepo;
     import com.michal.openai.persistence.ResponseDtoRepo;
+    import com.michal.openai.persistence.SlackRepo;
     import com.michal.openai.slack.entity.SlackUser;
     import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
     import org.hamcrest.Matchers;
@@ -58,9 +60,11 @@
         @Autowired ObjectMapper objectMapper;
         @Autowired GptServiceImpl service;
 
-        @MockitoBean JpaGptRequestRepo jpaGptRequestRepo;
-        @MockitoBean JpaGptResponseRepo jpaGptResponseRepo;
-        @MockitoBean JpaSlackRepo jpaSlackRepo;
+        @MockitoBean
+        RequestDtoRepo requestDtoRepo;
+        @MockitoBean ResponseDtoRepo responseDtoRepo;
+        @MockitoBean
+        SlackRepo slackRepo;
         @MockitoBean
         ResponseDtoRepo messageRepo; // needed for service constructor
         @MockitoBean FunctionFacory functionFactory;
@@ -81,7 +85,7 @@
         @Test
         void shouldAnswerNoFunctionCall() throws JsonProcessingException {
             SlackUser user = new SlackUser("U12345678", "Slack Name");
-            when(jpaSlackRepo.findBySlackUserId("U12345678")).thenReturn(user);
+            when(slackRepo.findBySlackUserId("U12345678")).thenReturn(user);
             when(jpaGptRequestRepo.getLastRequestsBySlackId("U12345678", 5)).thenReturn(List.of());
             when(jpaGptResponseRepo.getLastResponsesToUser("U12345678", 5)).thenReturn(List.of());
             when(jpaGptRequestRepo.save(any())).thenAnswer(inv -> {
@@ -113,7 +117,7 @@
         @Test
         void shouldThrowExceptionWhenInvalidGptResponse() {
             SlackUser user = new SlackUser("U12345678", "Slack Name");
-            when(jpaSlackRepo.findBySlackUserId("U12345678")).thenReturn(user);
+            when(slackRepo.findBySlackUserId("U12345678")).thenReturn(user);
             when(jpaGptRequestRepo.getLastRequestsBySlackId("U12345678", 5)).thenReturn(List.of());
             when(jpaGptResponseRepo.getLastResponsesToUser("U12345678", 5)).thenReturn(List.of());
             when(jpaGptRequestRepo.save(any())).thenAnswer(inv -> {
@@ -152,7 +156,7 @@
             CompletableFuture<String> query = CompletableFuture.completedFuture("Assign ticket Dummy-1 to U12345678");
             CompletableFuture<String> userName = CompletableFuture.completedFuture("U12345678");
             // when
-            when(jpaSlackRepo.findBySlackUserId(slackUserId)).thenReturn(slackRequestAuthor);
+            when(slackRepo.findBySlackUserId(slackUserId)).thenReturn(slackRequestAuthor);
             when(jpaGptRequestRepo.getLastRequestsBySlackId(slackUserId, service.getQtyContextMessagesInRequestOrResponse())).thenReturn(List.of("Test request 1", "Test request 2"));
             when(jpaGptResponseRepo.getLastResponsesToUser(slackUserId, service.getQtyContextMessagesInRequestOrResponse())).thenReturn(List.of("Test response 1", "Test response 2"));
             when(jpaGptRequestRepo.save(any())).thenAnswer(inv -> {
@@ -212,7 +216,7 @@
             CompletableFuture<String> userName = CompletableFuture.completedFuture(slackUserId);
 
             // when
-            when(jpaSlackRepo.findBySlackUserId(slackUserId)).thenReturn(slackRequestAuthor);
+            when(slackRepo.findBySlackUserId(slackUserId)).thenReturn(slackRequestAuthor);
             when(jpaGptRequestRepo.getLastRequestsBySlackId(slackUserId, service.getQtyContextMessagesInRequestOrResponse())).thenReturn(List.of("Test request 1", "Test request 2"));
             when(jpaGptResponseRepo.getLastResponsesToUser(slackUserId, service.getQtyContextMessagesInRequestOrResponse())).thenReturn(List.of("Test response 1", "Test response 2"));
             when(jpaGptRequestRepo.save(any())).thenAnswer(inv -> {

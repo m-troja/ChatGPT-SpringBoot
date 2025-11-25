@@ -21,6 +21,7 @@ public class GptMessage {
 
     private String name;
     private String role;
+    private String toolCallId;
 
     public GptMessage() {}
 
@@ -32,9 +33,9 @@ public class GptMessage {
     // ----------------------- ToolCall -----------------------
     @Data
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public static class ToolCall {
 
-        private Long internalId;
         private String id;
         private String type;
 

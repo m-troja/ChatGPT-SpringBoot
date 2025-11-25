@@ -23,6 +23,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -156,18 +157,20 @@ public class GptServiceImpl implements GptService {
             return "GPT response error";
         }
 
-        GptMessage lastMessage = gptResponse.getChoices().getFirst().getMessage();
-        List<GptMessage.ToolCall> toolsToCall = lastMessage.getToolCalls();
+        GptMessage responseMessage = gptResponse.getChoices().getFirst().getMessage();
+        List<GptMessage.ToolCall> toolsToCall = responseMessage.getToolCalls();
 
         if (toolsToCall == null || toolsToCall.isEmpty()) {
-            return lastMessage.getContent();
+            return responseMessage.getContent();
         }
 
         for (GptMessage.ToolCall toolCall : toolsToCall) {
+            log.debug("Tool call found, GPT will be called: {}", toolCall.getFunctionCall().getName());
             Function fn = functionFactory.getFunctionByFunctionName(toolCall.getFunctionCall().getName());
             String result;
             try {
                 result = fn.execute(toolCall.getFunctionCall().getArguments());
+                log.debug("Result of function: {}", result);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -175,14 +178,17 @@ public class GptServiceImpl implements GptService {
             GptMessage toolMessage = new GptMessage();
             toolMessage.setRole("tool");
             toolMessage.setContent(result);
-            toolMessage.setName(toolCall.getFunctionCall().getName());
-            toolMessage.setToolCalls(List.of(toolCall));
-
+//            toolMessage.setName(toolCall.getFunctionCall().getName());
+            toolMessage.setToolCallId(toolCall.getId());
             if (gptRequest != null) {
+                gptRequest.getMessages().add(responseMessage);
                 gptRequest.getMessages().add(toolMessage);
             }
+            log.debug("List of messages to send to GPT:");
+            log.debug("{}", gptRequest.getMessages() );
 
             while (gptRequest.getMessages().size() > totalQtyMessagesInContext) {
+                log.debug("Context exceeded! Removed first message: {}", gptRequest.getMessages().getFirst());
                 gptRequest.getMessages().removeFirst();
             }
         }
@@ -232,21 +238,21 @@ public class GptServiceImpl implements GptService {
         RequestDto requestDto;
         ResponseDto responseDto;
 
-        if (responseMessage.getToolCalls() != null) {
-            log.debug("Tool call found in responseMessage, skipping ResponseDTO creation");
-        } else {
-            responseDto = messageCnv.responseEntityToDto(responseMessage, slackUserRequestAuthor);
-            responseDtoRepo.save(responseDto);
-            saveMessage(responseDto);
-        }
-
-        if (requestMessage.getToolCalls() != null) {
-            log.debug("Tool call found in requestMessage, skipping RequestDTO creation");
-        }
-        else {
+        if (requestMessage.getToolCallId() == null && requestMessage.getToolCalls() == null && requestMessage.getRole() != "tool") {
             requestDto = messageCnv.requestEntityToDto(requestMessage, slackUserRequestAuthor);
             requestDtoRepo.save(requestDto);
-            saveMessage(requestDto);
+            saveMessageJson(requestDto);
+        }
+        else {
+            log.debug("Tool call found in requestMessage, skipping RequestDTO creation");
+        }
+
+        if (responseMessage.getToolCalls() == null) {
+            responseDto = messageCnv.responseEntityToDto(responseMessage, slackUserRequestAuthor);
+            responseDtoRepo.save(responseDto);
+            saveMessageJson(responseDto);
+        } else {
+            log.debug("Tool call found in responseMessage, skipping ResponseDTO creation");
         }
 
         saveGptResponse(response);
@@ -272,15 +278,15 @@ public class GptServiceImpl implements GptService {
 	}
 
     private void saveGptResponse(GptResponse gptResponse) {
-        log.debug("Response from GPT:");
-        logPrettyJson(gptResponse);
+//        log.debug("Response from GPT:");
+//        logPrettyJson(gptResponse);
         JsonSaver jsonSaver = new JsonSaver(jsonDir);
         jsonSaver.saveResponse(gptResponse);
 	}
 
-    private void saveMessage(Object obj) {
-        log.debug("Saved message:");
-        logPrettyJson(obj);
+    private void saveMessageJson(Object obj) {
+//        log.debug("Saved message:");
+//        logPrettyJson(obj);
         JsonSaver jsonSaver = new JsonSaver(jsonDir);
         jsonSaver.saveMessage(obj);
     }
@@ -289,8 +295,10 @@ public class GptServiceImpl implements GptService {
 
     private List<GptMessage> getLastRequestsOfUser(SlackUser user) {
 		log.debug("Calling getLastRequestsOfUser with user={}, max allowed context= {}", user.getSlackUserId(), qtyContextMessagesInRequestOrResponse);
+        PageRequest limit = PageRequest.of(0, qtyContextMessagesInRequestOrResponse);
+        log.debug("Limit of requests: {}", limit);
 
-		List<RequestDto> dtos = requestDtoRepo.findByUserSlackId(user.getSlackUserId());
+        List<RequestDto> dtos = requestDtoRepo.findByUserSlackIdOrderByTimestampDesc(user.getSlackUserId(), limit);
 		if (dtos.isEmpty()) {
             log.debug("Not found any request");
         }
@@ -309,8 +317,10 @@ public class GptServiceImpl implements GptService {
 
     private List<GptMessage> getLastResponsesToUser(SlackUser user) {
         log.debug("Calling getLastResponsesToUser with user={}, max allowed context= {}", user.getSlackUserId(), qtyContextMessagesInRequestOrResponse);
+        PageRequest limit = PageRequest.of(0, qtyContextMessagesInRequestOrResponse);
+        log.debug("Limit of responses: {}", limit);
 
-        List<ResponseDto> dtos = responseDtoRepo.findByUserSlackId(user.getSlackUserId());
+        List<ResponseDto> dtos = responseDtoRepo.findByUserSlackIdOrderByTimestampDesc(user.getSlackUserId(), limit);
         if (dtos.isEmpty()) {
             log.debug("Not found any responses");
         }
