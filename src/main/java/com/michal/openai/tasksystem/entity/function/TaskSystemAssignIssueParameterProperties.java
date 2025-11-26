@@ -1,4 +1,4 @@
-package com.michal.openai.tasksystem.entity;
+package com.michal.openai.tasksystem.entity.function;
 
 import com.michal.openai.functions.entity.ParameterProperties;
 import com.michal.openai.functions.entity.ParameterPropertyAttribute;

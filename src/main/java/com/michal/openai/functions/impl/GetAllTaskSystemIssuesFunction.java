@@ -3,7 +3,7 @@ package com.michal.openai.functions.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.functions.Function;
-import com.michal.openai.tasksystem.entity.response.TaskSystemIssueDto;
+import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
 import com.michal.openai.tasksystem.service.TaskSystemService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

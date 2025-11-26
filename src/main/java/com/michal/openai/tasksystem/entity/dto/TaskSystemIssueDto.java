@@ -1,4 +1,4 @@
-package com.michal.openai.tasksystem.entity.response;
+package com.michal.openai.tasksystem.entity.dto;
 
 public record TaskSystemIssueDto(
         String key,

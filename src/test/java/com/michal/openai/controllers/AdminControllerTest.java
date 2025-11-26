@@ -9,7 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -22,7 +22,7 @@ class AdminControllerTest {
 
     @Test
     void shouldReturnOkOnClearDatabase() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/clear-database"))
+        mockMvc.perform(delete("/api/v1/admin/clear-database"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Cleared database"));
         verify(gptService, times(1))

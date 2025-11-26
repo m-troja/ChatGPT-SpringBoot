@@ -3,10 +3,10 @@ package com.michal.openai.slack.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.functions.entity.GptFunction;
+import com.michal.openai.persistence.SlackRepo;
 import com.michal.openai.slack.entity.SlackRequest;
 import com.michal.openai.slack.entity.SlackUser;
 import com.michal.openai.gpt.GptService;
-import com.michal.openai.persistence.JpaSlackRepo;
 import com.michal.openai.slack.SlackService;
 import com.slack.api.methods.MethodsClient;
 import com.slack.api.methods.SlackApiException;
@@ -30,7 +30,7 @@ public class SlackServiceImpl implements SlackService {
 	private final MethodsClient slackBotClient;
 	private final List<GptFunction> functions;
     private final ObjectMapper objectMapper;
-    private final JpaSlackRepo jpaSlackrepo;
+    private final SlackRepo jpaSlackrepo;
     private final GptService gptService;
 
 	@Async("defaultExecutor")
@@ -83,7 +83,6 @@ public class SlackServiceImpl implements SlackService {
 					String stringToSend = response != null ? response : "[No response]";
 					ChatPostMessageRequest request = ChatPostMessageRequest.builder()
 	                .channel(channelId)
-//                    .channel("dummy1")
 	                .text(stringToSend)
 	                .build();
 
@@ -120,7 +119,7 @@ public class SlackServiceImpl implements SlackService {
         return SUCCESSFULL_REGISTRATION_MESSAGE  ;
     }
 
-    public SlackServiceImpl(@Qualifier("slackBotClient") MethodsClient slackBotClient, List<GptFunction> functions, ObjectMapper objectMapper, JpaSlackRepo jpaSlackrepo, GptService gptService) {
+    public SlackServiceImpl(@Qualifier("slackBotClient") MethodsClient slackBotClient, List<GptFunction> functions, ObjectMapper objectMapper, SlackRepo jpaSlackrepo, GptService gptService) {
         this.slackBotClient = slackBotClient;
         this.functions = functions;
         this.objectMapper = objectMapper;

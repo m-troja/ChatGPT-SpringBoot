@@ -7,8 +7,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface JpaSlackRepo extends CrudRepository<SlackUser, Integer> {
-	
-	 List<SlackUser> findAllByOrderBySlackUserId();
-	 SlackUser findBySlackUserId(String slackId);
+public interface SlackRepo extends CrudRepository<SlackUser, Integer> {
+
+    List<SlackUser> findAllByOrderBySlackUserId();
+    SlackUser findBySlackUserId(String slackId);
 }
