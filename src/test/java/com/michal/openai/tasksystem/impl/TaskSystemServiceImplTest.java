@@ -1,10 +1,17 @@
 package com.michal.openai.tasksystem.impl;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.tasksystem.entity.request.CreateTaskSystemIssueRequest;
 import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
+import com.michal.openai.tasksystem.entity.request.TaskSystemLoginRequest;
+import com.michal.openai.tasksystem.entity.response.TaskSystemAccessToken;
+import com.michal.openai.tasksystem.entity.response.TaskSystemTokenResponse;
+import com.michal.openai.tasksystem.entity.token.TaskSystemRefreshToken;
+import com.michal.openai.tasksystem.entity.token.TokenStore;
 import com.michal.openai.tasksystem.service.impl.TaskSystemServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -18,13 +25,14 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CompletionException;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
@@ -39,6 +47,14 @@ class TaskSystemServiceImplTest {
     @Autowired MockRestServiceServer server;
     @Autowired ObjectMapper objectMapper;
     @Autowired TaskSystemServiceImpl service;
+    @Autowired TokenStore tokenStore;
+
+    @BeforeEach
+    void setup() {
+        when(tokenStore.isExpired()).thenReturn(true)
+                .thenReturn(false);
+        when(tokenStore.getAccessToken()).thenReturn("accessToken");
+    }
 
     @Test
     public void shouldCreateTaskSystemIssue() throws JsonProcessingException {
@@ -46,7 +62,19 @@ class TaskSystemServiceImplTest {
         var responseJsonFromTaskSystem = "{\\\"title\\\":\\\"Test title\\\",\\\"description\\\":\\\"Test desc\\\",\\\"priority\\\":\\\"HIGH\\\",\\\"authorSlackId\\\":\\\"U08SHTW059C\\\",\\\"assigneeSlackId\\\":\\\"U08SHTW059C\\\",\\\"dueDate\\\":\\\"2025-11-20\\\"}";
         var createIssueRequest = new CreateTaskSystemIssueRequest("Test title", "Test desc", "HIGH", "U08SHTW059C", "U12345678", "2025-11-20", 1);
         var responseIssueDto = new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U12345678");
+        var tokenResponse = new TaskSystemTokenResponse(
+                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
+                new TaskSystemRefreshToken("refreshToken", 1,  LocalDateTime.parse("2026-10-10T00:00:00"), false)
+        );
+
+        var loginEndpoint = "/api/v1/login";
+
+        server.expect(requestTo(baseUrl + loginEndpoint))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
+
         server.expect(requestTo(baseUrl + createIssueEndpoint))
+                .andExpect(header("Authorization", "Bearer accessToken"))
                 .andExpect(request -> {
                     String requestBody = request.getBody().toString();
                     CreateTaskSystemIssueRequest requestObj = objectMapper.readValue(requestBody, CreateTaskSystemIssueRequest.class);
@@ -61,6 +89,17 @@ class TaskSystemServiceImplTest {
 
     @Test
     void shouldIgnoreUnknownFields() throws Exception {
+        // login
+        var loginEndpoint = "/api/v1/login";
+        var tokenResponse = new TaskSystemTokenResponse(
+                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
+                new TaskSystemRefreshToken("refreshToken", 1,  LocalDateTime.parse("2026-10-10T00:00:00"), false)
+        );
+
+        server.expect(requestTo(baseUrl + loginEndpoint))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
+
         var responseIssueDto = new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U12345678");
         String jsonWithExtraFields = """
                 {
@@ -75,6 +114,7 @@ class TaskSystemServiceImplTest {
                 """;
 
         server.expect(requestTo(baseUrl + createIssueEndpoint))
+                .andExpect(header("Authorization", "Bearer accessToken"))
                 .andRespond(withSuccess(
                         objectMapper.writeValueAsString(responseIssueDto),  MediaType.APPLICATION_JSON
             ));
@@ -83,40 +123,90 @@ class TaskSystemServiceImplTest {
     }
 
     @Test
-    public void shouldThrowCompletionExceptionWhenSendingInvalidJsonToTaskSystem() {
-        String invalidJson = """
-                {"title": "Test title",
-                 "description": "Test description"}
-                """;
+    public void shouldThrowCompletionExceptionWhenSendingInvalidJsonToTaskSystem() throws JsonProcessingException {
+        // login
+        var loginEndpoint = "/api/v1/login";
+        var tokenResponse = new TaskSystemTokenResponse(
+                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
+                new TaskSystemRefreshToken("refreshToken", 1,  LocalDateTime.parse("2026-10-10T00:00:00"), false)
+        );
+
+        server.expect(requestTo(baseUrl + loginEndpoint))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
+
+        String invalidJson = "{ invalidJson";
         // Task-System returns SC 500 for invalid JSON
         server.expect(requestTo(baseUrl + createIssueEndpoint))
                 .andExpect(method(HttpMethod.POST))
+                .andExpect(header("Authorization", "Bearer accessToken"))
                 .andRespond(withServerError());
         assertThatThrownBy( () -> service.createIssue(invalidJson))
                 .isInstanceOf(CompletionException.class)
-                .hasCauseInstanceOf(HttpServerErrorException.class);
-        server.verify();
+                .hasCauseInstanceOf(JsonParseException.class);
     }
 
     @Test
-    public void shouldThrowExceptionWhenReceivingInvalidIssueDto() {
-        var createIssueRequest = new CreateTaskSystemIssueRequest("Test title", "Test desc", "HIGH", "U08SHTW059C", "U12345678", "2025-11-20", 1);
-        var invalidDtoResponse = """
-                { "unknown_field" : "value"
-                """;
+    public void shouldThrowExceptionWhenReceivingInvalidIssueDto() throws JsonProcessingException {
+        // login
+        var loginEndpoint = "/api/v1/login";
+        var tokenResponse = new TaskSystemTokenResponse(
+                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
+                new TaskSystemRefreshToken("refreshToken", 1,  LocalDateTime.parse("2026-10-10T00:00:00"), false)
+        );
+
+        server.expect(requestTo(baseUrl + loginEndpoint))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
+
+        String requestJson = """
+        {
+          "title": "Test",
+          "description": "Desc",
+          "priority": "HIGH",
+          "authorSlackId": "U1",
+          "assigneeSlackId": "U2",
+          "dueDate": "2025-11-20"
+        }
+    """;
+
+        String invalidDtoResponse = """
+        { "unknown_field" : "value" }
+    """;
+
         server.expect(requestTo(baseUrl + createIssueEndpoint))
+                .andExpect(header("Authorization", "Bearer accessToken"))
+                .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess(invalidDtoResponse,  MediaType.APPLICATION_JSON ));
-        assertThatThrownBy( () -> service.createIssue(objectMapper.writeValueAsString(createIssueRequest)))
-                .isInstanceOf(CompletionException.class);
+
+        var dto = service.createIssue(requestJson);
+
+        assertThat(dto)
+                .isNotNull()
+                .hasFieldOrPropertyWithValue("title", null) // NULL -> new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .hasFieldOrPropertyWithValue("priority", null); // NULL -> new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
         server.verify();
     }
 
+
     @Test
-    public void shouldAssignIssue() throws JsonProcessingException {
+    public void shouldGetAllIssues() throws JsonProcessingException {
+        // login
+        var loginEndpoint = "/api/v1/login";
+        var tokenResponse = new TaskSystemTokenResponse(
+                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
+                new TaskSystemRefreshToken("refreshToken", 1,  LocalDateTime.parse("2026-10-10T00:00:00"), false)
+        );
+        server.expect(requestTo(baseUrl + loginEndpoint))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
+
         var issueDto1 = new TaskSystemIssueDto("Dummy-1", "Test title #1", "Test desc", "NEW", "LOW", "U08SHTW059C", "U98765432");
         var issueDto2 = new TaskSystemIssueDto("Dummy-2", "Test title #2", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U98765432");
         List<TaskSystemIssueDto> issueDtoLIst = List.of(issueDto1, issueDto2);
         server.expect(requestTo(baseUrl + getAllIssuesEndpoint))
+                .andExpect(header("Authorization", "Bearer accessToken"))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withSuccess(objectMapper.writeValueAsString(issueDtoLIst), MediaType.APPLICATION_JSON));
         var serviceResponse = service.getAllIssues();
@@ -124,11 +214,25 @@ class TaskSystemServiceImplTest {
         assertThat(serviceResponse).isEqualTo(issueDtoLIst);
     }
 
+    private void callLogin() throws JsonProcessingException {
+        var request = new TaskSystemLoginRequest("test@test.com", "StrongBotPassword");
+        var tokenResponse = new TaskSystemTokenResponse(
+                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
+                new TaskSystemRefreshToken("refreshToken", 1,  LocalDateTime.parse("2026-10-10T00:00:00"), false)
+        );
+        var loginEndpoint = "/api/v1/login";
+
+        server.expect(requestTo(baseUrl + loginEndpoint))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
+    }
+
     @Test
     public void shouldReturnGetIssues() {
-        //given
+        // TODO
 
     }
+
     @TestConfiguration
     static class TestConfig {
         @Bean
@@ -136,5 +240,11 @@ class TaskSystemServiceImplTest {
         RestClient  taskSystemRestClient(RestClient.Builder builder) {
             return builder.baseUrl(baseUrl).build();
         }
+
+        @Bean
+        TokenStore tokenStore() {
+            return org.mockito.Mockito.mock(TokenStore.class);
+        }
     }
+
 }

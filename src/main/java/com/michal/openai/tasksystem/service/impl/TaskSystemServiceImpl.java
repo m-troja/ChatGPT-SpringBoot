@@ -63,6 +63,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
             );
             TaskSystemIssueDto response = restClient.post()
                     .uri(CREATE_ISSUE_ENDPOINT)
+                    .header("Authorization", "Bearer " + tokenStore.getAccessToken())
                     .body(createIssueRequest)
                     .retrieve()
                     .body(TaskSystemIssueDto.class);
@@ -85,6 +86,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
         try {
             TaskSystemIssueDto response = restClient.put()
                     .uri(ASSIGN_ISSUE_ENDPOINT)
+                    .header("Authorization", "Bearer " + tokenStore.getAccessToken())
                     .body(requestBody)
                     .retrieve()
                     .body(TaskSystemIssueDto.class);
@@ -104,6 +106,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
         try {
             List<TaskSystemIssueDto> issues = restClient.get()
                     .uri(GET_ALL_ISSUES_ENDPOINT)
+                    .header("Authorization", "Bearer " + tokenStore.getAccessToken())
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {});
             log.debug("Fetched issues: {}", issues);
@@ -122,6 +125,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
         try {
             TaskSystemUserDto user = restClient.get()
                     .uri(GET_USER_BY_SLACK_ENDPOINT + "/" + username)
+                    .header("Authorization", "Bearer " + tokenStore.getAccessToken())
                     .retrieve()
                     .body(TaskSystemUserDto.class);
             log.debug("Fetched user: {}", user);
@@ -157,7 +161,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
 
 
     private void login() {
-        TaskSystemLoginRequest request = new TaskSystemLoginRequest(BOT_EMAIL, BOT_PASSWORD);
+        var request = new TaskSystemLoginRequest(BOT_EMAIL, BOT_PASSWORD);
             for (int i = 1; i <= ATTEMPTS; i++) {
                 try {
                     log.debug("Login attempt {}", i);

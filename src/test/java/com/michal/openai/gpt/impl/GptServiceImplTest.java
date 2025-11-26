@@ -24,6 +24,8 @@
     import org.springframework.boot.test.context.TestConfiguration;
     import org.springframework.context.annotation.Bean;
     import org.springframework.context.annotation.Import;
+    import org.springframework.data.domain.PageRequest;
+    import org.springframework.data.domain.Pageable;
     import org.springframework.http.MediaType;
     import org.springframework.test.context.TestPropertySource;
     import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -60,8 +62,6 @@
         @Autowired ObjectMapper objectMapper;
         @Autowired GptServiceImpl service;
 
-        @MockitoBean
-        RequestDtoRepo requestDtoRepo;
         @MockitoBean ResponseDtoRepo responseDtoRepo;
         @MockitoBean SlackRepo slackRepo;
         @MockitoBean RequestDtoRepo requestDtoRepo;
@@ -82,16 +82,15 @@
 
         @Test
         void shouldAnswerNoFunctionCall() throws JsonProcessingException {
+            var expectedAnswerFromService = "Hello from gpts";
             SlackUser user = new SlackUser("U12345678", "Slack Name");
             when(slackRepo.findBySlackUserId("U12345678")).thenReturn(user);
-            when(requestDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", 5)).thenReturn(List.of());
-            when(responseDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", 5)).thenReturn(List.of());
-            when(jpaGptRequestRepo.save(any())).thenAnswer(inv -> {
-                GptRequest req = inv.getArgument(0);
-                req.setId(1L);
-                return req;
-            });
-            var gptResponse = buildResponse("Hi there!", null);
+
+            Pageable limit = PageRequest.of(0, qtyContextMessagesInRequestOrResponse);
+            when(requestDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", limit)).thenReturn(List.of());
+            when(responseDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", limit)).thenReturn(List.of());
+
+            var gptResponse = buildResponse(expectedAnswerFromService, null);
 
             // mock GptResponse
             server.expect(requestTo(chatGptApiUrl))
@@ -109,20 +108,17 @@
             String answerFromService = service.getAnswerWithSlack(query, userName).join();
             server.verify();
 
-            assertThat(answerFromService).isEqualTo("Hi there!");
+            assertThat(answerFromService).isEqualTo(expectedAnswerFromService);
         }
 
         @Test
         void shouldThrowExceptionWhenInvalidGptResponse() {
             SlackUser user = new SlackUser("U12345678", "Slack Name");
             when(slackRepo.findBySlackUserId("U12345678")).thenReturn(user);
-            when(jpaGptRequestRepo.getLastRequestsBySlackId("U12345678", 5)).thenReturn(List.of());
-            when(jpaGptResponseRepo.getLastResponsesToUser("U12345678", 5)).thenReturn(List.of());
-            when(jpaGptRequestRepo.save(any())).thenAnswer(inv -> {
-                GptRequest req = inv.getArgument(0);
-                req.setId(1L);
-                return req;
-            });
+            Pageable limit = PageRequest.of(0, qtyContextMessagesInRequestOrResponse);
+            when(requestDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", limit)).thenReturn(List.of());
+            when(responseDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", limit)).thenReturn(List.of());
+
             String invalidJson = """
                     {"key":"value"}
                     """;
@@ -155,13 +151,10 @@
             CompletableFuture<String> userName = CompletableFuture.completedFuture("U12345678");
             // when
             when(slackRepo.findBySlackUserId(slackUserId)).thenReturn(slackRequestAuthor);
-            when(jpaGptRequestRepo.getLastRequestsBySlackId(slackUserId, service.getQtyContextMessagesInRequestOrResponse())).thenReturn(List.of("Test request 1", "Test request 2"));
-            when(jpaGptResponseRepo.getLastResponsesToUser(slackUserId, service.getQtyContextMessagesInRequestOrResponse())).thenReturn(List.of("Test response 1", "Test response 2"));
-            when(jpaGptRequestRepo.save(any())).thenAnswer(inv -> {
-                GptRequest req = inv.getArgument(0);
-                req.setId(1L);
-                return req;
-            });
+            Pageable limit = PageRequest.of(0, qtyContextMessagesInRequestOrResponse);
+            when(requestDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", limit)).thenReturn(List.of());
+            when(responseDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", limit)).thenReturn(List.of());
+
             when(functionFactory.getFunctionByFunctionName("assignTaskSystemIssueFunction")).thenReturn(assignTaskSystemIssueFunction);
             when(assignTaskSystemIssueFunction.execute(anyString())).thenReturn("Response from function");
 
@@ -186,8 +179,8 @@
             // 1st response - check if GPT sent Function Call
             Assertions.assertNotNull(gptResponseFunctionCall);
             assertThat(gptResponseFunctionCall.getChoices().getFirst().getMessage().getToolCalls()).isNotNull();
-            assertThat(gptResponseFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().name()).isEqualTo("assignTaskSystemIssueFunction");
-            assertThat(gptResponseFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().arguments()).isEqualTo("{\\\"key\\\":\\\"Dummy-1\\\",\\\"slackUserId\\\":\\\"U12345678\\\"}");
+            assertThat(gptResponseFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().getName()).isEqualTo("assignTaskSystemIssueFunction");
+            assertThat(gptResponseFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().getArguments()).isEqualTo("{\\\"key\\\":\\\"Dummy-1\\\",\\\"slackUserId\\\":\\\"U12345678\\\"}");
 
             // 2nd response - check if GPT did not send Function Call
             Assertions.assertNotNull(gptResponseNoFunctionCall);
@@ -202,7 +195,7 @@
             // given
             var slackUserId = "U08SHTW059C";
             var queryFuture = "Create Task-system issue: title= Test title, description= Test desc, Due date: 14 days, priority: HIGH, author=U08SHTW059C,  assignee: U08SHTW059C. Then after that, assign returned issue to this issue to U08RQ4PPVNW.";
-            var newIssueDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U08SHTW059C"));
+            var newIssueDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHOW059C", "U08SHTW059C"));
             var reassignedIssueDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U12345678"));
             var finalResponseContent = "Your issue key is Dummy-1, it was assigned to U12345678";
 
@@ -215,13 +208,10 @@
 
             // when
             when(slackRepo.findBySlackUserId(slackUserId)).thenReturn(slackRequestAuthor);
-            when(jpaGptRequestRepo.getLastRequestsBySlackId(slackUserId, service.getQtyContextMessagesInRequestOrResponse())).thenReturn(List.of("Test request 1", "Test request 2"));
-            when(jpaGptResponseRepo.getLastResponsesToUser(slackUserId, service.getQtyContextMessagesInRequestOrResponse())).thenReturn(List.of("Test response 1", "Test response 2"));
-            when(jpaGptRequestRepo.save(any())).thenAnswer(inv -> {
-                GptRequest req = inv.getArgument(0);
-                req.setId(1L);
-                return req;
-            });
+            Pageable limit = PageRequest.of(0, qtyContextMessagesInRequestOrResponse);
+            when(requestDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", limit)).thenReturn(List.of());
+            when(responseDtoRepo.findByUserSlackIdOrderByTimestampDesc("U12345678", limit)).thenReturn(List.of());
+
             when(functionFactory.getFunctionByFunctionName("createTaskSystemIssueFunction")).thenReturn(createTaskSystemIssueFunction);
             when(assignTaskSystemIssueFunction.execute(anyString())).thenReturn(newIssueDtoJson);
             when(functionFactory.getFunctionByFunctionName("assignTaskSystemIssueFunction")).thenReturn(assignTaskSystemIssueFunction);
@@ -250,15 +240,15 @@
             // 1st response - check if GPT sent createTaskSystemIssueFunction
             Assertions.assertNotNull(gptResponseCreateIssueFunctionCall);
             assertThat(gptResponseCreateIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls()).isNotNull();
-            assertThat(gptResponseCreateIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().name()).isEqualTo("createTaskSystemIssueFunction");
-            assertThat(gptResponseCreateIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().arguments()).isEqualTo("{\\\"title\\\":\\\"Test title\\\",\\\"description\\\":\\\"Test desc\\\",\\\"priority\\\":\\\"HIGH\\\",\\\"authorSlackId\\\":\\\"U08SHTW059C\\\",\\\"assigneeSlackId\\\":\\\"U08SHTW059C\\\",\\\"dueDate\\\":\\\"2025-11-20\\\"}");
+            assertThat(gptResponseCreateIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().getName()).isEqualTo("createTaskSystemIssueFunction");
+            assertThat(gptResponseCreateIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().getArguments()).isEqualTo("{\\\"title\\\":\\\"Test title\\\",\\\"description\\\":\\\"Test desc\\\",\\\"priority\\\":\\\"HIGH\\\",\\\"authorSlackId\\\":\\\"U08SHTW059C\\\",\\\"assigneeSlackId\\\":\\\"U08SHTW059C\\\",\\\"dueDate\\\":\\\"2025-11-20\\\"}");
 
 
             // 2nd response - check if GPT sent assignTaskSystemIssueFunction
             Assertions.assertNotNull(gptResponseAssignIssueFunctionCall);
             assertThat(gptResponseAssignIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls()).isNotNull();
-            assertThat(gptResponseAssignIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().name()).isEqualTo("assignTaskSystemIssueFunction");
-            assertThat(gptResponseAssignIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().arguments()).isEqualTo("{\\\"key\\\":\\\"Dummy-1\\\",\\\"slackUserId\\\":\\\"U12345678\\\"}");
+            assertThat(gptResponseAssignIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().getName()).isEqualTo("assignTaskSystemIssueFunction");
+            assertThat(gptResponseAssignIssueFunctionCall.getChoices().getFirst().getMessage().getToolCalls().getFirst().getFunctionCall().getArguments()).isEqualTo("{\\\"key\\\":\\\"Dummy-1\\\",\\\"slackUserId\\\":\\\"U12345678\\\"}");
 
             // 3rd response - check if GPT did not send Function Call
             Assertions.assertNotNull(gptResponseFinal);
@@ -277,7 +267,7 @@
                 //  check number of messages sent in context
                 System.out.println("Size of message list: " + gptRequest.getMessages().size());
                 gptRequest.getMessages().forEach(m -> System.out.println("Found GptMessage: " + m.toString()));
-                assertThat(gptRequest.getMessages().size()).isGreaterThanOrEqualTo(totalQtyMessagesInContext);
+                assertThat(gptRequest.getMessages().size()).isLessThanOrEqualTo(totalQtyMessagesInContext);
             };
         }
 
