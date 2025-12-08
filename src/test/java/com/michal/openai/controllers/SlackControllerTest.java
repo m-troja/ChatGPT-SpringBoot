@@ -22,28 +22,28 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(SlackRestController.class)
 class SlackRestControllerTest {
 
-//    @Autowired
-//    private MockMvc mockMvc;
-//
-//    @MockitoBean
-//    private SlackService slackService;
-//
-//    private String slackRequest;
-//
-//    @BeforeEach
-//    void setup() throws IOException {
-//        slackRequest = Files.readString(Paths.get("src/test/resources/SlackRequestSayHi.json"));
-//    }
-//
-//    @Test
-//    void shouldReturnOkAndCallSlackService() throws Exception {
-//        mockMvc.perform(post("/api/v1/slack")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(slackRequest))
-//                .andExpect(status().isOk())
-//                .andExpect(content().string("OK"));
-//
-//        verify(slackService, times(1))
-//                .processOnMentionEvent(slackRequest);
-//    }
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private SlackService slackService;
+
+    private String slackRequest;
+
+    @BeforeEach
+    void setup() throws IOException {
+        slackRequest = Files.readString(Paths.get("src/test/resources/SlackRequestSayHi.json"));
+    }
+
+    @Test
+    void shouldReturnOkAndCallSlackService() throws Exception {
+        mockMvc.perform(post("/api/v1/slack")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(slackRequest))
+                .andExpect(status().isOk())
+                .andExpect(content().string("OK"));
+
+        verify(slackService, times(1))
+                .processOnMentionEvent(slackRequest);
+    }
 }
