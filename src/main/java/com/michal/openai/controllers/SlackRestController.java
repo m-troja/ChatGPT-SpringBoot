@@ -33,7 +33,7 @@ public class SlackRestController {
 
 //	Authentication
 //
-	@PostMapping(value = "/api/v1/slack")
+	@PostMapping
 	public String returnChallengeValue(@RequestBody String requestBody)
 	{
 		System.out.println(requestBody);
