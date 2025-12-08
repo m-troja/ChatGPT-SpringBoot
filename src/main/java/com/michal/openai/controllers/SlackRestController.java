@@ -1,5 +1,7 @@
 package com.michal.openai.controllers;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.slack.SlackService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,37 +17,38 @@ import org.springframework.web.bind.annotation.RestController;
 public class SlackRestController {
 
 	private final SlackService slackService;
-	
-	@PostMapping
-	public String doPost(@RequestBody String requestBody)
-	{
-        log.info("Received POST /api/v1/slack");
-        log.debug("Received POST /api/v1/slack with body: {} \n", requestBody);
+	private final ObjectMapper objectMapper;
 
-		slackService.processOnMentionEvent(requestBody);
-
-		log.debug("********** Responded status 200 to Slack **********");
-		return "OK";
-	}
+//	@PostMapping
+//	public String doPost(@RequestBody String requestBody)
+//	{
+//        log.info("Received POST /api/v1/slack");
+//        log.debug("Received POST /api/v1/slack with body: {} \n", requestBody);
+//
+//		slackService.processOnMentionEvent(requestBody);
+//
+//		log.debug("********** Responded status 200 to Slack **********");
+//		return "OK";
+//	}
 
 //	Authentication
 //
-//	@PostMapping(value = "/api/v1/slack")
-//	public String returnChallengeValue(@RequestBody String requestBody)
-//	{
-//		System.out.println(requestBody);
-//		try
-//		{
-//			JsonNode mainNode = objectMapper.readTree(requestBody);
-//			JsonNode challengeNode = mainNode.path("challenge");
-//			System.out.println("/api/v1/slack: challenge = " + challengeNode.asText());
-//
-//			return challengeNode.asText();
-//		}
-//		catch (Exception e)
-//		{
-//			return "error";
-//		}
-//	}
+	@PostMapping(value = "/api/v1/slack")
+	public String returnChallengeValue(@RequestBody String requestBody)
+	{
+		System.out.println(requestBody);
+		try
+		{
+			JsonNode mainNode = objectMapper.readTree(requestBody);
+			JsonNode challengeNode = mainNode.path("challenge");
+			System.out.println("/api/v1/slack: challenge = " + challengeNode.asText());
+
+			return challengeNode.asText();
+		}
+		catch (Exception e)
+		{
+			return "error";
+		}
+	}
 
 }

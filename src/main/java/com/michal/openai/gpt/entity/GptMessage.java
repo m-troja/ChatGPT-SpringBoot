@@ -1,6 +1,5 @@
 package com.michal.openai.gpt.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -9,7 +8,6 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GptMessage {
 
@@ -32,8 +30,6 @@ public class GptMessage {
 
     // ----------------------- ToolCall -----------------------
     @Data
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public static class ToolCall {
 
         private String id;
@@ -48,14 +44,11 @@ public class GptMessage {
         }
 
         @Data
-        @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
         public static class FunctionCall {
 
             private String name;
 
             private String arguments;
-
-            public FunctionCall() {}
 
             public FunctionCall(String name, String arguments) {
                 this.name = name;
