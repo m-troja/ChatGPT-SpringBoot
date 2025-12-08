@@ -1,5 +1,6 @@
 package com.michal.openai.gpt.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.exception.GptCommunicationException;
 import com.michal.openai.functions.Function;
@@ -202,12 +203,20 @@ public class GptServiceImpl implements GptService {
                 log.debug("Calling GPT: attempt {}/{}", attempt, retryAttempts);
                 log.debug("Sending to GPT:");
                 logPrettyJson(gptRequest);
-                var gptResponse = restClient.post()
+                var gptResponseString = restClient.post()
                         .body(gptRequest)
                         .retrieve()
-                        .body(GptResponse.class);
-                log.debug("RestClient response:");
-                log.debug("{}", gptResponse);
+                        .body(String.class);
+                log.debug("RestClient response String:");
+                log.debug("{}", gptResponseString);
+                GptResponse gptResponse = null;
+                try {
+                    gptResponse = objectMapper.readValue(gptResponseString, GptResponse.class);
+                    log.debug("Converted with ObjectMapper gptResponse: ");
+                    log.debug("{}", gptResponse);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
 
                 if (gptResponse == null || gptResponse.getChoices() == null ||  gptResponse.getChoices().isEmpty()) {
                     log.error("GPT returned null response!");
