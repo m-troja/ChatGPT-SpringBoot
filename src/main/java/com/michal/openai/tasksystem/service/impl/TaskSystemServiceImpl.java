@@ -3,6 +3,8 @@ package com.michal.openai.tasksystem.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.michal.openai.exception.TaskSystemException;
 import com.michal.openai.exception.TaskSystemLoginException;
 import com.michal.openai.tasksystem.entity.dto.TaskSystemUserDto;
@@ -29,7 +31,9 @@ import java.util.concurrent.CompletionException;
 public class TaskSystemServiceImpl implements TaskSystemService {
 
     private final ObjectMapper objectMapper = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     private final TokenStore tokenStore;
 
     private static final String GET_ALL_ISSUES_ENDPOINT = "/api/v1/issue/all";
@@ -46,6 +50,8 @@ public class TaskSystemServiceImpl implements TaskSystemService {
     private static final int ATTEMPTS = 3;
 
     @Qualifier("taskSystemRestClient") private final RestClient restClient;
+
+
 
     public TaskSystemServiceImpl(TokenStore tokenStore, @Qualifier("taskSystemRestClient") RestClient restClient) {
         this.tokenStore = tokenStore;
@@ -165,18 +171,26 @@ public class TaskSystemServiceImpl implements TaskSystemService {
             for (int i = 1; i <= ATTEMPTS; i++) {
                 try {
                     log.debug("Login attempt {}", i);
-                    TaskSystemTokenResponse tokens = restClient.post()
+                    var tokensString = restClient.post()
                             .uri(LOGIN_ENDPOINT)
                             .body(request)
                             .retrieve()
-                            .body(TaskSystemTokenResponse.class);
-                    log.debug("RestClient response: {}", tokens);
+                            .body(String.class);
+                    log.debug("[LOGIN] Raw rest client response:");
+                    log.debug("{}", tokensString);
+                    TaskSystemTokenResponse tokens = null;
+                    try {
+                        tokens = objectMapper.readValue(tokensString, TaskSystemTokenResponse.class);
+                    } catch (JsonProcessingException e) {
+                        log.debug("Error processing tokens:", e);
+                        throw new RuntimeException(e);
+                    }
+                    log.debug("Tokens RestClient response: {}", tokens);
                     if (tokens == null || tokens.accessToken() == null || tokens.accessToken().token().isEmpty()) {
                         throw new TaskSystemLoginException("Failed to retrieve access token");
                     }
                     tokenStore.setAccessToken(tokens.accessToken().token());
-                    tokenStore.setExpiresAt(tokens.accessToken().expires()
-                            .atZone(ZoneId.systemDefault()).toInstant());
+                    tokenStore.setExpiresAt(tokens.accessToken().expires() );
                     return;
 
                 } catch (HttpClientErrorException.BadRequest |

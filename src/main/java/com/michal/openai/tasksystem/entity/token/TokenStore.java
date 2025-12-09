@@ -4,17 +4,17 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 
 @Component
 @Getter
 @Setter
 public class TokenStore {
     private String accessToken;
-    private Instant expiresAt;
+    private OffsetDateTime expiresAt;
 
     public boolean isExpired() {
-        return accessToken == null || expiresAt == null || Instant.now().isAfter(expiresAt);
+        return accessToken == null || expiresAt == null ||expiresAt.isBefore(OffsetDateTime.now().plusMinutes(2));
     }
 
     @Override

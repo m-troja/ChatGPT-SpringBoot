@@ -1,11 +1,9 @@
 package com.michal.openai.tasksystem.entity.token;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public record TaskSystemRefreshToken(
-        String refreshToken,
-        int userId,
-        LocalDateTime expires,
-        boolean isRevoked
-) {
-}
+        String token,
+        OffsetDateTime expires
+) {}
