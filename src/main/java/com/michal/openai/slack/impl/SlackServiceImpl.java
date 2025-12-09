@@ -83,13 +83,14 @@ public class SlackServiceImpl implements SlackService {
 					String stringToSend = response != null ? response : "[No response]";
 					ChatPostMessageRequest request = ChatPostMessageRequest.builder()
 	                .channel(channelId)
+//	                .channel("test")
 	                .text(stringToSend)
 	                .build();
 
 			        try {
                         log.info("sendMessageToSlack: Channel= {}, Message= {}", channelId, stringToSend);
 			            slackBotClient.chatPostMessage(request);
-			        } 
+			        }
 			        catch (IOException | SlackApiException e){
                         log.error(e.getMessage());
 			        }

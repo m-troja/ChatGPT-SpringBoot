@@ -132,7 +132,6 @@ public class GptServiceImpl implements GptService {
         gptRequest.setTemperature(temperature);
 //        gptRequest.setPresencePenalty(presencePenalty);
         gptRequest.setMaxOutputTokens(maxTokens);
-        gptRequest.setMessages(messages);
         log.debug("Found {} GPT Functions to add into requestTools", gptFunctions.size());
         List<GptTool> requestTools = new ArrayList<>();
         gptFunctions.forEach(fn -> {
@@ -197,7 +196,7 @@ public class GptServiceImpl implements GptService {
     }
 
     private GptResponse sendRequestToGpt(GptRequest gptRequest) {
-        for (int attempt = 1; 1 <= retryAttempts; attempt++) {
+        for (int attempt = 1; attempt <= retryAttempts; attempt++) {
 //        for (int attempt = 1; attempt <= retryAttempts; attempt++) {
             try {
                 log.debug("Calling GPT: attempt {}/{}", attempt, retryAttempts);
@@ -247,7 +246,7 @@ public class GptServiceImpl implements GptService {
         RequestDto requestDto;
         ResponseDto responseDto;
 
-        if (requestMessage.getToolCallId() == null && requestMessage.getToolCalls() == null && requestMessage.getRole() != "tool") {
+        if (requestMessage.getToolCallId() == null && requestMessage.getToolCalls() == null && requestMessage.getRole().equals("tool")) {
             requestDto = messageCnv.requestEntityToDto(requestMessage, slackUserRequestAuthor);
             requestDtoRepo.save(requestDto);
             saveMessageJson(requestDto);
