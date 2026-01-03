@@ -30,8 +30,6 @@ public class ResponseDto {
     @Column(updatable = false)
     private LocalDateTime timestamp;
 
-    public ResponseDto() {}
-
     public ResponseDto(String content, String userSlackId, String realUserName, String role) {
         this.content = content;
         this.userSlackId = userSlackId;
