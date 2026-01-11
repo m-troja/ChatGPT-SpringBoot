@@ -2,12 +2,14 @@ package com.michal.openai.gpt.entity.dto;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 @Data
 @Entity
+@NoArgsConstructor
 public class ResponseDto {
 
     @Id
@@ -29,8 +31,6 @@ public class ResponseDto {
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime timestamp;
-
-    public ResponseDto() {}
 
     public ResponseDto(String content, String userSlackId, String realUserName, String role) {
         this.content = content;
