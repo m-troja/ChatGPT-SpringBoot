@@ -27,6 +27,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
             .requestMatchers("/api/v1/admin/clear-database").permitAll()
             .requestMatchers("/swagger").permitAll()
             .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
+            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
             .anyRequest().authenticated()
         );
     return http.build();

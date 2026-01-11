@@ -2,12 +2,14 @@ package com.michal.openai.gpt.entity.dto;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 @Data
 @Entity
+@NoArgsConstructor
 public class ResponseDto {
 
     @Id

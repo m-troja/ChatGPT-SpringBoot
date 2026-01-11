@@ -197,7 +197,6 @@ public class GptServiceImpl implements GptService {
 
     private GptResponse sendRequestToGpt(GptRequest gptRequest) {
         for (int attempt = 1; attempt <= retryAttempts; attempt++) {
-//        for (int attempt = 1; attempt <= retryAttempts; attempt++) {
             try {
                 log.debug("Calling GPT: attempt {}/{}", attempt, retryAttempts);
                 log.debug("Sending to GPT:");
@@ -286,15 +285,11 @@ public class GptServiceImpl implements GptService {
 	}
 
     private void saveGptResponse(GptResponse gptResponse) {
-//        log.debug("Response from GPT:");
-//        logPrettyJson(gptResponse);
         JsonSaver jsonSaver = new JsonSaver(jsonDir);
         jsonSaver.saveResponse(gptResponse);
 	}
 
     private void saveMessageJson(Object obj) {
-//        log.debug("Saved message:");
-//        logPrettyJson(obj);
         JsonSaver jsonSaver = new JsonSaver(jsonDir);
         jsonSaver.saveMessage(obj);
     }
