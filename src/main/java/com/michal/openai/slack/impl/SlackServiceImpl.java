@@ -51,6 +51,7 @@ public class SlackServiceImpl implements SlackService {
                 CompletableFuture.completedFuture(slackRequest.event().user()),
                 functions.toArray(GptFunction[]::new)
         );
+        log.debug("Sending message to slackChannelId: {}", slackChannelId);
         sendMessageToSlack(gptResponseFuture, slackChannelId);
     }
 
@@ -83,8 +84,7 @@ public class SlackServiceImpl implements SlackService {
 				response -> {
 					String stringToSend = response != null ? response : "[No response]";
 					ChatPostMessageRequest request = ChatPostMessageRequest.builder()
-//	                .channel(channelId)
-	                .channel("test")
+	                .channel(slackChannelId)
 	                .text(stringToSend)
 	                .build();
 
@@ -136,6 +136,6 @@ public class SlackServiceImpl implements SlackService {
         this.jpaSlackrepo = jpaSlackrepo;
         this.gptService = gptService;
         slackChannelId = System.getenv().getOrDefault("SLACK_CHANNEL_ID", "C08RLDBCRB9");
-        log.info("SLACK_CHANNEL_ID = {}", slackChannelId);
+        log.info("SLACK_CHANNEL_ID ={}", slackChannelId);
     }
 }
