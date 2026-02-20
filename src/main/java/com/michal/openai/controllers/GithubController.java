@@ -16,7 +16,7 @@ import java.util.List;
 @RequestMapping("/api/v1/github")
 @RestController
 @RequiredArgsConstructor
-public class GithubRestController {
+public class GithubController {
 
     private final GithubService githubService;
 

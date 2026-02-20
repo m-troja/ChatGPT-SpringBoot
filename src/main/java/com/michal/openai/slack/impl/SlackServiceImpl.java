@@ -32,6 +32,7 @@ public class SlackServiceImpl implements SlackService {
     private final ObjectMapper objectMapper;
     private final SlackRepo jpaSlackrepo;
     private final GptService gptService;
+    public static String slackChannelId ;
 
 	@Async("defaultExecutor")
 	@Override
@@ -50,7 +51,7 @@ public class SlackServiceImpl implements SlackService {
                 CompletableFuture.completedFuture(slackRequest.event().user()),
                 functions.toArray(GptFunction[]::new)
         );
-        sendMessageToSlack(gptResponseFuture, slackRequest.event().channel());
+        sendMessageToSlack(gptResponseFuture, slackChannelId);
     }
 
     private void checkSlackUserInDb(String slackUserId) {
@@ -102,8 +103,17 @@ public class SlackServiceImpl implements SlackService {
 			}
 		);
 	}
-	
-	public SlackUser getSlackUserBySlackId(String slackId) {
+    public void sendMessageToSlack(String message, String slackChannelId)
+    {
+        sendMessageToSlack(CompletableFuture.completedFuture(message), slackChannelId);
+    }
+
+    @Override
+    public void triggerGetUsers() {
+        extractUsersIntoDatabase();
+    }
+
+    public SlackUser getSlackUserBySlackId(String slackId) {
 		return jpaSlackrepo.findBySlackUserId(slackId);
 	}
 	
@@ -119,12 +129,13 @@ public class SlackServiceImpl implements SlackService {
         log.info("Registered user: {}", user);
         return SUCCESSFULL_REGISTRATION_MESSAGE  ;
     }
-
     public SlackServiceImpl(@Qualifier("slackBotClient") MethodsClient slackBotClient, List<GptFunction> functions, ObjectMapper objectMapper, SlackRepo jpaSlackrepo, GptService gptService) {
         this.slackBotClient = slackBotClient;
         this.functions = functions;
         this.objectMapper = objectMapper;
         this.jpaSlackrepo = jpaSlackrepo;
         this.gptService = gptService;
+        slackChannelId = System.getenv().getOrDefault("SLACK_CHANNEL_ID", "C08RLDBCRB9");
+        log.info("SLACK_CHANNEL_ID = {}", slackChannelId);
     }
 }

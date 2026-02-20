@@ -86,6 +86,12 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- Needed for OffsetDateTime in JSON parsings -->
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
