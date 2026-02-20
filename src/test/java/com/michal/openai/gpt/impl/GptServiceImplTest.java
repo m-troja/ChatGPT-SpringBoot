@@ -13,6 +13,7 @@
     import com.michal.openai.persistence.ResponseDtoRepo;
     import com.michal.openai.persistence.SlackRepo;
     import com.michal.openai.slack.entity.SlackUser;
+    import com.michal.openai.tasksystem.entity.dto.TaskSystemCommentDto;
     import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
     import org.hamcrest.Matchers;
     import org.junit.jupiter.api.Assertions;
@@ -32,7 +33,12 @@
     import org.springframework.test.web.client.MockRestServiceServer;
     import org.springframework.test.web.client.RequestMatcher;
     import org.springframework.web.client.RestClient;
+    import com.fasterxml.jackson.databind.ObjectMapper;
+    import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+
+    import java.time.OffsetDateTime;
+    import java.util.ArrayList;
     import java.util.List;
     import java.util.concurrent.CompletableFuture;
     import java.util.concurrent.CompletionException;
@@ -71,6 +77,7 @@
 
         @BeforeEach
         void setup() {
+            objectMapper.registerModule(new JavaTimeModule());
             service.setQtyContextMessagesInRequestOrResponse(qtyContextMessagesInRequestOrResponse);
             service.setModel("gpt-5.1");
             service.setTemperature(0.8);
@@ -145,7 +152,7 @@
         void shouldCallTaskSystemAssignIssueFunctionTest() throws JsonProcessingException {
             // given
             var slackUserId = "U12345678";
-            var expectedDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345678"));
+            var expectedDtoJson = objectMapper.writeValueAsString(getIssueDto());
             SlackUser slackRequestAuthor = new SlackUser(slackUserId, "Slack Name");
             CompletableFuture<String> query = CompletableFuture.completedFuture("Assign ticket Dummy-1 to U12345678");
             CompletableFuture<String> userName = CompletableFuture.completedFuture("U12345678");
@@ -195,8 +202,8 @@
             // given
             var slackUserId = "U08SHTW059C";
             var queryFuture = "Create Task-system issue: title= Test title, description= Test desc, Due date: 14 days, priority: HIGH, author=U08SHTW059C,  assignee: U08SHTW059C. Then after that, assign returned issue to this issue to U08RQ4PPVNW.";
-            var newIssueDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHOW059C", "U08SHTW059C"));
-            var reassignedIssueDtoJson = objectMapper.writeValueAsString(new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U12345678"));
+            var newIssueDtoJson = objectMapper.writeValueAsString(getIssueDto());
+            var reassignedIssueDtoJson = objectMapper.writeValueAsString(getIssueDto());
             var finalResponseContent = "Your issue key is Dummy-1, it was assigned to U12345678";
 
             System.out.println("newIssueDtoJson: " + newIssueDtoJson);
@@ -262,6 +269,7 @@
             return request -> {
                 System.out.println("Intercepting GptRequest...");
                 String json = request.getBody().toString();
+                objectMapper.registerModule(new JavaTimeModule());
                 GptRequest gptRequest = objectMapper.readValue(json, GptRequest.class);
                 assertThat(gptRequest.getMessages()).isNotNull();
                 //  check number of messages sent in context
@@ -312,5 +320,16 @@
             RestClient gptRestClient(RestClient.Builder builder) {
                 return builder.baseUrl(chatGptApiUrl).build();
             }
+        }
+
+        private TaskSystemIssueDto getIssueDto() {
+            var commentDto = new TaskSystemCommentDto(1, 1, "conent", 1, OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"), "authorName");
+            List<TaskSystemCommentDto> comments = new ArrayList<>();
+            comments.add(commentDto);
+            return new TaskSystemIssueDto(1, "Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345677",
+                    OffsetDateTime.parse("2025-09-15T19:32:24Z") , OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"),
+                    comments,
+                    1
+            );
         }
     }

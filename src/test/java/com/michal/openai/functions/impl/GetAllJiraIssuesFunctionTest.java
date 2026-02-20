@@ -3,10 +3,12 @@ package com.michal.openai.functions.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.michal.openai.jira.entity.JiraIssue;
 import com.michal.openai.jira.service.JiraService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
@@ -17,13 +19,14 @@ import static org.mockito.Mockito.when;
 class GetAllJiraIssuesFunctionTest {
 
     private JiraService jiraService;
-    private ObjectMapper objectMapper;
+    @Autowired ObjectMapper objectMapper;
     private GetAllJiraIssuesFunction function;
 
     @BeforeEach
     public void setup(){
-        jiraService = mock(JiraService.class);
         objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        jiraService = mock(JiraService.class);
         function = new GetAllJiraIssuesFunction(jiraService, objectMapper);
     }
     @Test

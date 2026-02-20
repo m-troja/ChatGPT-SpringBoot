@@ -3,11 +3,15 @@ package com.michal.openai.functions.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.michal.openai.tasksystem.entity.dto.TaskSystemCommentDto;
 import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
 import com.michal.openai.tasksystem.service.TaskSystemService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -24,6 +28,7 @@ class GetAllTaskSystemIssuesFunctionTest {
     public void init() {
         taskSystemService = mock(TaskSystemService.class);
         objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
         function = new GetAllTaskSystemIssuesFunction(taskSystemService, objectMapper);
     }
 
@@ -43,8 +48,23 @@ class GetAllTaskSystemIssuesFunctionTest {
     }
 
     private List<TaskSystemIssueDto> buildTaskSystemIssueDto() {
-        var issue1 = new TaskSystemIssueDto("JAVA-1", "Set duedate parameter as optional", "As a user, I want the 'duedate' parameter in the task-system to be optional, so that creating or updating tickets does not always require specifying a due date.", "NEW", "NORMAL", "U08RQ4PPVNW", "U08SHTW059C");
-        var issue2 = new TaskSystemIssueDto("JAVA-2", "Set duedate parameter as optional", "As a user, I want the 'duedate' parameter in the task-system to be optional, so that creating or updating tickets does not always require specifying a due date.", "NEW", "NORMAL", "U08RQ4PPVNW", "U08SHTW059C");
+        var commentDto1 = new TaskSystemCommentDto(1, 1, "conent", 1, OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"), "authorName");
+        List<TaskSystemCommentDto> comments1 = new ArrayList<>();
+        comments1.add(commentDto1);
+        var issue1=  new TaskSystemIssueDto(1, "Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345677",
+                OffsetDateTime.parse("2025-09-15T19:32:24Z") , OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"),
+                comments1,
+                1
+        );
+        var commentDto2 = new TaskSystemCommentDto(1, 1, "conent", 1, OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"), "authorName");
+        List<TaskSystemCommentDto> comments2 = new ArrayList<>();
+        comments2.add(commentDto2);
+        var issue2=  new TaskSystemIssueDto(1, "Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345677",
+                OffsetDateTime.parse("2025-09-15T19:32:24Z") , OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"),
+                comments1,
+                1
+        );
+
         return List.of(issue1, issue2);
     }
 }
