@@ -271,7 +271,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
 //                 String.format("Hey <@%s>, a new issue has been assigned to you! Title: %s, Link: %s", assignee.getSlackUserId(), event.issue().title(),  LINK_PREFIX + event.issue().key());
                  String.format("Hey <@%s>, a new issue has been assigned to you! Title: %s, Link: jak Piotr zrobi to kiedyś tu będzie :D", assignee.getSlackUserId(), event.issue().title());
             case COMMENT_CREATED ->
-                 String.format("New comment by <@%s> posted in %s: %s", event.issue().comments().getLast().authorName(), event.issue().key(), event.issue().comments().getLast().content());
+                 String.format("New comment by <@%s> posted in %s: %s", event.issue().comments().getLast().authorSlackId(), event.issue().key(), event.issue().comments().getLast().content());
             case UPDATE_DUEDATE ->
                  String.format("New due-date of %s: %s", event.issue().key(), event.issue().dueDate());
             case UPDATE_PRIORITY ->

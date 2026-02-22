@@ -14,7 +14,8 @@ public record TaskSystemCommentDto
                 OffsetDateTime createdAt,
                 OffsetDateTime updatedAt,
                 String authorName,
-                List<Integer> attachmentIds
+                List<Integer> attachmentIds,
+                String authorSlackId
 
         ){
 }

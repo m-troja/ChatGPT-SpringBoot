@@ -50,7 +50,9 @@ class GetAllTaskSystemIssuesFunctionTest {
     private List<TaskSystemIssueDto> buildTaskSystemIssueDto() {
         List<Integer> attachmentIds = new ArrayList<>();
         attachmentIds.add(1);
-        var commentDto1 = new TaskSystemCommentDto(1, 1, "conent", 1, OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"), "authorName", attachmentIds);
+        var commentDto1 = new TaskSystemCommentDto(1, 1, "content", 1, OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"), "authorName",
+                attachmentIds,
+                "slackUserId");
         List<TaskSystemCommentDto> comments1 = new ArrayList<>();
         comments1.add(commentDto1);
         var issue1=  new TaskSystemIssueDto(1, "Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345677",
@@ -58,7 +60,8 @@ class GetAllTaskSystemIssuesFunctionTest {
                 comments1,
                 1
         );
-        var commentDto2 = new TaskSystemCommentDto(1, 1, "conent", 1, OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"), "authorName", attachmentIds);
+        var commentDto2 = new TaskSystemCommentDto(2, 2, "content2", 1, OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"), "authorName",
+                attachmentIds ,"slackUserId");    ;
         List<TaskSystemCommentDto> comments2 = new ArrayList<>();
         comments2.add(commentDto2);
         var issue2=  new TaskSystemIssueDto(1, "Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345677",
