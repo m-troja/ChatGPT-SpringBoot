@@ -22,7 +22,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
             .requestMatchers("/api/v1/slack").permitAll()
             .requestMatchers("/api/v1/slack/get-users").permitAll()
             .requestMatchers("/api/v1/test/**").permitAll()
-            .requestMatchers("/api/v1/task-system/**").permitAll()
+            .requestMatchers("/api/v1/taskstorm/**").permitAll()
             .requestMatchers("/api/v1/jira/**").permitAll()
             .requestMatchers("/api/v1/users/**").permitAll()
             .requestMatchers("/api/v1/github/user/**").permitAll()
