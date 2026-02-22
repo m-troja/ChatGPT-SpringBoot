@@ -51,7 +51,10 @@ class CreateTaskSystemIssueFunctionTest {
     }
 
     private TaskSystemIssueDto getDto() {
-        var commentDto = new TaskSystemCommentDto(1, 1, "conent", 1, OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"), "authorName");
+        List<Integer> attachmentIds = new ArrayList<>();
+        attachmentIds.add(1);
+        var commentDto = new TaskSystemCommentDto(1, 1, "conent", 1, OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"), "authorName",
+                attachmentIds);
         List<TaskSystemCommentDto> comments = new ArrayList<>();
         comments.add(commentDto);
         return new TaskSystemIssueDto(1, "Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345677",
