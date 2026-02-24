@@ -52,7 +52,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
     private static final String BOT_SLACK_USER_ID = "USLACKBOT";
     private static final String BOT_EMAIL = "test@test.com";
     private static final String BOT_PASSWORD = "StrongBotPassword";
-    private static final String LINK_PREFIX = "http://komuna.site/issue/";
+    private static final String LINK_PREFIX = "http://komuna.site/issues/";
 
     private static final int ATTEMPTS = 3;
     private final SlackService slackService;
@@ -259,25 +259,23 @@ public class TaskSystemServiceImpl implements TaskSystemService {
 
             case ISSUE_CREATED -> {
                 if (assignee != null && author != null) {
-//                    yield  String.format("Hey <@%s>, a new ticket for you has been created by <@%s>! Title: %s, Link: %s", assignee.getSlackUserId(), author.getSlackUserId(), event.issue().title(), LINK_PREFIX + event.issue().key());
-                    yield  String.format("Hey <@%s>, a new ticket for you has been created by <@%s>! Title: %s, Link: jak Piotr zrobi to kiedyś tu będzie :D", assignee.getSlackUserId(), author.getSlackUserId(), event.issue().title());
+                    yield  String.format("Hey <@%s>, a new ticket for you has been created by <@%s>! Title: %s [%s]", assignee.getSlackUserId(), author.getSlackUserId(), event.issue().title(), LINK_PREFIX + event.issue().key());
                 } else if (author != null) {
-                    yield String.format("New ticket has been created by <@%s>! Title: %s, Link: %s", event.issue().title(), author.getSlackUserId(), LINK_PREFIX + event.issue().key());
+                    yield String.format("New ticket has been created by <@%s>! Title: %s [%s]", author.getSlackUserId(), event.issue().title(), LINK_PREFIX + event.issue().key());
                 } else {
-                    yield String.format("New ticket has been created! Title: %s, Link: %s", event.issue().title(), LINK_PREFIX + event.issue().key());
+                    yield String.format("New ticket has been created! Title: %s [%s]", event.issue().title(), LINK_PREFIX + event.issue().key() );
                 }
             }
             case ISSUE_ASSIGNED ->
-//                 String.format("Hey <@%s>, a new issue has been assigned to you! Title: %s, Link: %s", assignee.getSlackUserId(), event.issue().title(),  LINK_PREFIX + event.issue().key());
-                 String.format("Hey <@%s>, a new issue has been assigned to you! Title: %s, Link: jak Piotr zrobi to kiedyś tu będzie :D", assignee.getSlackUserId(), event.issue().title());
+                 String.format("Hey <@%s>, a new issue has been assigned to you! Title: %s, [%s]", assignee.getSlackUserId(), event.issue().title(), LINK_PREFIX + event.issue().key());
             case COMMENT_CREATED ->
-                 String.format("New comment by <@%s> posted in %s: %s", event.issue().comments().getLast().authorSlackId(), event.issue().key(), event.issue().comments().getLast().content());
+                 String.format("New comment by <@%s> posted in %s: %s [%s]", event.issue().comments().getLast().authorSlackId(), event.issue().key(), event.issue().comments().getLast().content(), LINK_PREFIX + event.issue().key());
             case UPDATE_DUEDATE ->
-                 String.format("New due-date of %s: %s", event.issue().key(), event.issue().dueDate());
+                 String.format("New due-date of %s: %s [%s]", event.issue().key(), event.issue().dueDate(), LINK_PREFIX + event.issue().key());
             case UPDATE_PRIORITY ->
-                 String.format("New priority of %s: %s", event.issue().key(), event.issue().priority());
+                 String.format("New priority of %s: %s [%s]", event.issue().key(), event.issue().priority(), LINK_PREFIX + event.issue().key());
             case UPDATE_STATUS ->
-                String.format("Status update for %s: %s", event.issue().key(), event.issue().status());
+                String.format("Status update for %s: %s [%s]", event.issue().key(), event.issue().status(), LINK_PREFIX + event.issue().key());
         };
         slackService.sendMessageToSlack(message, "test");
     }
