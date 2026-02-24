@@ -247,7 +247,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
         TaskSystemEventType eventType;
 
         try {
-            eventType = TaskSystemEventType.valueOf(event.event().toString().toUpperCase());
+            eventType = valueOf(event.event().toString().toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
             log.error("Invalid event type: " + event.event());
             throw new IllegalArgumentException("Invalid event type: " + event.event());
@@ -256,7 +256,6 @@ public class TaskSystemServiceImpl implements TaskSystemService {
         var assignee = slackRepo.findBySlackUserId(event.issue().assigneeSlackId());
         var author = slackRepo.findBySlackUserId(event.issue().authorSlackId());
         var message = switch (eventType) {
-
             case ISSUE_CREATED -> {
                 if (assignee != null && author != null) {
                     yield  String.format("Hey <@%s>, a new ticket for you has been created by <@%s>! Title: %s [%s]", assignee.getSlackUserId(), author.getSlackUserId(), event.issue().title(), LINK_PREFIX + event.issue().key());
@@ -268,6 +267,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
             }
             case ISSUE_ASSIGNED ->
                  String.format("Hey <@%s>, a new issue has been assigned to you! Title: %s, [%s]", assignee.getSlackUserId(), event.issue().title(), LINK_PREFIX + event.issue().key());
+            case ISSUE_DELETED -> String.format("Issue %s has been deleted by <@%s>", event.issue().key(), author.getSlackUserId());
             case COMMENT_CREATED ->
                  String.format("New comment by <@%s> posted in %s: %s [%s]", event.issue().comments().getLast().authorSlackId(), event.issue().key(), event.issue().comments().getLast().content(), LINK_PREFIX + event.issue().key());
             case UPDATE_DUEDATE ->
