@@ -55,7 +55,7 @@ class GetAllTaskSystemIssuesFunctionTest {
                 "slackUserId");
         List<TaskSystemCommentDto> comments1 = new ArrayList<>();
         comments1.add(commentDto1);
-        var issue1=  new TaskSystemIssueDto(1, "Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345677",
+        var issue1=  new TaskSystemIssueDto(1, "Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345677", "U12345678",
                 OffsetDateTime.parse("2025-09-15T19:32:24Z") , OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"),
                 comments1,
                 1
@@ -64,7 +64,7 @@ class GetAllTaskSystemIssuesFunctionTest {
                 attachmentIds ,"slackUserId");    ;
         List<TaskSystemCommentDto> comments2 = new ArrayList<>();
         comments2.add(commentDto2);
-        var issue2=  new TaskSystemIssueDto(1, "Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345677",
+        var issue2=  new TaskSystemIssueDto(1, "Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345677", "U12345678",
                 OffsetDateTime.parse("2025-09-15T19:32:24Z") , OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"),
                 comments1,
                 1

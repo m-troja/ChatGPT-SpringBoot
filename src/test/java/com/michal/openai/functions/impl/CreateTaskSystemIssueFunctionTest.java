@@ -58,7 +58,7 @@ class CreateTaskSystemIssueFunctionTest {
                 "slackUserId");
         List<TaskSystemCommentDto> comments = new ArrayList<>();
         comments.add(commentDto);
-        return new TaskSystemIssueDto(1, "Dummy-1", "Title", "Desc", "NEW", "HIGH", "U12345678", "U12345677",
+        return new TaskSystemIssueDto(1, "Dummy-1", "Title",  "Team A", "Desc", "NEW", "HIGH", "U12345678", "U12345677",
                 OffsetDateTime.parse("2025-09-15T19:32:24Z") , OffsetDateTime.parse("2025-09-15T19:32:24Z"), OffsetDateTime.parse("2025-09-15T19:32:24Z"),
                 comments,
                 1
