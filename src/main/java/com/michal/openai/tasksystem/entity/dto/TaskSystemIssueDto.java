@@ -9,6 +9,7 @@ public record TaskSystemIssueDto(
         int id,
         String key,
         String title,
+        String teamName,
         String description,
         String status,
         String priority,

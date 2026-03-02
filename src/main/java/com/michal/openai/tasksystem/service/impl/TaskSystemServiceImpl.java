@@ -256,26 +256,33 @@ public class TaskSystemServiceImpl implements TaskSystemService {
         var assignee = slackRepo.findBySlackUserId(event.issue().assigneeSlackId());
         var author = slackRepo.findBySlackUserId(event.issue().authorSlackId());
         var message = switch (eventType) {
-            case ISSUE_CREATED -> {
+            case CREATED_ISSUE -> {
                 if (assignee != null && author != null) {
-                    yield  String.format("Hey <@%s>, a new ticket for you has been created by <@%s>! Title: %s [%s]", assignee.getSlackUserId(), author.getSlackUserId(), event.issue().title(), LINK_PREFIX + event.issue().key());
-                } else if (author != null) {
-                    yield String.format("New ticket has been created by <@%s>! Title: %s [%s]", author.getSlackUserId(), event.issue().title(), LINK_PREFIX + event.issue().key());
+                    yield  String.format("Hey <@%s>, a new ticket for you has been created by <@%s>! Title: %s [%s]", assignee.getSlackUserId(), author.getSlackUserId(), event.issue().title(), LINK_PREFIX + event.issue().id());
+                } else if (assignee == null) {
+                    yield String.format("New ticket has been created by <@%s>! Title: %s [%s]", author.getSlackUserId(), event.issue().title(), LINK_PREFIX + event.issue().id());
                 } else {
-                    yield String.format("New ticket has been created! Title: %s [%s]", event.issue().title(), LINK_PREFIX + event.issue().key() );
+                    yield String.format("New ticket has been created! Title: %s [%s]", event.issue().title(),  LINK_PREFIX + event.issue().id() );
                 }
             }
-            case ISSUE_ASSIGNED ->
-                 String.format("Hey <@%s>, a new issue has been assigned to you! Title: %s, [%s]", assignee.getSlackUserId(), event.issue().title(), LINK_PREFIX + event.issue().key());
-            case ISSUE_DELETED -> String.format("Issue %s has been deleted by <@%s>", event.issue().key(), author.getSlackUserId());
-            case COMMENT_CREATED ->
-                 String.format("New comment by <@%s> posted in %s: %s [%s]", event.issue().comments().getLast().authorSlackId(), event.issue().key(), event.issue().comments().getLast().content(), LINK_PREFIX + event.issue().key());
-            case UPDATE_DUEDATE ->
-                 String.format("New due-date of %s: %s [%s]", event.issue().key(), event.issue().dueDate(), LINK_PREFIX + event.issue().key());
-            case UPDATE_PRIORITY ->
-                 String.format("New priority of %s: %s [%s]", event.issue().key(), event.issue().priority(), LINK_PREFIX + event.issue().key());
-            case UPDATE_STATUS ->
-                String.format("Status update for %s: %s [%s]", event.issue().key(), event.issue().status(), LINK_PREFIX + event.issue().key());
+            case UPDATED_ASSIGNEE ->
+                 String.format("Hey <@%s>, a new issue has been assigned to you by <@%s>! Title: %s, [%s]", assignee.getSlackUserId(), event.eventUserSlackId() , event.issue().title(), LINK_PREFIX + event.issue().id());
+            case DELETED_ISSUE -> String.format("Issue %s has been deleted by <@%s>", event.issue().key(), event.eventUserSlackId());
+            case CREATED_COMMENT ->
+                 String.format("New comment by <@%s> posted in %s: %s [%s]", event.eventUserSlackId(), event.issue().key(), event.issue().comments().getLast().content(),  LINK_PREFIX + event.issue().id());
+            case UPDATED_PRIORITY ->
+                 String.format("Priority of %s was set to %s by <@%s> [%s]", event.issue().key(), event.issue().priority(), event.eventUserSlackId(), LINK_PREFIX + event.issue().id());
+            case UPDATED_STATUS ->
+                String.format("Status of %s was set to %s by <@%s> [%s]", event.issue().key(), event.issue().status(), event.eventUserSlackId(), LINK_PREFIX + event.issue().id());
+            case UPDATED_TEAM ->
+                    String.format("Team of %s was set to %s by <@%s> [%s]", event.issue().key(), event.issue().teamName(), event.eventUserSlackId(), LINK_PREFIX + event.issue().id());
+            case UPDATED_TITLE ->
+                    String.format("Title of %s was set to %s by <@%s> [%s]", event.issue().key(), event.issue().title(), event.eventUserSlackId(), LINK_PREFIX + event.issue().id());
+            case UPDATED_DESCRIPTION ->
+                    String.format("Description of %s was set to %s by <@%s> [%s]", event.issue().key(), event.issue().description(), event.eventUserSlackId(), LINK_PREFIX + event.issue().id());
+            case UPDATED_DUEDATE ->
+                    String.format("Due-date of %s was set to %s by <@%s> [%s]", event.issue().key(), event.issue().dueDate(), event.eventUserSlackId(), LINK_PREFIX + event.issue().id());
+
         };
         slackService.sendMessageToSlack(message, "test");
     }

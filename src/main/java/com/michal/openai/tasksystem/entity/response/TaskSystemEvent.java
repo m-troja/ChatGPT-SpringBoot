@@ -5,7 +5,8 @@ import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
 
 public record TaskSystemEvent(
         TaskSystemEventType event,
-        TaskSystemIssueDto issue
+        TaskSystemIssueDto issue,
+        String eventUserSlackId
 )
 {
 }
