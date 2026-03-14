@@ -3,7 +3,6 @@ package com.michal.openai.slack;
 import com.michal.openai.slack.entity.SlackUser;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 public interface SlackService {
 
@@ -15,7 +14,6 @@ public interface SlackService {
 
     List<SlackUser> getAllSlackUsers();
 
-    void sendMessageToSlack(CompletableFuture<String> message, String channelId);
     void sendMessageToSlack(String message, String channelId);
     void triggerGetUsers();
 }

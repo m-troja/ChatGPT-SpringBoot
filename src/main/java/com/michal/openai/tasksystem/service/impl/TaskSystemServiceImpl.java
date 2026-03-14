@@ -21,6 +21,7 @@ import com.michal.openai.tasksystem.entity.token.TokenStore;
 import com.michal.openai.tasksystem.service.TaskSystemService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.scheduling.config.Task;
 import org.springframework.stereotype.Service;
@@ -49,9 +50,15 @@ public class TaskSystemServiceImpl implements TaskSystemService {
     private static final String LOGIN_ENDPOINT = "/api/v1/login";
     private static final String REGISTER_ENDPOINT = "/api/v1/register";
 
-    private static final String BOT_SLACK_USER_ID = "USLACKBOT";
-    private static final String BOT_EMAIL = "test@test.com";
-    private static final String BOT_PASSWORD = "StrongBotPassword";
+    @Value("${TS_BOT_SLACK_USER_ID}")
+    private String BOT_SLACK_USER_ID;
+
+    @Value("${TS_BOT_EMAIL}")
+    private String BOT_EMAIL;
+
+    @Value("${TS_BOT_PW}")
+    private String BOT_PASSWORD
+            ;
     private static final String LINK_PREFIX = "http://komuna.site/issues/";
 
     private static final int ATTEMPTS = 3;

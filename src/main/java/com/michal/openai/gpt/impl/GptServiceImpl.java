@@ -2,11 +2,10 @@ package com.michal.openai.gpt.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.michal.openai.config.BeansConfiguration;
 import com.michal.openai.exception.GptCommunicationException;
 import com.michal.openai.functions.Function;
 import com.michal.openai.functions.FunctionFacory;
-import com.michal.openai.functions.entity.GptFunction;
-import com.michal.openai.functions.entity.GptTool;
 import com.michal.openai.gpt.GptService;
 import com.michal.openai.gpt.entity.GptMessage;
 import com.michal.openai.gpt.entity.GptRequest;
@@ -22,17 +21,15 @@ import com.michal.openai.slack.entity.SlackUser;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 
 @Data
@@ -40,15 +37,15 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class GptServiceImpl implements GptService {
 
-	private static final String ROLE_USER = "user";
-	private static final String ROLE_SYSTEM = "system";
-	private static final String ROLE_ASSISTANT = "assistant";
+    private static final String ROLE_SYSTEM = "system";
+    private static final String ROLE_USER = "user";
+    private static final String ROLE_ASSISTANT = "assistant";
+    private static final String ROLE_TOOL = "tool";
+
     @Value("${CHAT_MODEL}")
     private String model;
     @Value("${gpt.chat.temperature}")
     private Double temperature;
-//    @Value("${gpt.chat.presence.penalty}")
-//    private Double presencePenalty;
     @Value("${CHAT_MAX_TOKENS}")
     private Integer maxTokens;
     @Value("${gpt.chat.sendrequest.retryattempts}")
@@ -69,16 +66,21 @@ public class GptServiceImpl implements GptService {
     private final ResponseDtoRepo responseDtoRepo;
     private final SlackRepo slackRepo;
     private final ObjectMapper objectMapper;
+    @Autowired private final BeansConfiguration beansConfiguration;
+
+
+
 
     // Constructor needed because of @Qualifier("gptRestClient")
 
-    public GptServiceImpl(@Qualifier("gptRestClient") RestClient restClient, FunctionFacory functionFactory, RequestDtoRepo requestDtoRepo, ResponseDtoRepo responseDtoRepo, SlackRepo slackRepo, ObjectMapper objectMapper) {
+    public GptServiceImpl(@Qualifier("gptRestClient") RestClient restClient, FunctionFacory functionFactory, RequestDtoRepo requestDtoRepo, ResponseDtoRepo responseDtoRepo, SlackRepo slackRepo, ObjectMapper objectMapper, BeansConfiguration beansConfiguration) {
         this.restClient = restClient;
         this.functionFactory = functionFactory;
         this.requestDtoRepo = requestDtoRepo;
         this.responseDtoRepo = responseDtoRepo;
         this.slackRepo = slackRepo;
         this.objectMapper = objectMapper;
+        this.beansConfiguration = beansConfiguration;
     }
 
     @PostConstruct
@@ -90,15 +92,60 @@ public class GptServiceImpl implements GptService {
 	 * Called by SlackAPI controller.
 	 * Builds object of GPTRequest and forwards it to send to GPT.
 	 */
-	@Override
-	public CompletableFuture<String> getAnswerWithSlack(CompletableFuture<String> queryFuture, CompletableFuture<String> userNameFuture, GptFunction... gptFunctions ) {
+    @Override
+    public String getAnswerWithSlack(String query, String slackUserId) {
 
-        return queryFuture.thenCombine(userNameFuture, (query, slackUserId) -> handleQuery(query, slackUserId, gptFunctions))
-                .exceptionally(e -> {
-                            log.error("Async error:", e);
-                            throw new CompletionException(e);
-                });
-	}
+        SlackUser user = slackRepo.findBySlackUserId(slackUserId);
+
+        if (user == null) {
+            log.warn("Slack user not found: {}", slackUserId);
+        }
+
+        GptRequest request = new GptRequest();
+
+        request.setModel(model);
+        request.setTemperature(temperature);
+        request.setMaxOutputTokens(maxTokens);
+
+        request.setTools(beansConfiguration.getAllowedToolCalls());
+
+        request.setMessages(
+                buildLastMessagesContextOfUserSlackId(slackUserId, query)
+        );
+
+        log.debug("Built GPT request with {} context messages",
+                request.getMessages().size());
+
+        return runConversation(request, user);
+    }
+
+    private GptRequest buildRequest(String query, String slackUserId) {
+
+        GptRequest request = new GptRequest();
+
+        List<GptMessage> messages = new ArrayList<>();
+
+        String systemContent = String.format(
+                "%sYou received message from <@%s>",
+                systemInitialMessage,
+                slackUserId
+        );
+
+        messages.add(new GptMessage(ROLE_SYSTEM, systemContent));
+        messages.add(new GptMessage(ROLE_USER, query));
+
+        request.setMessages(messages);
+        request.setModel(model);
+        request.setMaxOutputTokens(maxTokens);
+        request.setTemperature(temperature);
+
+        request.setTools(beansConfiguration.getAllowedToolCalls());
+
+        log.debug("GPT request initialized with {} tools", request.getTools().size());
+
+        return request;
+    }
+
 
     @Override
     public void clearDatabase() {
@@ -113,129 +160,114 @@ public class GptServiceImpl implements GptService {
         }
     }
 
-    private String handleQuery(String query, String slackUserId, GptFunction... gptFunctions) {
-        SlackUser slackUserRequestAuthor = getSlackUserBySlackId(slackUserId);
-        log.debug("Handle query: slackUserId={}, slackUserRequestAuthor={}", slackUserId, slackUserRequestAuthor);
-        List<GptFunction> functions = List.of(gptFunctions);
-        GptRequest gptRequest = buildGptRequest(query, slackUserRequestAuthor, functions);
+    private String runConversation(GptRequest request, SlackUser user) {
 
-        return callGptNoFunction(gptRequest, slackUserRequestAuthor);
+        while (true) {
+
+            GptResponse response = sendRequestWithRetry(request);
+
+            if (response.getChoices() == null || response.getChoices().isEmpty()) {
+                log.error("Empty GPT response");
+                throw new GptCommunicationException("Empty GPT response");
+            }
+
+            GptMessage assistantMessage =
+                    response.getChoices().getFirst().getMessage();
+
+            saveDto(request, response, user);
+
+            if (assistantMessage.getToolCalls() == null ||
+                    assistantMessage.getToolCalls().isEmpty()) {
+
+                log.debug("GPT returned final answer");
+                return assistantMessage.getContent();
+            }
+
+            request.getMessages().add(assistantMessage);
+
+            assistantMessage.getToolCalls().forEach(toolCall -> {
+
+                String functionName =
+                        toolCall.getFunctionCall().getName();
+
+                log.debug("GPT requested tool: {}", functionName);
+
+                Function function =
+                        functionFactory.getFunctionByFunctionName(functionName);
+
+                String result;
+
+                try {
+
+                    result = function.execute(
+                            toolCall.getFunctionCall().getArguments()
+                    );
+
+                } catch (Exception e) {
+
+                    log.error("Tool execution failed: {}", functionName, e);
+
+                    result = "Tool execution error";
+                }
+
+                GptMessage toolMessage = new GptMessage();
+
+                toolMessage.setRole(ROLE_TOOL);
+                toolMessage.setToolCallId(toolCall.getId());
+                toolMessage.setContent(result);
+
+                request.getMessages().add(toolMessage);
+
+                log.debug("Tool result added to conversation");
+            });
+        }
     }
 
-    private GptRequest buildGptRequest(String query, SlackUser slackUserRequestAuthor, List<GptFunction> gptFunctions ) {
-        log.debug("Building GPT request with params: \nQuery:{}, \nSlackUser:{}, \nFunctions:{}", query, slackUserRequestAuthor, gptFunctions );
-        GptRequest gptRequest = new GptRequest();
-        List<GptMessage> messages = buildLastMessagesContextOfUserSlackId(slackUserRequestAuthor.getSlackUserId(), query);
-        gptRequest.setMessages(messages);
 
-        gptRequest.setModel(model);
-        gptRequest.setTemperature(temperature);
-//        gptRequest.setPresencePenalty(presencePenalty);
-        gptRequest.setMaxOutputTokens(maxTokens);
-        log.debug("Found {} GPT Functions to add into requestTools", gptFunctions.size());
-        List<GptTool> requestTools = new ArrayList<>();
-        gptFunctions.forEach(fn -> {
-            requestTools.add(new GptTool("function", fn));
-            log.debug("Added function into requestTools: {}", fn.getName());
-        });
-        gptRequest.setTools(requestTools);
-        saveGptRequest(gptRequest);
+    private GptResponse sendRequestWithRetry(GptRequest request) {
 
-        return gptRequest;
-    }
+        int attempt = 0;
 
-    private String callGptNoFunction(GptRequest gptRequest, SlackUser slackUserRequestAuthor) {
-        GptResponse gptResponse = sendRequestToGpt(gptRequest);
-        if (gptResponse != null && gptRequest != null) {
-            saveDto(gptRequest, gptResponse, slackUserRequestAuthor);
-        } else {
-            log.debug("GptResponse or GptRequest is null!");
-        }
+        while (true) {
 
-        if (gptResponse.getChoices() == null || gptResponse.getChoices().isEmpty()) {
-            log.error("GPT response is null or empty");
-            return "GPT response error";
-        }
-
-        GptMessage responseMessage = gptResponse.getChoices().getFirst().getMessage();
-        List<GptMessage.ToolCall> toolsToCall = responseMessage.getToolCalls();
-
-        if (toolsToCall == null || toolsToCall.isEmpty()) {
-            return responseMessage.getContent();
-        }
-
-        for (GptMessage.ToolCall toolCall : toolsToCall) {
-            log.debug("Tool call found, GPT will be called: {}", toolCall.getFunctionCall().getName());
-            Function fn = functionFactory.getFunctionByFunctionName(toolCall.getFunctionCall().getName());
-            String result;
             try {
-                result = fn.execute(toolCall.getFunctionCall().getArguments());
-                log.debug("Result of function: {}", result);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
 
-            GptMessage toolMessage = new GptMessage();
-            toolMessage.setRole("tool");
-            toolMessage.setContent(result);
-//            toolMessage.setName(toolCall.getFunctionCall().getName());
-            toolMessage.setToolCallId(toolCall.getId());
-            if (gptRequest != null) {
-                gptRequest.getMessages().add(responseMessage);
-                gptRequest.getMessages().add(toolMessage);
-            }
-            log.debug("List of messages to send to GPT:");
-            log.debug("{}", gptRequest.getMessages() );
+                log.debug("Sending GPT request attempt {}", attempt + 1);
 
-            while (gptRequest.getMessages().size() > totalQtyMessagesInContext) {
-                log.debug("Context exceeded! Removed first message: {}", gptRequest.getMessages().getFirst());
-                gptRequest.getMessages().removeFirst();
-            }
-        }
-        return callGptNoFunction(gptRequest, slackUserRequestAuthor);
-    }
+                logPrettyJson(request);
 
-    private GptResponse sendRequestToGpt(GptRequest gptRequest) {
-        for (int attempt = 1; attempt <= retryAttempts; attempt++) {
-            try {
-                log.debug("Calling GPT: attempt {}/{}", attempt, retryAttempts);
-                log.debug("Sending to GPT:");
-                logPrettyJson(gptRequest);
-                var gptResponseString = restClient.post()
-                        .body(gptRequest)
+                String responseString = restClient
+                        .post()
+                        .body(request)
                         .retrieve()
                         .body(String.class);
-                log.debug("RestClient response String:");
-                log.debug("{}", gptResponseString);
-                GptResponse gptResponse = null;
-                try {
-                    gptResponse = objectMapper.readValue(gptResponseString, GptResponse.class);
-                    log.debug("Converted with ObjectMapper gptResponse: ");
-                    log.debug("{}", gptResponse);
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
+
+                GptResponse response =
+                        objectMapper.readValue(responseString, GptResponse.class);
+
+                saveGptRequest(request);
+                saveGptResponse(response);
+
+                return response;
+
+            } catch (JsonProcessingException e) {
+
+                throw new GptCommunicationException("GPT response parsing error");
+
+            } catch (Exception e) {
+
+                attempt++;
+
+                log.error("GPT request failed attempt {}", attempt, e);
+
+                if (attempt >= retryAttempts) {
+                    throw new GptCommunicationException("GPT request failed");
                 }
 
-                if (gptResponse == null || gptResponse.getChoices() == null ||  gptResponse.getChoices().isEmpty()) {
-                    log.error("GPT returned null response!");
-                    throw new GptCommunicationException("GPT returned null response");
-                }
-                return gptResponse;
-
-            } catch (RuntimeException e) {
-
-                log.error("GPT request failed on attempt {} of {}.", attempt, retryAttempts, e);
-
-                if (attempt == retryAttempts) {
-                    log.error("Max retry attempts reached.");
-                    throw new GptCommunicationException("Max retry attempts reached");
-                }
                 sleep(waitSeconds);
             }
         }
-        return null;
     }
-
     private void saveDto(GptRequest request, GptResponse response, SlackUser slackUserRequestAuthor) {
         log.debug("Saving DTOs... ");
         var messageCnv = new GptMessageCnv();

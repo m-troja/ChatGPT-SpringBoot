@@ -1,5 +1,6 @@
 package com.michal.openai.config;
 
+import com.michal.openai.functions.entity.GptTool;
 import com.michal.openai.github.entity.GetReposParameterProperties;
 import com.michal.openai.functions.entity.GptFunction;
 import com.michal.openai.jira.entity.JiraCreateIssueParameterProperties;
@@ -7,10 +8,18 @@ import com.michal.openai.tasksystem.entity.function.TaskSystemAssignIssueParamet
 import com.michal.openai.tasksystem.entity.function.TaskSystemCreateIssueParameterProperties;
 import com.slack.api.Slack;
 import com.slack.api.methods.MethodsClient;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.ApplicationContext;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Slf4j
 @Configuration
 public class BeansConfiguration {
 
@@ -22,6 +31,37 @@ public class BeansConfiguration {
         return Slack.getInstance().methods(slackSecurityTokenBot);
     }
 
+    @Value("${CHAT_ALLOW_FUNCTION_TASKSTORM_ASSIGN_ISSUE}")
+    private String allowFunctionTaskStormAssignIssue;
+
+    @Value("${CHAT_ALLOW_FUNCTION_TASKSTORM_CREATE_ISSUE}")
+    private String allowFunctionTaskStormCreateIssue;
+
+    @Value("${CHAT_ALLOW_FUNCTION_TASKSTORM_GET_ALL_ISSUES}")
+    private String allowFunctionTaskStormGetAllIssues;
+
+    @Value("${CHAT_ALLOW_FUNCTION_JIRA_GET_ALL_ISSUES}")
+    private String allowFunctionJiraGetAllIssues;
+
+    @Value("${CHAT_ALLOW_FUNCTION_JIRA_CREATE_ISSUE}")
+    private String allowFunctionJiraCreateIssue;
+
+    @Value("${CHAT_ALLOW_FUNCTION_GITHUB_GET_REPOS}")
+    private String allowFunctionGithubGetRepos;
+
+    @Value("${gpt.function.tasksystem.assign.issue.name}") private String taskStormAssignIssueFunctionName;
+    @Value("${gpt.function.tasksystem.create.issue.name}") private String taskStormCreateIssueFunctionName;
+    private final String taskStormGetAllIssuesFunctionName = "getAllTaskSystemIssuesFunction";
+    @Value("${gpt.function.jira.create.issue.name}") private String jiraCreateIssueFunctionName;
+    private final String jiraGetAllIssuesFunctionName = "getAllJiraIssuesFunction";
+    @Value("${github.function.name}") private String githubGetReposFunctionName;
+
+    private final ApplicationContext context;
+
+    public BeansConfiguration(ApplicationContext context) {
+        this.context = context;
+    }
+
     /* ==============================
      *          Github
      * ==============================
@@ -29,12 +69,11 @@ public class BeansConfiguration {
 	@Bean("defineGetReposFunction")
 	public GptFunction getRepos(
 			@Value("${github.function.desc}") String functionDescription,
-			@Value("${github.function.name}") String functionName,
 			@Value("${github.function.attr.login}") String attrLogin,
 			@Value("${github.function.attr.login.desc}") String attrLoginDesc
     ) {
 		var getReposFunction = new GptFunction();
-		getReposFunction.setName(functionName);
+		getReposFunction.setName(githubGetReposFunctionName);
 		getReposFunction.setDescription(functionDescription);
 
 		GptFunction.Parameters gptFunctionParameters = getReposFunction.new Parameters();
@@ -54,9 +93,10 @@ public class BeansConfiguration {
      *          Jira
      * ==============================
      */
+
+
     @Bean("defineCreateJiraIssueFunction")
     public GptFunction defineCreateJiraIssueFunction(
-            @Value("${gpt.function.jira.create.issue.name}") String functionName,
             @Value("${gpt.function.jira.create.issue.description}") String description,
             @Value("${gpt.function.jira.create.issue.attr.description.desc}") String descrAttrDescription,
             @Value("${gpt.function.jira.create.issue.attr.issuetype.desc}") String issueTypeAttrDescription,
@@ -71,7 +111,7 @@ public class BeansConfiguration {
     )
     {
         var gptFunction = new GptFunction();
-        gptFunction.setName(functionName);
+        gptFunction.setName(jiraCreateIssueFunctionName);
         gptFunction.setDescription(description);
 
         // Predefine function parameters
@@ -96,7 +136,7 @@ public class BeansConfiguration {
 	@Bean("defineAllJiraIssuesFunction")
 	public GptFunction defineGetAllJiraIssuesFunction() {
 		var gptFunction = new GptFunction();
-		gptFunction.setName("getAllJiraIssuesFunction");
+		gptFunction.setName(jiraGetAllIssuesFunctionName);
 		gptFunction.setDescription("Get basic data about all issues in my Jira: key, assignee, description, summary, due date.");
 
 		return gptFunction;
@@ -110,7 +150,7 @@ public class BeansConfiguration {
     @Bean("defineAllTaskSystemIssuesFunction")
     public GptFunction defineGetAllTaskSystemIssuesFunction() {
         var gptFunction = new GptFunction();
-        gptFunction.setName("getAllTaskSystemIssuesFunction");
+        gptFunction.setName(taskStormGetAllIssuesFunctionName);
         gptFunction.setDescription("Get all issues in Task-System: key, assignee, description, summary, due date etc...");
         return gptFunction;
     }
@@ -118,16 +158,15 @@ public class BeansConfiguration {
     @Bean("defineAssignTaskSystemIssueFunction")
     public GptFunction assignTaskSystemIssue(
             @Value("${gpt.function.tasksystem.assign.issue.desc}") String functionDescription,
-            @Value("${gpt.function.tasksystem.assign.issue.name}") String functionName,
             @Value("${gpt.function.tasksystem.assign.issue.attr.key.desc}") String attrKey,
             @Value("${gpt.function.tasksystem.assign.issue.attr.slackUserId.desc}") String attrSlackUserId
 
     ) {
-        var getReposFunction = new GptFunction();
-        getReposFunction.setName(functionName);
-        getReposFunction.setDescription(functionDescription);
+        var assignTaskSystemIssueFn = new GptFunction();
+        assignTaskSystemIssueFn.setName(taskStormAssignIssueFunctionName);
+        assignTaskSystemIssueFn.setDescription(functionDescription);
 
-        GptFunction.Parameters gptFunctionParameters = getReposFunction.new Parameters();
+        GptFunction.Parameters gptFunctionParameters = assignTaskSystemIssueFn.new Parameters();
         gptFunctionParameters.setType("object");
         gptFunctionParameters.setRequired(new String[] {"key", "userSlackId"});
 
@@ -138,14 +177,13 @@ public class BeansConfiguration {
         properties.setKey(key);
         properties.setSlackUserId(slackUserId);
         gptFunctionParameters.setProperties(properties);
-        getReposFunction.setParameters(gptFunctionParameters);
+        assignTaskSystemIssueFn.setParameters(gptFunctionParameters);
 
-        return getReposFunction;
+        return assignTaskSystemIssueFn;
     }
 
     @Bean("defineCreateTaskSystemIssueFunction")
     public GptFunction defineCreateTaskSystemIssueFunction(
-            @Value("${gpt.function.tasksystem.create.issue.name}") String functionName,
             @Value("${gpt.function.tasksystem.create.issue.description}") String description,
             @Value("${gpt.function.tasksystem.create.issue.attr.title.desc}") String titleAttrDescription,
             @Value("${gpt.function.tasksystem.create.issue.attr.description.desc}") String descrAttrDescription,
@@ -158,7 +196,7 @@ public class BeansConfiguration {
     )
     {
         var gptFunction = new GptFunction();
-        gptFunction.setName(functionName);
+        gptFunction.setName(taskStormCreateIssueFunctionName);
         gptFunction.setDescription(description);
 
         // Predefine function parameters
@@ -220,4 +258,59 @@ public class BeansConfiguration {
 		return function;
 	}
 	 */
+
+    public List<GptTool> getAllowedToolCalls(
+    ) {
+        Map<String, GptFunction> functionMap =
+                context.getBeansOfType(GptFunction.class)
+                        .values().stream()
+                        .collect(Collectors.toMap(GptFunction::getName, f -> f));
+
+        var allowedFunctions = new ArrayList<GptFunction>();
+
+        if (allowFunctionTaskStormAssignIssue.equals("1"))
+        {
+            allowedFunctions.add(functionMap.get(taskStormAssignIssueFunctionName));
+
+        }
+        if (allowFunctionTaskStormCreateIssue.equals("1"))
+        {
+            allowedFunctions.add(functionMap.get(taskStormCreateIssueFunctionName));
+
+        }
+        if (allowFunctionTaskStormGetAllIssues.equals("1")) {
+            allowedFunctions.add(functionMap.get(taskStormGetAllIssuesFunctionName));
+        }
+
+        if (allowFunctionJiraGetAllIssues.equals("1"))
+        {
+            allowedFunctions.add(functionMap.get(jiraGetAllIssuesFunctionName));
+
+        }
+        if (allowFunctionJiraCreateIssue.equals("1"))
+        {
+            allowedFunctions.add(functionMap.get(jiraCreateIssueFunctionName));
+
+        }
+        if (allowFunctionGithubGetRepos.equals("1")) {
+            allowedFunctions.add(functionMap.get(githubGetReposFunctionName));
+        }
+
+        System.getenv().forEach((key, value) ->
+                {
+                    if ( key.contains("CHAT"))
+                    {
+                        log.debug("{}={}", key, value);
+
+                    }
+                });
+
+        var extractedTools = allowedFunctions.stream().map(f -> new GptTool("function", f)).toList();
+        log.debug("Allowed GPT Tools:");
+        for (GptTool t : extractedTools)
+        {
+            log.debug("{}", t.function().getName());
+        }
+        return extractedTools;
+    }
 }
