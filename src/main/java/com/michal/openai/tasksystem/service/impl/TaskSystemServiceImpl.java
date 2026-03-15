@@ -85,6 +85,9 @@ public class TaskSystemServiceImpl implements TaskSystemService {
     @Override
     public TaskSystemIssueDto createIssue(CreateTaskSystemIssueTool.Args args) {
         log.debug("Creating issue, args: {}", args);
+
+        log.debug("req: {}", objectMapper.convertValue( args, CreateTaskSystemIssueRequest.class ) );
+
         if (tokenStore.isExpired()) {
             login();
         }
