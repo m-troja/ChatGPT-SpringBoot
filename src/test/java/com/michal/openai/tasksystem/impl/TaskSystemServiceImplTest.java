@@ -1,14 +1,13 @@
 package com.michal.openai.tasksystem.impl;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.tasksystem.entity.request.CreateTaskSystemIssueRequest;
+import com.michal.openai.persistence.SlackRepo;
+import com.michal.openai.slack.SlackService;
+import com.michal.openai.slack.entity.SlackUser;
+import com.michal.openai.tasksystem.entity.TaskSystemEventType;
 import com.michal.openai.tasksystem.entity.dto.TaskSystemIssueDto;
-import com.michal.openai.tasksystem.entity.request.TaskSystemLoginRequest;
-import com.michal.openai.tasksystem.entity.response.TaskSystemAccessToken;
-import com.michal.openai.tasksystem.entity.response.TaskSystemTokenResponse;
-import com.michal.openai.tasksystem.entity.token.TaskSystemRefreshToken;
+import com.michal.openai.tasksystem.entity.dto.TaskSystemUserDto;
+import com.michal.openai.tasksystem.entity.response.TaskSystemEvent;
 import com.michal.openai.tasksystem.entity.token.TokenStore;
 import com.michal.openai.tasksystem.service.impl.TaskSystemServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,232 +18,345 @@ import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.client.MockRestServiceServer;
-import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.concurrent.CompletionException;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.anything;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 @RestClientTest(TaskSystemServiceImpl.class)
-//@Import(TaskSystemServiceImplTest.TestConfig.class)
+@Import(TaskSystemServiceImplTest.TestConfig.class)
 class TaskSystemServiceImplTest {
-//    private final String getAllIssuesEndpoint = "/api/v1/issue/all";
-//    private final String createIssueEndpoint = "/api/v1/chatgpt/issue/create";
-//    private final String assignIssueEndpoint = "/api/v1/chatgpt/issue/assign";
-//    private final String getUserBySlackUserIdEndpoint = "/api/v1/chatgpt/user/slack-user-id";
-//    private final static String baseUrl = "http://localhost:6901";
-//    @Autowired MockRestServiceServer server;
-//    @Autowired ObjectMapper objectMapper;
-//    @Autowired TaskSystemServiceImpl service;
-//    @Autowired TokenStore tokenStore;
-//
-//    @BeforeEach
-//    void setup() {
-//        when(tokenStore.isExpired()).thenReturn(true)
-//                .thenReturn(false);
-//        when(tokenStore.getAccessToken()).thenReturn("accessToken");
-//    }
-//
-//    @Test
-//    public void shouldCreateTaskSystemIssue() throws JsonProcessingException {
-//        // given
-//        var responseJsonFromTaskSystem = "{\\\"title\\\":\\\"Test title\\\",\\\"description\\\":\\\"Test desc\\\",\\\"priority\\\":\\\"HIGH\\\",\\\"authorSlackId\\\":\\\"U08SHTW059C\\\",\\\"assigneeSlackId\\\":\\\"U08SHTW059C\\\",\\\"dueDate\\\":\\\"2025-11-20\\\"}";
-//        var createIssueRequest = new CreateTaskSystemIssueRequest("Test title", "Test desc", "HIGH", "U08SHTW059C", "U12345678", "2025-11-20", 1);
-//        var responseIssueDto = new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U12345678");
-//        var tokenResponse = new TaskSystemTokenResponse(
-//                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
-//                new TaskSystemRefreshToken("refreshToken", LocalDateTime.parse("2026-10-10T00:00:00"))
-//        );
-//
-//        var loginEndpoint = "/api/v1/login";
-//
-//        server.expect(requestTo(baseUrl + loginEndpoint))
-//                .andExpect(method(HttpMethod.POST))
-//                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
-//
-//        server.expect(requestTo(baseUrl + createIssueEndpoint))
-//                .andExpect(header("Authorization", "Bearer accessToken"))
-//                .andExpect(request -> {
-//                    String requestBody = request.getBody().toString();
-//                    CreateTaskSystemIssueRequest requestObj = objectMapper.readValue(requestBody, CreateTaskSystemIssueRequest.class);
-//                })
-//                .andExpect(method(HttpMethod.POST))
-//                .andRespond(withSuccess(objectMapper.writeValueAsString(responseIssueDto), MediaType.APPLICATION_JSON));
-//        var dtoFromService = service.createIssue(objectMapper.writeValueAsString(createIssueRequest));
-//        assertThat(dtoFromService).isEqualTo(responseIssueDto);
-//
-//        server.verify();
-//    }
-//
-//    @Test
-//    void shouldIgnoreUnknownFields() throws Exception {
-//        // login
-//        var loginEndpoint = "/api/v1/login";
-//        var tokenResponse = new TaskSystemTokenResponse(
-//                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
-//                new TaskSystemRefreshToken("refreshToken",   LocalDateTime.parse("2026-10-10T00:00:00"))
-//        );
-//
-//        server.expect(requestTo(baseUrl + loginEndpoint))
-//                .andExpect(method(HttpMethod.POST))
-//                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
-//
-//        var responseIssueDto = new TaskSystemIssueDto("Dummy-1", "Test title", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U12345678");
-//        String jsonWithExtraFields = """
-//                {
-//                  "title": "Test title",
-//                  "description": "Test desc",
-//                  "priority": "HIGH",
-//                  "authorSlackId": "U08SHTW059C",
-//                  "assigneeSlackId": "U08SHTW059C",
-//                  "dueDate": "2025-11-20",
-//                  "extra": "this_should_be_ignored"
-//                }
-//                """;
-//
-//        server.expect(requestTo(baseUrl + createIssueEndpoint))
-//                .andExpect(header("Authorization", "Bearer accessToken"))
-//                .andRespond(withSuccess(
-//                        objectMapper.writeValueAsString(responseIssueDto),  MediaType.APPLICATION_JSON
-//            ));
-//        var dtoFromService = service.createIssue(jsonWithExtraFields);
-//        assertThat(dtoFromService).isEqualTo(responseIssueDto);
-//    }
-//
-//    @Test
-//    public void shouldThrowCompletionExceptionWhenSendingInvalidJsonToTaskSystem() throws JsonProcessingException {
-//        // login
-//        var loginEndpoint = "/api/v1/login";
-//        var tokenResponse = new TaskSystemTokenResponse(
-//                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
-//                new TaskSystemRefreshToken("refreshToken",  LocalDateTime.parse("2026-10-10T00:00:00"))
-//        );
-//
-//        server.expect(requestTo(baseUrl + loginEndpoint))
-//                .andExpect(method(HttpMethod.POST))
-//                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
-//
-//        String invalidJson = "{ invalidJson";
-//        // Task-System returns SC 500 for invalid JSON
-//        server.expect(requestTo(baseUrl + createIssueEndpoint))
-//                .andExpect(method(HttpMethod.POST))
-//                .andExpect(header("Authorization", "Bearer accessToken"))
-//                .andRespond(withServerError());
-//        assertThatThrownBy( () -> service.createIssue(invalidJson))
-//                .isInstanceOf(CompletionException.class)
-//                .hasCauseInstanceOf(JsonParseException.class);
-//    }
-//
-//    @Test
-//    public void shouldThrowExceptionWhenReceivingInvalidIssueDto() throws JsonProcessingException {
-//        // login
-//        var loginEndpoint = "/api/v1/login";
-//        var tokenResponse = new TaskSystemTokenResponse(
-//                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
-//                new TaskSystemRefreshToken("refreshToken",  LocalDateTime.parse("2026-10-10T00:00:00"))
-//        );
-//
-//        server.expect(requestTo(baseUrl + loginEndpoint))
-//                .andExpect(method(HttpMethod.POST))
-//                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
-//
-//        String requestJson = """
-//        {
-//          "title": "Test",
-//          "description": "Desc",
-//          "priority": "HIGH",
-//          "authorSlackId": "U1",
-//          "assigneeSlackId": "U2",
-//          "dueDate": "2025-11-20"
-//        }
-//    """;
-//
-//        String invalidDtoResponse = """
-//        { "unknown_field" : "value" }
-//    """;
-//
-//        server.expect(requestTo(baseUrl + createIssueEndpoint))
-//                .andExpect(header("Authorization", "Bearer accessToken"))
-//                .andExpect(method(HttpMethod.POST))
-//                .andRespond(withSuccess(invalidDtoResponse,  MediaType.APPLICATION_JSON ));
-//
-//        var dto = service.createIssue(requestJson);
-//
-//        assertThat(dto)
-//                .isNotNull()
-//                .hasFieldOrPropertyWithValue("title", null) // NULL -> new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-//                .hasFieldOrPropertyWithValue("priority", null); // NULL -> new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-//
-//        server.verify();
-//    }
-//
-//
-//    @Test
-//    public void shouldGetAllIssues() throws JsonProcessingException {
-//        // login
-//        var loginEndpoint = "/api/v1/login";
-//        var tokenResponse = new TaskSystemTokenResponse(
-//                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
-//                new TaskSystemRefreshToken("refreshToken",  LocalDateTime.parse("2026-10-10T00:00:00"))
-//        );
-//        server.expect(requestTo(baseUrl + loginEndpoint))
-//                .andExpect(method(HttpMethod.POST))
-//                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
-//
-//        var issueDto1 = new TaskSystemIssueDto("Dummy-1", "Test title #1", "Test desc", "NEW", "LOW", "U08SHTW059C", "U98765432");
-//        var issueDto2 = new TaskSystemIssueDto("Dummy-2", "Test title #2", "Test desc", "NEW", "HIGH", "U08SHTW059C", "U98765432");
-//        List<TaskSystemIssueDto> issueDtoLIst = List.of(issueDto1, issueDto2);
-//        server.expect(requestTo(baseUrl + getAllIssuesEndpoint))
-//                .andExpect(header("Authorization", "Bearer accessToken"))
-//                .andExpect(method(HttpMethod.GET))
-//                .andRespond(withSuccess(objectMapper.writeValueAsString(issueDtoLIst), MediaType.APPLICATION_JSON));
-//        var serviceResponse = service.getAllIssues();
-//        server.verify();
-//        assertThat(serviceResponse).isEqualTo(issueDtoLIst);
-//    }
-//
-//    private void callLogin() throws JsonProcessingException {
-//        var request = new TaskSystemLoginRequest("test@test.com", "StrongBotPassword");
-//        var tokenResponse = new TaskSystemTokenResponse(
-//                new TaskSystemAccessToken("accessToken", LocalDateTime.parse("2026-10-10T00:00:00")),
-//                new TaskSystemRefreshToken("refreshToken",  LocalDateTime.parse("2026-10-10T00:00:00"))
-//        );
-//        var loginEndpoint = "/api/v1/login";
-//
-//        server.expect(requestTo(baseUrl + loginEndpoint))
-//                .andExpect(method(HttpMethod.POST))
-//                .andRespond(withSuccess(objectMapper.writeValueAsString(tokenResponse), MediaType.APPLICATION_JSON));
-//    }
-//
-//    @Test
-//    public void shouldReturnGetIssues() {
-//        // TODO
-//
-//    }
-//
-//    @TestConfiguration
-//    static class TestConfig {
-//        @Bean
-//        @Qualifier("taskSystemRestClient")
-//        RestClient  taskSystemRestClient(RestClient.Builder builder) {
-//            return builder.baseUrl(baseUrl).build();
-//        }
-//
-//        @Bean
-//        TokenStore tokenStore() {
-//            return org.mockito.Mockito.mock(TokenStore.class);
-//        }
-//    }
 
+    private final static String baseUrl = "http://localhost:6901";
+
+    @Autowired MockRestServiceServer server;
+    @Autowired ObjectMapper objectMapper;
+    @Autowired TaskSystemServiceImpl service;
+    @MockitoBean TokenStore tokenStore;
+    @MockitoBean SlackService slackService;
+    @MockitoBean SlackRepo slackRepo;
+
+    SlackUser slackUser;
+
+    @BeforeEach
+    void setup() {
+
+        slackUser = new SlackUser();
+        slackUser.setSlackUserId("U123");
+
+        when(tokenStore.isExpired()).thenReturn(false);
+        when(tokenStore.getAccessToken()).thenReturn("token");
+    }
+
+    private String json(Object o) throws Exception {
+        return objectMapper.writeValueAsString(o);
+    }
+
+    private TaskSystemIssueDto issue() {
+
+        return new TaskSystemIssueDto(
+                1,
+                "TS-1",
+                "Test issue",
+                "Platform",
+                "description",
+                "OPEN",
+                "HIGH",
+                "U111",
+                "U222",
+                OffsetDateTime.now(),
+                OffsetDateTime.now().plusDays(2),
+                OffsetDateTime.now(),
+                List.of(),
+                1
+        );
+    }
+
+    private List<TaskSystemIssueDto> issues() {
+        return List.of(issue());
+    }
+
+    @Test
+    void shouldCreateIssueSuccessfully() throws Exception {
+
+        server.expect(anything())
+                .andRespond(withSuccess(json(issue()), MediaType.APPLICATION_JSON));
+
+        var result = service.createIssue(mock());
+
+        assertThat(result.key()).isEqualTo("TS-1");
+
+        server.verify();
+    }
+
+    @Test
+    void shouldThrowWhenCreateIssueFails() {
+
+        server.expect(anything())
+                .andRespond(request -> { throw new RuntimeException(); });
+
+        assertThatThrownBy(() -> service.createIssue(mock()))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void shouldAssignIssueSuccessfully() throws Exception {
+
+        server.expect(anything())
+                .andRespond(withSuccess(json(issue()), MediaType.APPLICATION_JSON));
+
+        var result = service.assignIssue(mock());
+
+        assertThat(result.title()).isEqualTo("Test issue");
+    }
+
+    @Test
+    void shouldThrowWhenAssignIssueFails() {
+
+        server.expect(anything())
+                .andRespond(request -> { throw new RuntimeException(); });
+
+        assertThatThrownBy(() -> service.assignIssue(mock()))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void shouldReturnAllIssues() throws Exception {
+
+        server.expect(anything())
+                .andRespond(withSuccess(json(issues()), MediaType.APPLICATION_JSON));
+
+        var result = service.getAllIssues();
+
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void shouldThrowWhenGetAllIssuesFails() {
+
+        server.expect(anything())
+                .andRespond(request -> { throw new RuntimeException(); });
+
+        assertThatThrownBy(service::getAllIssues)
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void shouldReturnIssuesForUser() throws Exception {
+
+        server.expect(anything())
+                .andRespond(withSuccess(json(issues()), MediaType.APPLICATION_JSON));
+
+        var result = service.getIssuesForUser("U123");
+
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void shouldThrowWhenGetIssuesForUserFails() {
+
+        server.expect(anything())
+                .andRespond(request -> { throw new RuntimeException(); });
+
+        assertThatThrownBy(() -> service.getIssuesForUser("U123"))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void shouldFetchUserSuccessfully() throws Exception {
+        var user = new TaskSystemUserDto(
+                1,
+                "Bot",
+                "Name",
+                "bot@example.com",
+                List.of("ROLE_USER"),
+                List.of("TeamA"),
+                false,
+                "U123"
+        );
+
+        server.expect(anything())
+                .andRespond(withSuccess(json(user), MediaType.APPLICATION_JSON));
+
+        var result = service.getTaskSystemUser("U123");
+
+        assertThat(result).isNotNull();
+        assertThat(result.userSlackId()).isEqualTo("U123");
+        assertThat(result.email()).isEqualTo("bot@example.com");
+    }
+
+    @Test
+    void shouldThrowUnauthorizedWhenFetchingUser() {
+
+        server.expect(anything())
+                .andRespond(request -> {
+
+                    throw HttpClientErrorException.create(
+                            HttpStatus.UNAUTHORIZED,
+                            "Unauthorized",
+                            null,
+                            null,
+                            null
+                    );
+                });
+
+        assertThatThrownBy(() -> service.getTaskSystemUser("U123"))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void shouldThrowGenericErrorWhenFetchingUser() {
+
+        server.expect(anything())
+                .andRespond(request -> { throw new RuntimeException(); });
+
+        assertThatThrownBy(() -> service.getTaskSystemUser("U123"))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void shouldSendSlackMessageOnCreatedIssue() {
+
+        var event = mock(TaskSystemEvent.class);
+        var issueDto = issue();
+
+        when(event.event()).thenReturn(TaskSystemEventType.CREATED_ISSUE);
+        when(event.issue()).thenReturn(issueDto);
+        when(event.eventUserSlackId()).thenReturn("U999");
+
+        when(slackRepo.findBySlackUserId(issueDto.assigneeSlackId())).thenReturn(slackUser);
+        when(slackRepo.findBySlackUserId(issueDto.authorSlackId())).thenReturn(slackUser);
+
+        service.parseTaskSystemEvent(event);
+
+        verify(slackService).sendMessageToSlack(anyString(), anyString());
+    }
+
+    @Test
+    void shouldSendSlackMessageOnUpdatedAssignee() {
+
+        var event = mock(TaskSystemEvent.class);
+        var issueDto = issue();
+
+        when(event.event()).thenReturn(TaskSystemEventType.UPDATED_ASSIGNEE);
+        when(event.issue()).thenReturn(issueDto);
+        when(event.eventUserSlackId()).thenReturn("U999");
+
+        when(slackRepo.findBySlackUserId(issueDto.assigneeSlackId())).thenReturn(slackUser);
+        when(slackRepo.findBySlackUserId(issueDto.authorSlackId())).thenReturn(slackUser);
+
+        service.parseTaskSystemEvent(event);
+
+        verify(slackService).sendMessageToSlack(anyString(), anyString());
+    }
+
+    @Test
+    void shouldSendSlackMessageOnDeletedIssue() {
+
+        var event = mock(TaskSystemEvent.class);
+        when(event.event()).thenReturn(TaskSystemEventType.DELETED_ISSUE);
+        var issueDto = issue();
+
+        when(event.issue()).thenReturn(issueDto);
+        when(event.eventUserSlackId()).thenReturn("U999");
+
+        when(slackRepo.findBySlackUserId(issueDto.assigneeSlackId())).thenReturn(slackUser);
+        when(slackRepo.findBySlackUserId(issueDto.authorSlackId())).thenReturn(slackUser);
+
+        service.parseTaskSystemEvent(event);
+
+        verify(slackService).sendMessageToSlack(anyString(), anyString());
+    }
+
+    @Test
+    void shouldSendSlackMessageOnCreatedComment() {
+
+        var event = mock(TaskSystemEvent.class);
+        when(event.event()).thenReturn(TaskSystemEventType.CREATED_COMMENT);
+        var issueDto = issue();
+
+        when(event.issue()).thenReturn(issueDto);
+        when(event.eventUserSlackId()).thenReturn("U999");
+
+        when(slackRepo.findBySlackUserId(issueDto.assigneeSlackId())).thenReturn(slackUser);
+        when(slackRepo.findBySlackUserId(issueDto.authorSlackId())).thenReturn(slackUser);
+
+        service.parseTaskSystemEvent(event);
+
+        verify(slackService).sendMessageToSlack(anyString(), anyString());
+    }
+
+    @Test
+    void shouldSendSlackMessageOnPriorityUpdate() {
+
+        var event = mock(TaskSystemEvent.class);
+        when(event.event()).thenReturn(TaskSystemEventType.UPDATED_PRIORITY);
+
+        var issueDto = issue();
+
+        when(event.issue()).thenReturn(issueDto);
+        when(event.eventUserSlackId()).thenReturn("U999");
+
+        when(slackRepo.findBySlackUserId(issueDto.assigneeSlackId())).thenReturn(slackUser);
+        when(slackRepo.findBySlackUserId(issueDto.authorSlackId())).thenReturn(slackUser);
+
+        service.parseTaskSystemEvent(event);
+
+        verify(slackService).sendMessageToSlack(anyString(), anyString());
+    }
+
+    @Test
+    void shouldSendSlackMessageOnStatusUpdate() {
+
+        var event = mock(TaskSystemEvent.class);
+        when(event.event()).thenReturn(TaskSystemEventType.UPDATED_STATUS);
+
+        var issueDto = issue();
+
+        when(event.issue()).thenReturn(issueDto);
+        when(event.eventUserSlackId()).thenReturn("U999");
+
+        when(slackRepo.findBySlackUserId(issueDto.assigneeSlackId())).thenReturn(slackUser);
+        when(slackRepo.findBySlackUserId(issueDto.authorSlackId())).thenReturn(slackUser);
+
+
+        service.parseTaskSystemEvent(event);
+
+        verify(slackService).sendMessageToSlack(anyString(), anyString());
+    }
+
+    @Test
+    void shouldThrowWhenEventTypeInvalid() {
+
+        var event = mock(TaskSystemEvent.class);
+        when(event.event()).thenReturn(null);
+
+        assertThatThrownBy(() -> service.parseTaskSystemEvent(event))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        @Qualifier("taskSystemRestClient")
+        RestClient  taskSystemRestClient(RestClient.Builder builder) {
+            return builder.baseUrl(baseUrl).build();
+        }
+
+        @Bean
+        TokenStore tokenStore() {
+            return org.mockito.Mockito.mock(TokenStore.class);
+        }
+    }
 }

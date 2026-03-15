@@ -1,7 +1,5 @@
 package com.michal.openai.tasksystem.entity.dto;
 
-import org.springframework.format.annotation.DateTimeFormat;
-
 import java.time.OffsetDateTime;
 import java.util.List;
 
