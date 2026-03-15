@@ -240,7 +240,14 @@ public class GptServiceImpl implements GptService {
         }
     }
     private void saveDto(GptRequest request, GptResponse response, SlackUser slackUserRequestAuthor) {
+
+        if (slackUserRequestAuthor == null) {
+            log.warn("Skipping DTO save because Slack user is null");
+            return;
+        }
+
         log.debug("Saving DTOs... ");
+
         var messageCnv = new GptMessageCnv();
         var requestMessage = request.getMessages().getLast();
         var responseMessage = response.getChoices().getFirst().getMessage();
@@ -248,19 +255,24 @@ public class GptServiceImpl implements GptService {
         RequestDto requestDto;
         ResponseDto responseDto;
 
-        if (requestMessage.getToolCallId() == null && requestMessage.getToolCalls() == null && requestMessage.getRole().equals("tool")) {
+        if (requestMessage.getToolCallId() == null
+                && requestMessage.getToolCalls() == null
+                && requestMessage.getRole().equals("tool")) {
+
             requestDto = messageCnv.requestEntityToDto(requestMessage, slackUserRequestAuthor);
             requestDtoRepo.save(requestDto);
             saveMessageJson(requestDto);
-        }
-        else {
+
+        } else {
             log.debug("Tool call found in requestMessage, skipping RequestDTO creation");
         }
 
         if (responseMessage.getToolCalls() == null) {
+
             responseDto = messageCnv.responseEntityToDto(responseMessage, slackUserRequestAuthor);
             responseDtoRepo.save(responseDto);
             saveMessageJson(responseDto);
+
         } else {
             log.debug("Tool call found in responseMessage, skipping ResponseDTO creation");
         }
@@ -342,40 +354,33 @@ public class GptServiceImpl implements GptService {
 	}
 
     private List<GptMessage> buildLastMessagesContextOfUserSlackId(String userSlackId, String query) {
-        List<GptMessage> requests = getLastRequestsOfUser(getSlackUserBySlackId(userSlackId));
-        List<GptMessage> responses = getLastResponsesToUser(getSlackUserBySlackId(userSlackId));
+
+        SlackUser user = getSlackUserBySlackId(userSlackId);
+
         List<GptMessage> messages = new ArrayList<>();
 
-        int contextSize = Math.min(requests.size(), responses.size());
-        for (int i = contextSize - 1; i >= 0; i--) {
-            GptMessage response = responses.get(i);
-            GptMessage request = requests.get(i);
+        if (user != null) {
 
-            if (response.getToolCalls() != null && !response.getToolCalls().isEmpty()) {
-                GptMessage toolMessage = new GptMessage();
-                toolMessage.setRole("tool");
-                toolMessage.setContent(response.getContent());
-                toolMessage.setName(response.getName());
-                toolMessage.setToolCalls(response.getToolCalls());
-                messages.add(toolMessage);
-            } else {
-                messages.add(response);
+            List<GptMessage> requests = getLastRequestsOfUser(user);
+            List<GptMessage> responses = getLastResponsesToUser(user);
+
+            int contextSize = Math.min(requests.size(), responses.size());
+
+            for (int i = contextSize - 1; i >= 0; i--) {
+                messages.add(responses.get(i));
+                messages.add(requests.get(i));
             }
-            messages.add(request);
         }
 
         messages.add(getInitialSystemMessage(userSlackId));
         messages.add(new GptMessage(ROLE_USER, query));
 
         while (messages.size() > totalQtyMessagesInContext) {
-            log.debug("Context exceeded, removing first message: {}", messages.getFirst());
             messages.removeFirst();
         }
 
-        log.debug("Added total {} messages into context", messages.size());
         return messages;
     }
-
 	private GptMessage getInitialSystemMessage(String userSlackId) {
 		String content = String.format(
 			    "%sYou received message from %s. Type <@%s> to mention them.",

@@ -1,5 +1,6 @@
 package com.michal.openai.controllers;
 
+import com.michal.openai.gpt.service.SlackGptCoordinator;
 import com.michal.openai.slack.SlackService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,9 @@ class SlackRestControllerTest {
     @MockitoBean
     private SlackService slackService;
 
+    @MockitoBean
+    private SlackGptCoordinator slackGptCoordinator;
+
     private String slackRequest;
 
     @BeforeEach
@@ -43,7 +47,7 @@ class SlackRestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("OK"));
 
-        verify(slackService, times(1))
-                .processOnMentionEvent(slackRequest);
+        verify(slackGptCoordinator, times(1))
+                .processMention(slackRequest);
     }
 }

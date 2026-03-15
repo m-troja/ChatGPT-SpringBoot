@@ -15,18 +15,20 @@ import org.springframework.web.bind.annotation.*;
 public class SlackController {
 
 	private final SlackGptCoordinator slackGptCoordinator;
-    private  final SlackService slackService;
-    @PostMapping
+    private final SlackService slackService;
 
+    @PostMapping
     public ResponseEntity<String> doPost(@RequestBody String requestBody) {
         log.info("Received POST /api/v1/slack");
         log.debug("Received body: {}", requestBody);
 
-        slackGptCoordinator.processMention(requestBody); // async now
+        slackGptCoordinator.processMention(requestBody);
 
         log.debug("********** Responded status 200 to Slack **********");
-        return ResponseEntity.ok("OK"); // Slack sees 200 immediately
+        return ResponseEntity.ok("OK");
     }
+
+
     @GetMapping("get-users")
     public HttpStatus getUsers()
     {
