@@ -47,4 +47,15 @@ public class AdminController {
             return tools;
     }
 
+    @GetMapping(value = "all-tools")
+    public List<GptTool> getAllTools() {
+        log.debug("getAllTools:");
+
+        var tools = gptToolRegistry.allGptTools();
+
+        log.debug("{}", tools);
+
+        return tools;
+    }
+
 }
