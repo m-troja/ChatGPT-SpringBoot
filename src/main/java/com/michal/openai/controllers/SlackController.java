@@ -1,9 +1,11 @@
 package com.michal.openai.controllers;
 
+import com.michal.openai.gpt.service.SlackGptCoordinator;
 import com.michal.openai.slack.SlackService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -12,20 +14,19 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class SlackController {
 
-	private final SlackService slackService;
+	private final SlackGptCoordinator slackGptCoordinator;
+    private  final SlackService slackService;
+    @PostMapping
 
-	@PostMapping
-	public String doPost(@RequestBody String requestBody)
-	{
+    public ResponseEntity<String> doPost(@RequestBody String requestBody) {
         log.info("Received POST /api/v1/slack");
-        log.debug("Received POST /api/v1/slack with body: {} \n", requestBody);
+        log.debug("Received body: {}", requestBody);
 
-		slackService.processOnMentionEvent(requestBody);
+        slackGptCoordinator.processMention(requestBody); // async now
 
-		log.debug("********** Responded status 200 to Slack **********");
-		return "OK";
-	}
-
+        log.debug("********** Responded status 200 to Slack **********");
+        return ResponseEntity.ok("OK"); // Slack sees 200 immediately
+    }
     @GetMapping("get-users")
     public HttpStatus getUsers()
     {

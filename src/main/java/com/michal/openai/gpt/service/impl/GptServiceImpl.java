@@ -1,18 +1,17 @@
-package com.michal.openai.gpt.impl;
+package com.michal.openai.gpt.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.config.BeansConfiguration;
 import com.michal.openai.exception.GptCommunicationException;
-import com.michal.openai.functions.Function;
-import com.michal.openai.functions.FunctionFacory;
-import com.michal.openai.gpt.GptService;
 import com.michal.openai.gpt.entity.GptMessage;
 import com.michal.openai.gpt.entity.GptRequest;
 import com.michal.openai.gpt.entity.GptResponse;
 import com.michal.openai.gpt.entity.cnv.GptMessageCnv;
 import com.michal.openai.gpt.entity.dto.RequestDto;
 import com.michal.openai.gpt.entity.dto.ResponseDto;
+import com.michal.openai.gpt.service.GptService;
+import com.michal.openai.gpt.tool.factory.ToolInvoker;
+import com.michal.openai.gpt.tool.registry.GptToolRegistry;
 import com.michal.openai.log.JsonSaver;
 import com.michal.openai.persistence.RequestDtoRepo;
 import com.michal.openai.persistence.ResponseDtoRepo;
@@ -21,7 +20,6 @@ import com.michal.openai.slack.entity.SlackUser;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +29,7 @@ import org.springframework.web.client.RestClient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import com.michal.openai.gpt.tool.executor.ToolExecutor;
 
 @Data
 @Slf4j
@@ -61,26 +60,24 @@ public class GptServiceImpl implements GptService {
     private String jsonDir;
     @Qualifier("gptRestClient")
     private final RestClient restClient;
-    private final FunctionFacory functionFactory;
     private final RequestDtoRepo requestDtoRepo;
     private final ResponseDtoRepo responseDtoRepo;
     private final SlackRepo slackRepo;
     private final ObjectMapper objectMapper;
-    @Autowired private final BeansConfiguration beansConfiguration;
-
-
-
+    private final GptToolRegistry gptToolRegistry;
+    private final ToolInvoker toolInvoker;
 
     // Constructor needed because of @Qualifier("gptRestClient")
 
-    public GptServiceImpl(@Qualifier("gptRestClient") RestClient restClient, FunctionFacory functionFactory, RequestDtoRepo requestDtoRepo, ResponseDtoRepo responseDtoRepo, SlackRepo slackRepo, ObjectMapper objectMapper, BeansConfiguration beansConfiguration) {
+    public GptServiceImpl(@Qualifier("gptRestClient") RestClient restClient ,RequestDtoRepo requestDtoRepo, ResponseDtoRepo responseDtoRepo, SlackRepo slackRepo, ObjectMapper objectMapper,
+                          GptToolRegistry gptToolRegistry, ToolInvoker toolInvoker) {
         this.restClient = restClient;
-        this.functionFactory = functionFactory;
         this.requestDtoRepo = requestDtoRepo;
         this.responseDtoRepo = responseDtoRepo;
         this.slackRepo = slackRepo;
         this.objectMapper = objectMapper;
-        this.beansConfiguration = beansConfiguration;
+        this.gptToolRegistry = gptToolRegistry;
+        this.toolInvoker = toolInvoker;
     }
 
     @PostConstruct
@@ -107,7 +104,7 @@ public class GptServiceImpl implements GptService {
         request.setTemperature(temperature);
         request.setMaxOutputTokens(maxTokens);
 
-        request.setTools(beansConfiguration.getAllowedToolCalls());
+        request.setTools(gptToolRegistry.allAllowedGptTools());
 
         request.setMessages(
                 buildLastMessagesContextOfUserSlackId(slackUserId, query)
@@ -118,34 +115,6 @@ public class GptServiceImpl implements GptService {
 
         return runConversation(request, user);
     }
-
-    private GptRequest buildRequest(String query, String slackUserId) {
-
-        GptRequest request = new GptRequest();
-
-        List<GptMessage> messages = new ArrayList<>();
-
-        String systemContent = String.format(
-                "%sYou received message from <@%s>",
-                systemInitialMessage,
-                slackUserId
-        );
-
-        messages.add(new GptMessage(ROLE_SYSTEM, systemContent));
-        messages.add(new GptMessage(ROLE_USER, query));
-
-        request.setMessages(messages);
-        request.setModel(model);
-        request.setMaxOutputTokens(maxTokens);
-        request.setTemperature(temperature);
-
-        request.setTools(beansConfiguration.getAllowedToolCalls());
-
-        log.debug("GPT request initialized with {} tools", request.getTools().size());
-
-        return request;
-    }
-
 
     @Override
     public void clearDatabase() {
@@ -187,21 +156,23 @@ public class GptServiceImpl implements GptService {
 
             assistantMessage.getToolCalls().forEach(toolCall -> {
 
-                String functionName =
-                        toolCall.getFunctionCall().getName();
+                String functionName = toolCall.getFunctionCall().getName();
 
                 log.debug("GPT requested tool: {}", functionName);
 
-                Function function =
-                        functionFactory.getFunctionByFunctionName(functionName);
-
-                String result;
+                ToolExecutor<?> executor = gptToolRegistry.get(functionName);
+                Object result;
 
                 try {
 
-                    result = function.execute(
+                    log.debug("functionCall: {}", toolCall.getFunctionCall());
+                    log.debug("arguments: {}", toolCall.getFunctionCall().getArguments());
+
+                     result = toolInvoker.invoke(
+                            executor,
                             toolCall.getFunctionCall().getArguments()
                     );
+                     log.debug("result: {}", result);
 
                 } catch (Exception e) {
 
@@ -214,7 +185,12 @@ public class GptServiceImpl implements GptService {
 
                 toolMessage.setRole(ROLE_TOOL);
                 toolMessage.setToolCallId(toolCall.getId());
-                toolMessage.setContent(result);
+                try {
+                    toolMessage.setContent(objectMapper.writeValueAsString(result));
+                } catch (JsonProcessingException e) {
+                    toolMessage.setContent(String.valueOf(result));
+                    throw new RuntimeException(e);
+                }
 
                 request.getMessages().add(toolMessage);
 
@@ -229,21 +205,16 @@ public class GptServiceImpl implements GptService {
         int attempt = 0;
 
         while (true) {
-
             try {
-
                 log.debug("Sending GPT request attempt {}", attempt + 1);
-
                 logPrettyJson(request);
-
                 String responseString = restClient
                         .post()
                         .body(request)
                         .retrieve()
                         .body(String.class);
 
-                GptResponse response =
-                        objectMapper.readValue(responseString, GptResponse.class);
+                GptResponse response = objectMapper.readValue(responseString, GptResponse.class);
 
                 saveGptRequest(request);
                 saveGptResponse(response);
@@ -311,7 +282,7 @@ public class GptServiceImpl implements GptService {
 
 	private void saveGptRequest(GptRequest gptRequest)  {
         log.debug("Request to GPT:");
-        logPrettyJson(gptRequest);
+//        logPrettyJson(gptRequest);
         JsonSaver jsonSaver = new JsonSaver(jsonDir);
         jsonSaver.saveRequest(gptRequest);
 	}

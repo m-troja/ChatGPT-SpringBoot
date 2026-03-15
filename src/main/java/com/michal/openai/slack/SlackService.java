@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface SlackService {
 
-    void processOnMentionEvent(String requestBody);
+    String processOnMentionEvent(String requestBody);
 
     String registerUser(SlackUser user);
 

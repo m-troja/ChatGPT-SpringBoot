@@ -11,10 +11,8 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GptMessage {
 
-    private int id;
     private String content;
 
-    @JsonProperty("tool_calls")
     private List<ToolCall> toolCalls;
 
     private String name;

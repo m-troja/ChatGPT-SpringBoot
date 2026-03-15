@@ -33,9 +33,9 @@ public class JiraRestController {
 	   
 	}
 	
-	@PostMapping("create-issue")
-	public JiraCreateIssueResponse createIssue(@RequestBody JiraCreateIssueRequest request) {
-        log.debug("POST /api/v1/jira/create-issue: {}", request);
-		 return jiraService.createJavaIssue(request);
-	}
+//	@PostMapping("create-issue")
+//	public JiraCreateIssueResponse createIssue(@RequestBody JiraCreateIssueRequest request) {
+//        log.debug("POST /api/v1/jira/create-issue: {}", request);
+//		 return jiraService.createJavaIssue(request);
+//	}
 }

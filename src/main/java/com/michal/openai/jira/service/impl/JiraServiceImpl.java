@@ -2,6 +2,7 @@ package com.michal.openai.jira.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michal.openai.exception.JiraCommunicationException;
+import com.michal.openai.gpt.tool.tools.CreateJiraIssueTool;
 import com.michal.openai.jira.entity.JiraCreateIssueRequest;
 import com.michal.openai.jira.entity.JiraCreateIssueResponse;
 import com.michal.openai.jira.entity.JiraIssue;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
+import java.io.DataInput;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -99,12 +101,14 @@ public class JiraServiceImpl implements JiraService {
         return List.of();
     }
 
-    public JiraCreateIssueResponse createJavaIssue(JiraCreateIssueRequest request) {
+    public JiraCreateIssueResponse createJavaIssue(CreateJiraIssueTool.Args args) {
     	
         log.debug("CreateJavaIssue() urlToCall: {}", createIssueEndpoint);
-        log.debug("requestBody : {}", request);
+        log.debug("args : {}", args);
+        JiraCreateIssueRequest request = null;
 
         try {
+            request = objectMapper.readValue((DataInput) args, JiraCreateIssueRequest.class);
             var jiraIssueResponse = callCreateIssue(request);
             log.debug("Result of callCreateIssue(): {}", jiraIssueResponse);
             return jiraIssueResponse;

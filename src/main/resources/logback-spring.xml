@@ -2,72 +2,64 @@
     <property name="LOG_PATH" value="${CHAT_LOG_DIR}" />
     <property name="LOG_FILE_NAME" value="${CHAT_LOG_FILENAME}" />
 
-    <!-- INFO File Appender -->
     <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/${CHAT_LOG_FILENAME}.info</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/${CHAT_LOG_FILENAME}.info.%i</fileNamePattern>
-            <minIndex>1</minIndex>
-            <maxIndex>5</maxIndex>
-        </rollingPolicy>
-        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>
+                ${LOG_PATH}/${CHAT_LOG_FILENAME}.info.%d{yyyyMMdd}.%i.log
+            </fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
-        </triggeringPolicy>
-        <!-- Accept DEBUG and higher (INFO, WARN, ERROR) -->
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
-        </filter>
+            <maxHistory>5</maxHistory>
+        </rollingPolicy>
+
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>INFO</level>
             <onMatch>ACCEPT</onMatch>
             <onMismatch>DENY</onMismatch>
         </filter>
+
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %class{1} - %msg%n</pattern>
         </encoder>
+
     </appender>
 
-    <!-- DEBUG File Appender -->
     <appender name="DEBUG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/${CHAT_LOG_FILENAME}.debug</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/${CHAT_LOG_FILENAME}.debug.%i</fileNamePattern>
-            <minIndex>1</minIndex>
-            <maxIndex>5</maxIndex>
-        </rollingPolicy>
-        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${CHAT_LOG_FILENAME}.debug.%d{yyyyMMdd}.%i.log</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
-        </triggeringPolicy>
-        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <maxHistory>5</maxHistory>
+        </rollingPolicy>
+
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>DEBUG</level>
         </filter>
+
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %class{1} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %level %class{1} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- ERROR File Appender -->
     <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/${CHAT_LOG_FILENAME}.error</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/${CHAT_LOG_FILENAME}.error.%i</fileNamePattern>
-            <minIndex>1</minIndex>
-            <maxIndex>5</maxIndex>
-        </rollingPolicy>
-        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${CHAT_LOG_FILENAME}.error.%d{yyyyMMdd}.%i.log</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
-        </triggeringPolicy>
+            <maxHistory>5</maxHistory>
+        </rollingPolicy>
+
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>ERROR</level>
             <onMatch>ACCEPT</onMatch>
             <onMismatch>DENY</onMismatch>
         </filter>
+
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %class{1} - %msg%n</pattern>
         </encoder>
+
     </appender>
 
-    <!-- Console Appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>INFO</level>
@@ -77,7 +69,6 @@
         </encoder>
     </appender>
 
-    <!-- Custom loggers -->
     <logger name="com.michal.openai" level="DEBUG" />
     <logger name="org.springframework.boot" level="INFO" />
     <logger name="org.springframework.boot.context" level="INFO"/>
@@ -93,13 +84,11 @@
     <logger name="org.springframework.data.repository.config.RepositoryConfigurationDelegate" level="INFO"/>
     <logger name="com.zaxxer.hikari" level="INFO"/>
 
-    <!-- Only this root logger -->
-    <root level="ERROR">
-        <!-- Custom loggers -->
-
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="INFO_FILE" />
-        <appender-ref ref="DEBUG_FILE" />
-        <appender-ref ref="ERROR_FILE" />
+    <root level="DEBUG">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="INFO_FILE"/>
+        <appender-ref ref="DEBUG_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
     </root>
+
 </configuration>

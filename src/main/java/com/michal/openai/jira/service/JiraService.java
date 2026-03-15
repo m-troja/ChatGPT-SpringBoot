@@ -1,5 +1,6 @@
 package com.michal.openai.jira.service;
 
+import com.michal.openai.gpt.tool.tools.CreateJiraIssueTool;
 import com.michal.openai.jira.entity.JiraCreateIssueRequest;
 import com.michal.openai.jira.entity.JiraCreateIssueResponse;
 import com.michal.openai.jira.entity.JiraIssue;
@@ -10,6 +11,6 @@ public interface JiraService {
 
     JiraIssue getIssue(String id);
     List<JiraIssue> getIssues();
-    JiraCreateIssueResponse createJavaIssue(JiraCreateIssueRequest request);
+    JiraCreateIssueResponse createJavaIssue(CreateJiraIssueTool.Args args);
 	
 }

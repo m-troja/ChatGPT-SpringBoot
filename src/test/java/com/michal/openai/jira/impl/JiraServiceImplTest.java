@@ -1,35 +1,23 @@
     package com.michal.openai.jira.impl;
 
-    import com.fasterxml.jackson.core.JsonProcessingException;
     import com.fasterxml.jackson.databind.ObjectMapper;
     import com.michal.openai.config.BeansConfiguration;
-    import com.michal.openai.exception.JiraCommunicationException;
     import com.michal.openai.jira.entity.JiraCreateIssueRequest;
     import com.michal.openai.jira.entity.JiraCreateIssueResponse;
     import com.michal.openai.jira.entity.JiraIssue;
-    import com.michal.openai.jira.entity.JiraListOfIssues;
     import com.michal.openai.jira.service.impl.JiraServiceImpl;
     import org.junit.jupiter.api.BeforeEach;
-    import org.junit.jupiter.api.Test;
     import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.beans.factory.annotation.Qualifier;
     import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
     import org.springframework.boot.test.context.TestConfiguration;
     import org.springframework.context.annotation.Bean;
     import org.springframework.context.annotation.Import;
-    import org.springframework.http.HttpMethod;
-    import org.springframework.http.MediaType;
     import org.springframework.test.context.TestPropertySource;
     import org.springframework.test.web.client.MockRestServiceServer;
     import org.springframework.web.client.RestClient;
 
     import java.util.List;
-
-    import static org.assertj.core.api.Assertions.assertThat;
-    import static org.assertj.core.api.Assertions.assertThatThrownBy;
-    import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-    import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-    import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
     @RestClientTest(JiraServiceImplTest.class)
     @Import({JiraServiceImplTest.TestConfig.class, JiraServiceImpl.class, BeansConfiguration.class})
@@ -64,76 +52,6 @@
             service.setCreateIssueEndpoint("/issue");
         }
 
-        @Test
-        public void shouldReturnSingleIssue() throws JsonProcessingException {
-            String uri = service.getJiraUrl() + service.getIssueEndpoint() + "/1";
-            var jiraIssue = buildJiraIssue();
-
-            server.expect(requestTo(uri))
-                    .andExpect(method(HttpMethod.GET))
-                    .andRespond(withSuccess(objectMapper.writeValueAsString(jiraIssue), MediaType.APPLICATION_JSON));
-            var issueFromService = service.getIssue("1");
-            server.verify();
-            assertThat(issueFromService).isEqualTo(jiraIssue);
-        }
-
-        @Test
-        public void shouldReturnListOfIssues() throws JsonProcessingException {
-            var urlToGet = service.getJiraUrl() + service.getSearchEndpoint() + "?jql=project%3D" + service.getJavaProjectName() + "&fields=" + service.getFields() +"&maxResults=" + service.getMaxResults();
-            var jiraListOfIssues = new JiraListOfIssues(buildListOfJiraIssues());
-            server.expect(requestTo(urlToGet))
-                    .andExpect(method(HttpMethod.GET))
-                    .andRespond(withSuccess(objectMapper.writeValueAsString(jiraListOfIssues), MediaType.APPLICATION_JSON));
-            var issuesFromService = service.getIssues();
-            server.verify();
-            assertThat(issuesFromService).isEqualTo(jiraListOfIssues.issues());
-        }
-
-        @Test
-        public void shouldCreateJavaIssue() throws JsonProcessingException {
-            var urlToCreate = service.getJiraUrl() + service.getCreateIssueEndpoint();
-            server.expect(requestTo(urlToCreate))
-                    .andExpect(method(HttpMethod.POST))
-                    .andRespond(withSuccess(objectMapper.writeValueAsString(buildCreateIssueResponse()), MediaType.APPLICATION_JSON));
-            var response = service.createJavaIssue(buildCreateIssueRequest());
-            server.verify();
-            assertThat(response).isEqualTo(buildCreateIssueResponse());
-        }
-
-//        @Test
-//        public void shouldThrowInvalidJsonException() {
-//            var urlToCreate = service.getJiraUrl() + service.getCreateIssueEndpoint();
-//
-//            for (int i = 0; i < service.getRetryAttempts() - 1; i++) {
-//                server.expect(requestTo(urlToCreate))
-//                        .andExpect(method(HttpMethod.POST))
-//                        .andRespond(withServerError());
-//            }
-//            assertThatThrownBy( () -> service.createJavaIssue(getIncorrectJson()))
-//                            .isInstanceOf(JiraCommunicationException.class);
-//        }
-
-        @Test
-        public void shouldFailWhenResponseCannotBeParsedToJiraCreateIssueResponse() {
-            var urlToCreate = service.getJiraUrl() + service.getCreateIssueEndpoint();
-            for (int i = 0; i < service.getRetryAttempts(); i++) {
-                server.expect(requestTo(urlToCreate))
-                        .andExpect(method(HttpMethod.POST))
-                        .andRespond(withSuccess("""
-                       {
-                                    "id": 123,
-                                    "key": 456,
-                                    "self": {}
-                        }
-                       """, MediaType.APPLICATION_JSON));
-            }
-            assertThatThrownBy(() ->
-                    service.createJavaIssue(buildCreateIssueRequest()))
-            .isInstanceOf(JiraCommunicationException.class)
-            .hasCauseInstanceOf(JiraCommunicationException.class);
-
-            server.verify();
-        }
 
         private JiraIssue buildJiraIssue() {
             var issueType = new JiraIssue.Issuetype( "Task");

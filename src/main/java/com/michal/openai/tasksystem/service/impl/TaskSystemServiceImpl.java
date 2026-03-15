@@ -1,12 +1,13 @@
 package com.michal.openai.tasksystem.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.michal.openai.exception.TaskSystemException;
 import com.michal.openai.exception.TaskSystemLoginException;
+import com.michal.openai.gpt.tool.tools.AssignTaskSystemIssueTool;
+import com.michal.openai.gpt.tool.tools.CreateTaskSystemIssueTool;
 import com.michal.openai.persistence.SlackRepo;
 import com.michal.openai.slack.SlackService;
 import com.michal.openai.tasksystem.entity.TaskSystemEventType;
@@ -23,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.scheduling.config.Task;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -31,7 +31,7 @@ import org.springframework.web.client.RestClient;
 import java.util.List;
 import java.util.concurrent.CompletionException;
 
-import static com.michal.openai.tasksystem.entity.TaskSystemEventType.*;
+import static com.michal.openai.tasksystem.entity.TaskSystemEventType.valueOf;
 
 @Slf4j
 @Service
@@ -44,6 +44,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
     private final TokenStore tokenStore;
 
     private static final String GET_ALL_ISSUES_ENDPOINT = "/api/v1/issue/all";
+    private static final String GET_ISSUES_FOR_USER_ENDPOINT = "/api/v1/chatgpt/issues/slack-user-id";
     private static final String CREATE_ISSUE_ENDPOINT = "/api/v1/chatgpt/issue/create";
     private static final String ASSIGN_ISSUE_ENDPOINT = "/api/v1/chatgpt/issue/assign";
     private static final String GET_USER_BY_SLACK_ENDPOINT = "/api/v1/chatgpt/user/slack-user-id";
@@ -57,9 +58,10 @@ public class TaskSystemServiceImpl implements TaskSystemService {
     private String BOT_EMAIL;
 
     @Value("${TS_BOT_PW}")
-    private String BOT_PASSWORD
-            ;
+    private String BOT_PASSWORD;
+
     private static final String LINK_PREFIX = "http://komuna.site/issues/";
+    private final String slackChannelId;
 
     private static final int ATTEMPTS = 3;
     private final SlackService slackService;
@@ -75,16 +77,20 @@ public class TaskSystemServiceImpl implements TaskSystemService {
         this.slackService = slackService;
         this.restClient = restClient;
         this.slackRepo = slackRepo;
+        this.slackChannelId =
+                System.getenv().getOrDefault("SLACK_CHANNEL_ID", "C08RLDBCRB9");
+
     }
 
     @Override
-    public TaskSystemIssueDto createIssue(String requestBody) {
+    public TaskSystemIssueDto createIssue(CreateTaskSystemIssueTool.Args args) {
+        log.debug("Creating issue, args: {}", args);
         if (tokenStore.isExpired()) {
             login();
         }
         try {
-            CreateTaskSystemIssueRequest createIssueRequest = objectMapper.readValue(
-                    requestBody, CreateTaskSystemIssueRequest.class
+            CreateTaskSystemIssueRequest createIssueRequest = objectMapper.convertValue(
+                     args, CreateTaskSystemIssueRequest.class
             );
             TaskSystemIssueDto response = restClient.post()
                     .uri(CREATE_ISSUE_ENDPOINT)
@@ -94,9 +100,6 @@ public class TaskSystemServiceImpl implements TaskSystemService {
                     .body(TaskSystemIssueDto.class);
             log.debug("Created issue response: {}", response);
             return response;
-        } catch (JsonProcessingException e) {
-            log.error("Failed to deserialize create issue request: {}", e.getMessage());
-            throw new CompletionException(e);
         } catch (Exception e) {
             log.error("Error creating issue: {}", e.getMessage(), e);
             throw new CompletionException(e);
@@ -104,7 +107,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
     }
 
     @Override
-    public TaskSystemIssueDto assignIssue(String requestBody) {
+    public TaskSystemIssueDto assignIssue(AssignTaskSystemIssueTool.Args requestBody) {
         if (tokenStore.isExpired()) {
             login();
         }
@@ -141,6 +144,31 @@ public class TaskSystemServiceImpl implements TaskSystemService {
             throw new TaskSystemException("Error fetching issues from Task-System", e);
         }
     }
+    @Override
+    public List<TaskSystemIssueDto> getIssuesForUser(String slackUserId) {
+
+
+        String uri = GET_ISSUES_FOR_USER_ENDPOINT + "/" + slackUserId;
+
+        log.debug("getIssuesForUser: {}, uri: {}", slackUserId, uri
+        );
+        if (tokenStore.isExpired()) {
+            login();
+        }
+        try {
+            List<TaskSystemIssueDto> issues = restClient.get()
+                    .uri(uri)
+                    .header("Authorization", "Bearer " + tokenStore.getAccessToken())
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {});
+            log.debug("Fetched issues for user: {}", issues);
+            return issues;
+        } catch (Exception e) {
+            log.error("Error fetching all issues: {}", e.getMessage(), e);
+            throw new TaskSystemException("Error fetching issues from Task-System", e);
+        }
+    }
+
 
     @Override
     public TaskSystemUserDto getTaskSystemUser(String username) {
@@ -186,67 +214,66 @@ public class TaskSystemServiceImpl implements TaskSystemService {
 
 
     private void login() {
+        String uri = LOGIN_ENDPOINT;
+        log.debug("Logging into TaskSystem: email: {}, endpoint: {}", BOT_EMAIL, uri);
+
         var request = new TaskSystemLoginRequest(BOT_EMAIL, BOT_PASSWORD);
-            for (int i = 1; i <= ATTEMPTS; i++) {
-                try {
-                    log.debug("Login attempt {}", i);
-                    var tokensString = restClient.post()
-                            .uri(LOGIN_ENDPOINT)
-                            .body(request)
-                            .retrieve()
-                            .body(String.class);
-                    log.debug("[LOGIN] Raw rest client response:");
-                    log.debug("{}", tokensString);
-                    TaskSystemTokenResponse tokens = null;
-                    try {
-                        tokens = objectMapper.readValue(tokensString, TaskSystemTokenResponse.class);
-                    } catch (JsonProcessingException e) {
-                        log.debug("Error processing tokens:", e);
-                        throw new RuntimeException(e);
-                    }
-                    log.debug("Tokens RestClient response: {}", tokens);
-                    if (tokens == null || tokens.accessToken() == null || tokens.accessToken().token().isEmpty()) {
-                        throw new TaskSystemLoginException("Failed to retrieve access token");
-                    }
-                    tokenStore.setAccessToken(tokens.accessToken().token());
-                    tokenStore.setExpiresAt(tokens.accessToken().expires() );
-                    return;
 
-                } catch (HttpClientErrorException.BadRequest |
-                         HttpClientErrorException.Unauthorized e) {
-                    log.warn("Login failed, registering bot…");
-                    register();
-                } catch (Exception e) {
-                    if (i == ATTEMPTS)
-                        throw new TaskSystemLoginException("Login failed after retries");
+        for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
+            try {
+                log.debug("Login attempt {}", attempt);
+
+                TaskSystemTokenResponse tokens = restClient.post()
+                        .uri(uri)
+                        .body(request)
+                        .retrieve()
+                        .body(TaskSystemTokenResponse.class);
+
+                if (tokens == null || tokens.accessToken() == null || tokens.accessToken().token().isEmpty()) {
+                    throw new TaskSystemLoginException("Failed to retrieve access token");
                 }
-            }
 
-            throw new TaskSystemLoginException("Login failed after retries");
+                tokenStore.setAccessToken(tokens.accessToken().token());
+                tokenStore.setExpiresAt(tokens.accessToken().expires());
+                log.debug("Login successful, access token acquired");
+                return; // success, exit method
+
+            } catch (HttpClientErrorException.Unauthorized | HttpClientErrorException.BadRequest e) {
+                log.warn("Login failed on attempt {}: {}, trying to register bot…", attempt, e.getMessage());
+                register(); // attempt registration
+            } catch (Exception e) {
+                log.error("Unexpected error on login attempt {}: {}", attempt, e.getMessage(), e);
+            }
         }
 
-    private void register() {
-        TaskSystemRegisterRequest req = new TaskSystemRegisterRequest(
-                "Slack", "Bot", BOT_EMAIL, BOT_PASSWORD, BOT_SLACK_USER_ID
-        );
-        int i;
-        for (i = 1; i <= ATTEMPTS; i++) {
-            try {
-                log.debug("Register attempt {}", i);
+        throw new TaskSystemLoginException("Login failed after " + ATTEMPTS + " attempts");
+    }
 
-                restClient.post()
-                        .uri(REGISTER_ENDPOINT)
+    private void register() {
+        String uri = REGISTER_ENDPOINT;
+        log.debug("Registering bot: email: {}, slackId: {}, endpoint: {}", BOT_EMAIL, BOT_SLACK_USER_ID, uri);
+
+        var req = new TaskSystemRegisterRequest("Slack", "Bot", BOT_EMAIL, BOT_PASSWORD, BOT_SLACK_USER_ID);
+
+        int attempt = 1;
+        while (attempt <= ATTEMPTS) {
+            try {
+                log.debug("Register attempt {}", attempt);
+
+                TaskSystemUserDto user = restClient.post()
+                        .uri(uri)
                         .body(req)
                         .retrieve()
                         .body(TaskSystemUserDto.class);
 
-                return;
-
+                log.debug("Bot registered successfully: {}", user);
+                return; // success
             } catch (Exception e) {
-                log.debug("Exception after {} attempt: {}", i, e.getMessage());
-                if (i == ATTEMPTS) throw new TaskSystemException("Registration failed after retries");
+                log.warn("Attempt {} failed", attempt);
             }
+            attempt++;
         }
+        throw new TaskSystemLoginException("Login failed after " + ATTEMPTS + " attempts");
     }
 
     public void parseTaskSystemEvent(TaskSystemEvent event) {
@@ -256,12 +283,18 @@ public class TaskSystemServiceImpl implements TaskSystemService {
         try {
             eventType = valueOf(event.event().toString().toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
-            log.error("Invalid event type: " + event.event());
+            log.error("Invalid event type: {}", event.event());
             throw new IllegalArgumentException("Invalid event type: " + event.event());
         }
 
         var assignee = slackRepo.findBySlackUserId(event.issue().assigneeSlackId());
         var author = slackRepo.findBySlackUserId(event.issue().authorSlackId());
+        var comments = event.issue().comments();
+
+        String comment = (comments != null && !comments.isEmpty())
+                ? comments.getLast().content()
+                : "comment";
+
         var message = switch (eventType) {
             case CREATED_ISSUE -> {
                 if (assignee != null && author != null) {
@@ -276,7 +309,7 @@ public class TaskSystemServiceImpl implements TaskSystemService {
                  String.format("Hey <@%s>, a new issue has been assigned to you by <@%s>! Title: %s, [%s]", assignee.getSlackUserId(), event.eventUserSlackId() , event.issue().title(), LINK_PREFIX + event.issue().id());
             case DELETED_ISSUE -> String.format("Issue %s has been deleted by <@%s>", event.issue().key(), event.eventUserSlackId());
             case CREATED_COMMENT ->
-                 String.format("New comment by <@%s> posted in %s: %s [%s]", event.eventUserSlackId(), event.issue().key(), event.issue().comments().getLast().content(),  LINK_PREFIX + event.issue().id());
+                 String.format("New comment by <@%s> posted in %s: %s [%s]", event.eventUserSlackId(), event.issue().key(), comment,  LINK_PREFIX + event.issue().id());
             case UPDATED_PRIORITY ->
                  String.format("Priority of %s was set to %s by <@%s> [%s]", event.issue().key(), event.issue().priority(), event.eventUserSlackId(), LINK_PREFIX + event.issue().id());
             case UPDATED_STATUS ->
@@ -291,6 +324,6 @@ public class TaskSystemServiceImpl implements TaskSystemService {
                     String.format("Due-date of %s was set to %s by <@%s> [%s]", event.issue().key(), event.issue().dueDate(), event.eventUserSlackId(), LINK_PREFIX + event.issue().id());
 
         };
-        slackService.sendMessageToSlack(message, "test");
+        slackService.sendMessageToSlack(message, slackChannelId);
     }
 }

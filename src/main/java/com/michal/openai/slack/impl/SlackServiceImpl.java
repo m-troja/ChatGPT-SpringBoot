@@ -2,7 +2,6 @@ package com.michal.openai.slack.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.michal.openai.gpt.GptService;
 import com.michal.openai.persistence.SlackRepo;
 import com.michal.openai.slack.SlackService;
 import com.michal.openai.slack.entity.SlackRequest;
@@ -29,19 +28,16 @@ public class SlackServiceImpl implements SlackService {
     private final MethodsClient slackBotClient;
     private final ObjectMapper objectMapper;
     private final SlackRepo slackRepo;
-    private final GptService gptService;
     private final String slackChannelId;
 
     public SlackServiceImpl(
             @Qualifier("slackBotClient") MethodsClient slackBotClient,
             ObjectMapper objectMapper,
-            SlackRepo slackRepo,
-            GptService gptService
+            SlackRepo slackRepo
     ) {
         this.slackBotClient = slackBotClient;
         this.objectMapper = objectMapper;
         this.slackRepo = slackRepo;
-        this.gptService = gptService;
 
         this.slackChannelId =
                 System.getenv().getOrDefault("SLACK_CHANNEL_ID", "C08RLDBCRB9");
@@ -49,9 +45,8 @@ public class SlackServiceImpl implements SlackService {
         log.info("SLACK_CHANNEL_ID={}", slackChannelId);
     }
 
-    @Async("defaultExecutor")
     @Override
-    public void processOnMentionEvent(String requestBody) {
+    public String processOnMentionEvent(String requestBody) {
 
         SlackRequest slackRequest;
 
@@ -60,7 +55,7 @@ public class SlackServiceImpl implements SlackService {
         }
         catch (JsonProcessingException e) {
             log.error("Cannot parse Slack request", e);
-            return;
+            return "error";
         }
 
         String slackUserId = slackRequest.event().user();
@@ -70,9 +65,7 @@ public class SlackServiceImpl implements SlackService {
 
         log.debug("Slack message from {}: {}", slackUserId, text);
 
-        String gptResponse = gptService.getAnswerWithSlack(text, slackUserId);
-
-        sendMessageToSlack(gptResponse, slackChannelId);
+        return slackUserId;
     }
 
     private void checkSlackUserInDb(String slackUserId) {
