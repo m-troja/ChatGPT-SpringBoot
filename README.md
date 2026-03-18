@@ -16,21 +16,21 @@
 
 ## Technology Stack
 
-| Component       | Details                                |
-| --------------- |----------------------------------------|
-| **Language**    | Java 21                                |
-| **Framework**   | Spring Boot 3.5.7                      |
-| **Build Tool**  | Maven                                  |
-| **Logging**     | SLF4J with Lombok                      |
-| **JSON Mapper** | Jackson ObjectMapper                   |
+| Component           |  Details                               |
+| --------------------|----------------------------------------|
+| **Language**        | Java 21                                |
+| **Framework**       | Spring Boot 3.5.7                      |
+| **Build Tool**      | Maven                                  |
+| **Logging**         | SLF4J with Lombok                      |
+|**Rest API integration** | [TaskStorm](https://github.com/m-troja/TaskStorm), Jira, Github, OpenAI |
+
 
 ## Requirements
 
 - public static IP address
 - Jira account and API token
-- OpenAI account and API token
+- OpenAI dev account and API token
 - Slack account and API token, SlackBot installed into workspace
-- public smtp credentials
 
 
 ## Config
