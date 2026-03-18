@@ -46,9 +46,9 @@ Token config in src/main/resources/secrets.properties:
 
 App saves incoming and outgoing JSON files. Env variables needed to configure file path:
 
-CHAT_LOG_DIR=
-CHAT_JSON_DIR=
-CHAT_LOG_FILENAME=chatgpt
+- CHAT_LOG_DIR=
+- CHAT_JSON_DIR=
+- CHAT_LOG_FILENAME=chatgpt
 
 System message to personalize AI experience:
 
