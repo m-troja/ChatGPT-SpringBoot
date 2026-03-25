@@ -1,6 +1,6 @@
-# Slack-AI-Agent
+# Slack AI Agent
 
-**Slack-AI-Agent** is a Spring Boot-based web application that integrates OpenAI's ChatGPT with **Slack**, **Jira**, **GitHub** and [TaskStorm](https://github.com/m-troja/TaskStorm) APIs. Designed as a modular and extensible backend, this application facilitates AI-powered task automation, conversational interfaces, and project management workflows.
+**Slack AI Agent** is a Spring Boot-based web application that integrates OpenAI's ChatGPT with **Slack**, **Jira**, **GitHub** and [TaskStorm](https://github.com/m-troja/TaskStorm) APIs. Designed as a modular and extensible backend, this application facilitates AI-powered task automation, conversational interfaces, and project management workflows.
 
 ---
 
